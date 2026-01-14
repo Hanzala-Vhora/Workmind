@@ -23,6 +23,12 @@ export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { signOut } = useClerk();
 
+  React.useEffect(() => {
+    if (!clientData) {
+      navigate('/intake');
+    }
+  }, [clientData, navigate]);
+
   if (!clientData) return null;
 
   const handleNav = (dept: Department, view: 'chat' | 'hub') => {

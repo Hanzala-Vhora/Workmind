@@ -111,6 +111,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/hub" element={
         <ProtectedRoute><DepartmentHub /></ProtectedRoute>
       } />
+      <Route path="*" element={<LandingPage />} />
     </Routes>
   );
 };
