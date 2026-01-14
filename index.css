@@ -1,6 +1,48 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-brand-bg: #F7F8F6;
+  --color-brand-navy: #0D3355;
+  --color-brand-deepBlue: #18516C;
+  --color-brand-teal: #3091A4;
+  --color-brand-lightTeal: #56B3C8;
+  --color-brand-purple: #493A73;
+
+  --color-ui-bg: #F8FAFC;
+  --color-ui-card: #FFFFFF;
+  --color-ui-text: #0F172A;
+  --color-ui-slate: #64748B;
+  --color-ui-border: #E2E8F0;
+
+  --color-neural: #6366F1;
+  --color-neural-dark: #4338CA;
+  --color-neural-light: #818CF8;
+
+  --color-deepTech: #0F172A;
+
+  --color-midnight: #1E293B;
+
+  --color-cyan-electric: #06B6D4;
+  --color-cyan-bio: #0EA5E9;
+
+  --background-image-gradient-brand: linear-gradient(to right, #4F46E5, #06B6D4);
+
+  --font-sans: Inter, system-ui, sans-serif;
+
+  --animate-fadeIn: fadeIn 0.5s ease-out;
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
 
 @layer base {
   body {
