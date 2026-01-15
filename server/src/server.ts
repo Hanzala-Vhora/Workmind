@@ -1,11 +1,12 @@
 // server/src/server.ts
-import express, { Express } from 'express';
+import express from 'express';
+import type { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import intakeFormRoutes from './routes/intakeForms';
-import workspaceRoutes from './routes/workspaces';
-import agentRoutes from './routes/agents';
-import threadRoutes from './routes/threads';
+import intakeFormRoutes from './routes/intakeForms.ts';
+import workspaceRoutes from './routes/workspaces.ts';
+import agentRoutes from './routes/agents.ts';
+import threadRoutes from './routes/threads.ts';
 
 dotenv.config();
 
@@ -32,7 +33,7 @@ app.use('/api/agents', agentRoutes);
 app.use('/api/threads', threadRoutes);
 
 // Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error('Error:', err);
   res.status(err.status || 500).json({
     error: err.message || 'Internal server error',

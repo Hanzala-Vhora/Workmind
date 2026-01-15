@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { IntakeData, Department } from '../types';
-import { ArrowLeft, ArrowRight, Check, Upload, Home, AlertCircle, Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Upload, Home, AlertCircle, Plus, Loader } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { apiClient } from '../services/apiClient';
 
 const DEPARTMENTS: Department[] = ['Sales', 'Marketing', 'Finance', 'Operations', 'HR', 'IT', 'Social Media', 'Procurement'];
 
@@ -47,7 +48,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
 
   const [miniIntakeIndex, setMiniIntakeIndex] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  // Track which departments are NEW in this session (for add mode)
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newDepartments, setNewDepartments] = useState<Department[]>([]);
 
   // Update helper
@@ -159,9 +160,41 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
     }
   };
 
-  const handleSubmit = () => {
-    setClientData(formData);
-    navigate('/dashboard');
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      // Call backend API to create intake form
+      const intakeFormData = {
+        workspaceId: 'workspace-' + Date.now(), // Generate a unique workspace ID
+        companyName: formData.business_name,
+        contactEmail: formData.primary_contact,
+        contactPhone: '',
+        department: formData.selected_departments[0] || 'General',
+        industry: formData.industry,
+        companySize: formData.stage,
+        currentState: formData.main_offer,
+        mainGoals: formData.revenue_streams ? [formData.revenue_streams] : [],
+        challenges: formData.broken_workflows ? [formData.broken_workflows] : [],
+        resources: formData.team_structure,
+        timeline: formData.sales_cycle || '1-3 months',
+        budget: formData.revenue_target_12m,
+      };
+
+      const result = await apiClient.intakeForms.create(intakeFormData);
+      
+      // Save to local state as well
+      setClientData(formData);
+      
+      // Show success message
+      alert('✅ Intake form submitted successfully!');
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Error submitting form:', error);
+      setErrors({ submit: error.message || 'Failed to submit form' });
+      alert('❌ Error submitting form: ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Determine which department is currently being configured in Step 5
@@ -481,8 +514,14 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
             <ArrowLeft className="w-4 h-4 mr-2" /> {step === 1 || (isAddMode && step === 4) ? 'Cancel' : 'Back'}
           </button>
 
-          <button onClick={step === 6 || (isAddMode && step === 5) ? handleSubmit : nextStep} className="bg-gradient-brand text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all flex items-center shadow-lg shadow-cyan-electric/20">
-            {step === 6 || (isAddMode && step === 5) ? (isAddMode ? 'Activate Expert' : 'Deploy Workmind OS') : <>Next <ArrowRight className="w-4 h-4 ml-2" /></>}
+          <button onClick={step === 6 || (isAddMode && step === 5) ? handleSubmit : nextStep} disabled={isSubmitting} className="bg-gradient-brand text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all flex items-center shadow-lg shadow-cyan-electric/20 disabled:opacity-50 disabled:cursor-not-allowed">
+            {isSubmitting ? (
+              <>
+                <Loader className="w-4 h-4 mr-2 animate-spin" /> Submitting...
+              </>
+            ) : (
+              step === 6 || (isAddMode && step === 5) ? (isAddMode ? 'Activate Expert' : 'Deploy Workmind OS') : <>Next <ArrowRight className="w-4 h-4 ml-2" /></>
+            )}
           </button>
         </div>
 

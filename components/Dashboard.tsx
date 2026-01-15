@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Users, Globe, BarChart3, Server, ShoppingCart, MessageSquare, Briefcase, Zap, LogOut, Layout, Workflow, Plus } from 'lucide-react';
+import { Users, Globe, BarChart3, Server, ShoppingCart, MessageSquare, Briefcase, Zap, LogOut, Layout, Workflow, Plus, Loader, RefreshCw } from 'lucide-react';
 import { Department } from '../types';
 import { BrainLogo } from './BrainLogo';
 import { useNavigate } from 'react-router-dom';
 import { useClerk } from '@clerk/clerk-react';
+import { apiClient } from '../services/apiClient';
 
 const DEPT_ICONS: Record<Department, any> = {
   'Sales': Briefcase,
@@ -22,10 +23,31 @@ export const Dashboard: React.FC = () => {
   const { clientData, setActiveDepartment, resetApp } = useApp();
   const navigate = useNavigate();
   const { signOut } = useClerk();
+  
+  const [intakeForms, setIntakeForms] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch intake forms from backend
+  const fetchIntakeForms = async () => {
+    try {
+      setRefreshing(true);
+      const workspaceId = clientData?.business_name || 'workspace-default';
+      const forms = await apiClient.intakeForms.getAll(workspaceId);
+      setIntakeForms(forms);
+      console.log('✅ Fetched intake forms:', forms);
+    } catch (error) {
+      console.error('❌ Error fetching intake forms:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   React.useEffect(() => {
     if (!clientData) {
       navigate('/intake');
+    } else {
+      fetchIntakeForms();
     }
   }, [clientData, navigate]);
 
@@ -127,8 +149,8 @@ export const Dashboard: React.FC = () => {
             <div className="text-3xl font-bold text-ui-text">{clientData.selected_departments.length}</div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="text-gray-500 text-sm mb-1">Context Docs</div>
-            <div className="text-3xl font-bold text-ui-text">0</div>
+            <div className="text-gray-500 text-sm mb-1">Intake Forms</div>
+            <div className="text-3xl font-bold text-ui-text">{intakeForms.length}</div>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
             <div className="text-gray-500 text-sm mb-1">Est. Time Saved</div>
@@ -139,6 +161,58 @@ export const Dashboard: React.FC = () => {
             <div className="text-3xl font-bold text-green-500 flex items-center gap-2">Online <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span></div>
           </div>
         </div>
+
+        {/* Intake Forms Section */}
+        {intakeForms.length > 0 && (
+          <div className="mb-10">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-deepTech-DEFAULT">Submitted Intake Forms</h3>
+              <button
+                onClick={fetchIntakeForms}
+                disabled={refreshing}
+                className="flex items-center gap-2 px-4 py-2 bg-cyan-100 text-neural-dark rounded-lg hover:bg-cyan-200 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+              {intakeForms.map(form => (
+                <div key={form.id} className="bg-gradient-to-br from-cyan-50 to-white p-6 rounded-2xl border border-cyan-100 shadow-sm hover:shadow-md transition-all">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h4 className="font-bold text-lg text-deepTech-DEFAULT">{form.companyName}</h4>
+                      <p className="text-gray-500 text-sm">{form.contactEmail}</p>
+                    </div>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium border ${
+                      form.status === 'submitted' 
+                        ? 'bg-green-100 text-green-700 border-green-200'
+                        : 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                    }`}>
+                      {form.status}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div><span className="text-gray-500">Department:</span> <span className="font-medium">{form.department}</span></div>
+                    <div><span className="text-gray-500">Industry:</span> <span className="font-medium">{form.industry}</span></div>
+                    <div><span className="text-gray-500">Size:</span> <span className="font-medium">{form.companySize}</span></div>
+                    <div><span className="text-gray-500">Timeline:</span> <span className="font-medium">{form.timeline}</span></div>
+                  </div>
+                  {form.mainGoals && form.mainGoals.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-cyan-200">
+                      <p className="text-gray-500 text-xs mb-2">Goals:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {form.mainGoals.map((goal, idx) => (
+                          <span key={idx} className="bg-cyan-200 text-neural-dark text-xs px-2 py-1 rounded-full">{goal}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <h3 className="text-xl font-bold text-deepTech-DEFAULT mb-6">Department Workspaces</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
