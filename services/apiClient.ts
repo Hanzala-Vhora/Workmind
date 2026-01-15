@@ -133,6 +133,15 @@ export const apiClient = {
       return response.json();
     },
   },
+
+  // Users
+  users: {
+    checkOnboardingStatus: async (userId: string) => {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}/onboarding-status`);
+      if (!response.ok) throw new Error(`Failed to check onboarding status: ${response.statusText}`);
+      return response.json();
+    }
+  }
 };
 
 // Usage Example:

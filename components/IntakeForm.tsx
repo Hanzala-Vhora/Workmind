@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { useApp } from '../context/AppContext';
 import { IntakeData, Department } from '../types';
 import { ArrowLeft, ArrowRight, Check, Upload, Home, AlertCircle, Plus, Loader } from 'lucide-react';
@@ -37,6 +38,7 @@ interface IntakeFormProps {
 
 export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
   const { setClientData, clientData } = useApp();
+  const { user } = useUser();
   const navigate = useNavigate();
   const isAddMode = mode === 'add';
 
@@ -49,7 +51,43 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
   const [miniIntakeIndex, setMiniIntakeIndex] = useState(0);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isChecking, setIsChecking] = useState(mode === 'initial');
   const [newDepartments, setNewDepartments] = useState<Department[]>([]);
+
+  // Use a ref to prevent double-checking in strict mode or due to re-renders
+  const hasChecked = React.useRef(false);
+
+  useEffect(() => {
+    const checkExistingForms = async () => {
+      // If no user, or not in initial mode, or already checked, do nothing
+      if (!user?.id || mode !== 'initial' || hasChecked.current) {
+        if (!user?.id) return; // Still waiting for user
+        setIsChecking(false);
+        return;
+      }
+
+      hasChecked.current = true;
+
+      try {
+        const status = await apiClient.users.checkOnboardingStatus(user.id);
+
+        if (status.completed) {
+          // If completed, redirect immediately and DO NOT stop loading (to prevent flash)
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+
+        // Only show the form if NOT completed
+        setIsChecking(false);
+      } catch (error) {
+        console.error('Error checking existing forms:', error);
+        // On error, we should probably allow the user to fill the form or retry
+        setIsChecking(false);
+      }
+    };
+
+    checkExistingForms();
+  }, [user?.id, mode, navigate]);
 
   // Update helper
   const update = (field: keyof IntakeData, value: any) => {
@@ -58,6 +96,14 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
       setErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
     }
   };
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-ui-card flex items-center justify-center">
+        <Loader className="w-8 h-8 animate-spin text-neural-DEFAULT" />
+      </div>
+    );
+  }
 
   const handleDeptToggle = (dept: Department) => {
     const current = formData.selected_departments;
@@ -178,13 +224,16 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
         resources: formData.team_structure,
         timeline: formData.sales_cycle || '1-3 months',
         budget: formData.revenue_target_12m,
+        userId: user?.id,
+        userEmail: user?.primaryEmailAddress?.emailAddress,
+        userName: user?.fullName,
       };
 
       const result = await apiClient.intakeForms.create(intakeFormData);
-      
+
       // Save to local state as well
       setClientData(formData);
-      
+
       // Show success message
       alert('✅ Intake form submitted successfully!');
       navigate('/dashboard');
