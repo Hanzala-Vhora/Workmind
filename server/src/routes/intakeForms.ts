@@ -1,6 +1,6 @@
 // server/src/routes/intakeForms.ts
 import { Router } from 'express';
-import * as intakeFormController from '../controllers/intakeFormController.ts';
+import * as intakeFormController from '../controllers/intakeFormController.js';
 
 const router = Router();
 

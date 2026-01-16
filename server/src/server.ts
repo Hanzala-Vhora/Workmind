@@ -4,11 +4,11 @@ import path from 'path';
 import type { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import intakeFormRoutes from './routes/intakeForms.ts';
-import workspaceRoutes from './routes/workspaces.ts';
-import agentRoutes from './routes/agents.ts';
-import threadRoutes from './routes/threads.ts';
-import userRoutes from './routes/users.ts';
+import intakeFormRoutes from './routes/intakeForms.js';
+import workspaceRoutes from './routes/workspaces.js';
+import agentRoutes from './routes/agents.js';
+import threadRoutes from './routes/threads.js';
+import userRoutes from './routes/users.js';
 
 dotenv.config();
 
