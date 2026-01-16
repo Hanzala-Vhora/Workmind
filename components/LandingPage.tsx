@@ -2,10 +2,13 @@
 import React from 'react';
 import { ArrowRight, CheckCircle2, FileText, Clock, BarChart3, Users, Globe, ShoppingCart, MessageSquare, Shield, Server, Lock, Zap, Workflow, Target, Play, Database, Brain, Rocket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useUser, UserButton } from '@clerk/clerk-react';
 import { BrainLogo } from './BrainLogo';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+
+  const { user, isLoaded, isSignedIn } = useUser();
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -33,12 +36,25 @@ export const LandingPage: React.FC = () => {
               <button onClick={() => scrollToSection('pricing')} className="hover:text-neural-DEFAULT transition-colors">Pricing</button>
             </div>
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate('/sign-in')}
-                className="text-sm font-bold text-gray-600 hover:text-neural-DEFAULT px-4 py-2 transition-colors"
-              >
-                Login / Sign-Up
-              </button>
+              {isSignedIn && isLoaded ? (
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => navigate('/dashboard')}
+                    className="text-sm font-bold text-neural-DEFAULT hover:text-neural-dark px-3 py-2 transition-colors border border-neural-DEFAULT/30 rounded-lg hover:bg-neural-DEFAULT/5"
+                  >
+                    Dashboard
+                  </button>
+                  <span className="text-sm font-semibold text-gray-700 hidden sm:inline">Hello, {user.firstName || user.fullName}</span>
+                  <UserButton />
+                </div>
+              ) : (
+                <button
+                  onClick={() => navigate('/sign-in')}
+                  className="text-sm font-bold text-gray-600 hover:text-neural-DEFAULT px-4 py-2 transition-colors"
+                >
+                  Login / Sign-Up
+                </button>
+              )}
               <button
                 onClick={() => navigate('/intake')}
                 className="bg-gradient-brand text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg hover:shadow-neural-DEFAULT/30 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0"
