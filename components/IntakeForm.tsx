@@ -38,8 +38,25 @@ interface IntakeFormProps {
 
 export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
   const { setClientData, clientData } = useApp();
+  const { user, isLoaded } = useUser();
   const navigate = useNavigate();
   const isAddMode = mode === 'add';
+
+  useEffect(() => {
+    if (isLoaded && user && mode === 'initial') {
+      const checkStatus = async () => {
+        try {
+          const status = await apiClient.users.checkOnboardingStatus(user.id);
+          if (status.completed) {
+            navigate('/dashboard');
+          }
+        } catch (err) {
+          console.error("Failed to check status", err);
+        }
+      };
+      checkStatus();
+    }
+  }, [isLoaded, user, mode, navigate]);
 
   const [step, setStep] = useState(isAddMode ? 4 : 1);
   const [formData, setFormData] = useState<IntakeData>(() => {
@@ -164,9 +181,14 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      if (!user) return;
+
       // Call backend API to create intake form
       const intakeFormData = {
         workspaceId: 'workspace-' + Date.now(), // Generate a unique workspace ID
+        userId: user.id,
+        userEmail: user.primaryEmailAddress?.emailAddress,
+        userName: user.fullName || user.firstName,
         companyName: formData.business_name,
         contactEmail: formData.primary_contact,
         contactPhone: '',
