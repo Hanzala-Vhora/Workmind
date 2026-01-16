@@ -1,0 +1,40 @@
+services:
+  # Backend Logics
+  - type: web
+    name: workmind-server
+    env: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: FRONTEND_URL
+        fromService:
+          type: static
+          name: workmind-frontend
+          property: url
+
+  # Frontend Static Site
+  - type: static
+    name: workmind-frontend
+    env: static
+    plan: free
+    rootDir: .
+    buildCommand: npm install --include=dev && npm run build
+    publishDir: dist
+    envVars:
+      - key: VITE_CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: workmind-server
+          property: url

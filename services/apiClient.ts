@@ -1,7 +1,10 @@
 // services/apiClient.ts
 // Frontend API client for backend communication
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const envUrl = import.meta.env.VITE_API_URL;
+const API_BASE_URL = envUrl
+  ? (envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`)
+  : 'http://localhost:5000/api';
 
 export const apiClient = {
   // Intake Forms
