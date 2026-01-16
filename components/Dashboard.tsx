@@ -2,11 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Users, Globe, BarChart3, Server, ShoppingCart, MessageSquare, Briefcase, Zap, LogOut, Layout, Workflow, Plus, Loader, RefreshCw } from 'lucide-react';
-import { Department } from '../types';
+import { Department, IntakeData } from '../types';
 import { BrainLogo } from './BrainLogo';
 import { useNavigate } from 'react-router-dom';
-import { useClerk } from '@clerk/clerk-react';
+import { useClerk, useUser } from '@clerk/clerk-react';
 import { apiClient } from '../services/apiClient';
+import { INITIAL_DATA } from './IntakeForm';
 
 const DEPT_ICONS: Record<Department, any> = {
   'Sales': Briefcase,
@@ -20,10 +21,11 @@ const DEPT_ICONS: Record<Department, any> = {
 };
 
 export const Dashboard: React.FC = () => {
-  const { clientData, setActiveDepartment, resetApp } = useApp();
+  const { clientData, setClientData, setActiveDepartment, resetApp } = useApp();
   const navigate = useNavigate();
   const { signOut } = useClerk();
-  
+  const { user, isLoaded } = useUser();
+
   const [intakeForms, setIntakeForms] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,12 +46,53 @@ export const Dashboard: React.FC = () => {
   };
 
   React.useEffect(() => {
-    if (!clientData) {
-      navigate('/intake');
-    } else {
+    if (!isLoaded || !user) return;
+
+    if (clientData) {
       fetchIntakeForms();
+    } else {
+      // Logic to prevent redirect loop: check backend for onboarding status
+      const restoreSession = async () => {
+        try {
+          const status = await apiClient.users.checkOnboardingStatus(user.id);
+
+          if (status.completed && status.formId) {
+            // Fetch the full form data to populate clientData
+            const form = await apiClient.intakeForms.getById(status.formId);
+
+            // Map backend data to frontend IntakeData structure
+            const restoredData: IntakeData = {
+              ...INITIAL_DATA,
+              business_name: form.companyName,
+              primary_contact: form.contactEmail,
+              industry: form.industry,
+              stage: form.companySize as any,
+              selected_departments: form.department ? [form.department as Department] : [],
+              // Map available fields
+              main_offer: form.currentState || '',
+              revenue_streams: form.mainGoals?.[0] || '',
+              broken_workflows: form.challenges?.[0] || '',
+              team_structure: form.resources || '',
+              sales_cycle: form.timeline as any || '1-3 months',
+              revenue_target_12m: form.budget || '',
+            };
+
+            console.log('Restured session from backend:', restoredData);
+            setClientData(restoredData);
+            // fetchIntakeForms will be called in next render due to clientData dependency
+          } else {
+            // Genuine not onboarded
+            navigate('/intake');
+          }
+        } catch (error) {
+          console.error("Failed to restore session:", error);
+          navigate('/intake');
+        }
+      };
+
+      restoreSession();
     }
-  }, [clientData, navigate]);
+  }, [clientData, navigate, isLoaded, user, setClientData]);
 
   if (!clientData) return null;
 
@@ -184,11 +227,10 @@ export const Dashboard: React.FC = () => {
                       <h4 className="font-bold text-lg text-deepTech-DEFAULT">{form.companyName}</h4>
                       <p className="text-gray-500 text-sm">{form.contactEmail}</p>
                     </div>
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium border ${
-                      form.status === 'submitted' 
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium border ${form.status === 'submitted'
                         ? 'bg-green-100 text-green-700 border-green-200'
                         : 'bg-yellow-100 text-yellow-700 border-yellow-200'
-                    }`}>
+                      }`}>
                       {form.status}
                     </span>
                   </div>

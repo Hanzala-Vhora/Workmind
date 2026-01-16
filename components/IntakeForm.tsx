@@ -9,7 +9,7 @@ import { apiClient } from '../services/apiClient';
 
 const DEPARTMENTS: Department[] = ['Sales', 'Marketing', 'Finance', 'Operations', 'HR', 'IT', 'Social Media', 'Procurement'];
 
-const INITIAL_DATA: IntakeData = {
+export const INITIAL_DATA: IntakeData = {
   // A
   business_name: '', website: '', industry: '', sub_sector: '', business_model: 'B2B', stage: 'Growth', countries_served: [], hq_location: '', founders_roles: '', primary_contact: '',
   // B
