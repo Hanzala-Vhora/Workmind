@@ -4,12 +4,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite\" \"cd server && npm run dev\"",
     "dev:server": "cd server && npm run dev",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:server\"",
-    "build": "vite build",
+    "build": "npm install && vite build && cd server && npm install && npm run build",
     "preview": "vite preview",
-    "start": "npx serve -s dist -l $PORT",
+    "start": "cd server && npm start",
     "prisma:push": "prisma db push",
     "prisma:generate": "prisma generate"
   },

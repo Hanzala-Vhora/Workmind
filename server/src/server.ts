@@ -1,5 +1,6 @@
 // server/src/server.ts
 import express from 'express';
+import path from 'path';
 import type { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -28,21 +29,27 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
+// Routes
 app.use('/api/intake-forms', intakeFormRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/threads', threadRoutes);
 app.use('/api/users', userRoutes);
 
-// Error handling middleware
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('Error:', err);
-  res.status(err.status || 500).json({
-    error: err.message || 'Internal server error',
-  });
-});
+// Serve static frontend files in production
+if (process.env.NODE_ENV === 'production') {
+  const __dirname = path.resolve();
+  // Assuming the build runs from root, and backend starts from server/, we need to find the dist folder correctly.
+  // If we run `node server/dist/server.js` from root:
+  app.use(express.static(path.join(__dirname, '../dist')));
 
-// 404 handler
+  // Handle client-side routing
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+  });
+}
+
+// 404 handler (only if not handled by static files)
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });

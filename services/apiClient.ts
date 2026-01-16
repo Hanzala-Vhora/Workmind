@@ -2,9 +2,16 @@
 // Frontend API client for backend communication
 
 const envUrl = import.meta.env.VITE_API_URL;
+console.log('Workmind Config:', {
+  VITE_API_URL: envUrl,
+  MODE: import.meta.env.MODE
+});
+
 const API_BASE_URL = envUrl
   ? (envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`)
-  : 'http://localhost:5000/api';
+  : (import.meta.env.MODE === 'production' ? '/api' : 'http://localhost:5000/api');
+
+console.log('Using API Base URL:', API_BASE_URL);
 
 export const apiClient = {
   // Intake Forms
