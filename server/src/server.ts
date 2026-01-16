@@ -3,11 +3,10 @@ import express from 'express';
 import type { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import intakeFormRoutes from './routes/intakeForms';
-import workspaceRoutes from './routes/workspaces';
-import agentRoutes from './routes/agents';
-import threadRoutes from './routes/threads';
-import userRoutes from './routes/users';
+import intakeFormRoutes from './routes/intakeForms.ts';
+import workspaceRoutes from './routes/workspaces.ts';
+import agentRoutes from './routes/agents.ts';
+import threadRoutes from './routes/threads.ts';
 
 dotenv.config();
 
@@ -32,7 +31,6 @@ app.use('/api/intake-forms', intakeFormRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/threads', threadRoutes);
-app.use('/api/users', userRoutes);
 
 // Error handling middleware
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

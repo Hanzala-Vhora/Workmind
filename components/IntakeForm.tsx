@@ -38,26 +38,8 @@ interface IntakeFormProps {
 
 export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
   const { setClientData, clientData } = useApp();
-  const { user, isLoaded } = useUser();
   const navigate = useNavigate();
   const isAddMode = mode === 'add';
-
-  // Check if user has already onboarded
-  useEffect(() => {
-    if (isLoaded && user && !isAddMode) {
-      const checkStatus = async () => {
-        try {
-          const status = await apiClient.users.checkOnboardingStatus(user.id);
-          if (status.completed) {
-            navigate('/dashboard');
-          }
-        } catch (error) {
-          console.error('Failed to check onboarding status:', error);
-        }
-      };
-      checkStatus();
-    }
-  }, [isLoaded, user, isAddMode, navigate]);
 
   const [step, setStep] = useState(isAddMode ? 4 : 1);
   const [formData, setFormData] = useState<IntakeData>(() => {
@@ -197,8 +179,6 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
         resources: formData.team_structure,
         timeline: formData.sales_cycle || '1-3 months',
         budget: formData.revenue_target_12m,
-        userId: user?.id,
-        userEmail: user?.primaryEmailAddress?.emailAddress,
       };
 
       const result = await apiClient.intakeForms.create(intakeFormData);

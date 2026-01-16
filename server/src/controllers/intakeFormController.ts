@@ -6,26 +6,10 @@ const prisma = new PrismaClient();
 
 export const createIntakeForm = async (req: Request, res: Response) => {
   try {
-    const { workspaceId, companyName, contactEmail, contactPhone, department, industry, companySize, currentState, mainGoals, challenges, resources, timeline, budget, userId, userEmail } = req.body;
+    const { workspaceId, companyName, contactEmail, contactPhone, department, industry, companySize, currentState, mainGoals, challenges, resources, timeline, budget } = req.body;
 
-    if (!workspaceId || !companyName || !userId) {
+    if (!workspaceId || !companyName) {
       return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    // Ensure User exists if userId is provided
-    if (userId) {
-      await prisma.user.upsert({
-        where: { id: userId },
-        update: {
-          email: userEmail || contactEmail,
-        },
-        create: {
-          id: userId,
-          email: userEmail || contactEmail,
-          name: companyName,
-          role: 'admin'
-        },
-      });
     }
 
     // Create or get workspace
@@ -35,7 +19,7 @@ export const createIntakeForm = async (req: Request, res: Response) => {
       create: {
         id: workspaceId,
         name: companyName,
-        user: { connect: { id: userId } },
+        industry: industry || 'Unknown',
       },
     });
 
