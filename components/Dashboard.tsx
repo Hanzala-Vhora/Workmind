@@ -5,7 +5,7 @@ import { Users, Globe, BarChart3, Server, ShoppingCart, MessageSquare, Briefcase
 import { Department } from '../types';
 import { BrainLogo } from './BrainLogo';
 import { useNavigate } from 'react-router-dom';
-import { useClerk, useUser } from '@clerk/clerk-react';
+import { useClerk } from '@clerk/clerk-react';
 import { apiClient } from '../services/apiClient';
 
 const DEPT_ICONS: Record<Department, any> = {
@@ -20,11 +20,10 @@ const DEPT_ICONS: Record<Department, any> = {
 };
 
 export const Dashboard: React.FC = () => {
-  const { clientData, setClientData, setActiveDepartment, resetApp } = useApp();
+  const { clientData, setActiveDepartment, resetApp } = useApp();
   const navigate = useNavigate();
   const { signOut } = useClerk();
-  const { user } = useUser();
-
+  
   const [intakeForms, setIntakeForms] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -45,134 +44,14 @@ export const Dashboard: React.FC = () => {
   };
 
   React.useEffect(() => {
-    const initializeDashboard = async () => {
-      // If we already have data, just ensure forms are synced
-      if (clientData) {
-        fetchIntakeForms();
-        return;
-      }
+    if (!clientData) {
+      navigate('/intake');
+    } else {
+      fetchIntakeForms();
+    }
+  }, [clientData, navigate]);
 
-      // If no user yet, wait
-      if (!user?.id) return;
-
-      setLoading(true);
-      try {
-        // Attempt to recover session from Backend
-        const workspaces = await apiClient.workspaces.getAll(user.id);
-
-        if (workspaces && workspaces.length > 0) {
-          const latestWorkspace = workspaces[0];
-          const forms = await apiClient.intakeForms.getAll(latestWorkspace.id);
-
-          if (forms && forms.length > 0) {
-            const latestForm = forms[0];
-
-            // Reconstruct IntakeData from DB form
-            const recoveredData: any = {
-              business_name: latestForm.companyName,
-              primary_contact: latestForm.contactEmail,
-              industry: latestForm.industry,
-              stage: latestForm.companySize,
-              selected_departments: [latestForm.department as Department],
-
-              // Defaults for required fields
-              department_configs: {},
-              website: '',
-              sub_sector: '',
-              business_model: 'B2B',
-              countries_served: [],
-              hq_location: '',
-              founders_roles: '',
-              main_offer: '',
-              icp: '',
-              buyer_roles: '',
-              main_pain: '',
-              promise: '',
-              competitors: [],
-              key_objections: '',
-              usp: '',
-              revenue_streams: '',
-              pricing_model: 'One-time',
-              price_points: '',
-              sales_cycle: latestForm.timeline || '1-3 months',
-              revenue_target_90d: '',
-              revenue_target_12m: latestForm.budget || '',
-              lead_sources: [],
-              working_channels: '',
-              failing_channels: '',
-              sales_mechanism: '',
-              crm_tool: '',
-              close_rate: '',
-              delivery_process: '',
-              tool_stack: [],
-              broken_workflows: '',
-              time_wasters: '',
-              has_sops: 'No',
-              team_structure: latestForm.resources || '',
-              decision_approver: '',
-              is_regulated: 'No',
-              sensitive_data: 'None',
-              brand_tone: 'Professional',
-              brand_keywords: '',
-              writing_samples: '',
-              interaction_style: 'Collaborative',
-              deliverables: [],
-              output_format: 'Markdown',
-              client_facing_needed: 'No',
-              deadline: '',
-              reference_brands: '',
-              hard_constraints: '',
-              must_avoid: ''
-            };
-
-            console.log('🔄 Recovered session from DB');
-            setClientData(recoveredData);
-            return;
-          }
-        }
-
-        console.warn('⚠️ No session found in DB');
-      } catch (error) {
-        console.error('❌ Error recovering session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initializeDashboard();
-  }, [clientData, user, navigate]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-ui-card">
-        <div className="text-center">
-          <Loader className="w-10 h-10 text-neural-DEFAULT animate-spin mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-deepTech-DEFAULT">Loading Workspace...</h2>
-        </div>
-      </div>
-    );
-  }
-
-  // If no clientData and not loading, showing the "Empty State" or "Redirect Prompt"
-  if (!clientData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-ui-card">
-        <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl text-center">
-          <BrainLogo width={60} height={60} className="text-neural-DEFAULT mx-auto mb-6" />
-          <h2 className="text-2xl font-bold text-deepTech-DEFAULT mb-2">Welcome to Workmind AI</h2>
-          <p className="text-gray-600 mb-8">We couldn't detect an active session locally. Let's get your workspace ready.</p>
-
-          <button
-            onClick={() => navigate('/intake')}
-            className="w-full py-3 px-4 bg-gradient-brand text-white rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Complete Setup / Recover Session
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (!clientData) return null;
 
   const handleNav = (dept: Department, view: 'chat' | 'hub') => {
     setActiveDepartment(dept);
@@ -305,10 +184,11 @@ export const Dashboard: React.FC = () => {
                       <h4 className="font-bold text-lg text-deepTech-DEFAULT">{form.companyName}</h4>
                       <p className="text-gray-500 text-sm">{form.contactEmail}</p>
                     </div>
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium border ${form.status === 'submitted'
-                      ? 'bg-green-100 text-green-700 border-green-200'
-                      : 'bg-yellow-100 text-yellow-700 border-yellow-200'
-                      }`}>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium border ${
+                      form.status === 'submitted' 
+                        ? 'bg-green-100 text-green-700 border-green-200'
+                        : 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                    }`}>
                       {form.status}
                     </span>
                   </div>
