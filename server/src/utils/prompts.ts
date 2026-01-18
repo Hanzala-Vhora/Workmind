@@ -1,4 +1,4 @@
-import { IntakeData, Department } from '../types';
+import { IntakeData, Department } from '../types.js';
 
 /**
 * ============================

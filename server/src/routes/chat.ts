@@ -1,8 +1,8 @@
 
 import { Router } from 'express';
 import { GoogleGenAI } from '@google/genai';
-import { buildSystemPrompt } from '../utils/prompts';
-import { IntakeData, Department, Message, StoredDocument } from '../types';
+import { buildSystemPrompt } from '../utils/prompts.js';
+import { IntakeData, Department, Message, StoredDocument } from '../types.js';
 
 const router = Router();
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
