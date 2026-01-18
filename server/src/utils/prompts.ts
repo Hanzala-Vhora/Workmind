@@ -140,10 +140,10 @@ export const buildSystemPrompt = (
     };
 
     const replace = (key: string, value: any) => {
-        prompt = prompt.replaceAll(`{{${key}}}`, safe(value));
+        prompt = prompt.replace(new RegExp(`{{${key}}}`, 'g'), safe(value));
     };
 
-    const deptConfig = data.department_configs?.[department] ?? {};
+    const deptConfig = data.department_configs?.[department] ?? {} as any;
 
     // Department core
     replace('department_name', department);

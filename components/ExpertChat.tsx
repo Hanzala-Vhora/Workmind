@@ -215,9 +215,6 @@ export const ExpertChat: React.FC = () => {
               <button onClick={() => setShowSidebar(true)} className="hidden md:block p-2 hover:bg-gray-100 rounded-lg text-gray-500 mr-2" title="Open Sidebar">
                 <Menu className="w-5 h-5" />
               </button>
-                <button onClick={() => setShowSidebar(true)} className="hidden md:block p-2 hover:bg-gray-100 rounded-lg text-gray-500 mr-2" title="Open Sidebar">
-                  <Menu className="w-5 h-5" />
-                </button>
             )}
             <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors md:hidden">
               <ArrowLeft className="w-5 h-5" />

@@ -131,9 +131,7 @@ router.post('/', async (req, res) => {
         // Add User Message
         messageParts.push({ text: `USER QUERY: ${userMessage}` });
 
-        const response = await chat.sendMessage({
-            message: { parts: messageParts }
-        });
+        const response = await chat.sendMessage({ message: messageParts });
 
         const responseText = response.text || "I apologize, no response generated.";
 
