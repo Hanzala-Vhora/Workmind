@@ -17,6 +17,14 @@ export const LandingPage: React.FC = () => {
     }
   };
 
+  const handleStart = () => {
+    if (isSignedIn) {
+      navigate('/dashboard');
+    } else {
+      navigate('/sign-up');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-ui-bg font-sans">
       {/* Navigation */}
@@ -56,7 +64,7 @@ export const LandingPage: React.FC = () => {
                 </button>
               )}
               <button
-                onClick={() => navigate('/intake')}
+                onClick={handleStart}
                 className="bg-gradient-brand text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg hover:shadow-neural-DEFAULT/30 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0"
               >
                 Start Free Pilot
@@ -87,7 +95,7 @@ export const LandingPage: React.FC = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-5 justify-center animate-fadeIn animation-delay-300">
             <button
-              onClick={() => navigate('/intake')}
+              onClick={handleStart}
               className="bg-gradient-brand text-white px-10 py-4 rounded-xl font-bold text-lg hover:shadow-2xl hover:shadow-neural-DEFAULT/30 transition-all duration-300 flex items-center justify-center gap-2 group transform hover:-translate-y-1"
             >
               Get Started Now <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -213,7 +221,7 @@ export const LandingPage: React.FC = () => {
             <div className="p-6 bg-gradient-brand rounded-2xl flex flex-col justify-center items-center text-center shadow-lg shadow-cyan-electric/20 transform hover:scale-105 transition-all">
               <h3 className="text-xl font-bold mb-2">Ready to deploy?</h3>
               <p className="text-sm text-white/80 mb-4">Get your custom experts running in minutes.</p>
-              <button onClick={() => navigate('/intake')} className="bg-white text-deepTech-DEFAULT px-6 py-2 rounded-full text-sm font-bold hover:bg-gray-100 w-full transition-colors shadow-md">Get Started</button>
+              <button onClick={handleStart} className="bg-white text-deepTech-DEFAULT px-6 py-2 rounded-full text-sm font-bold hover:bg-gray-100 w-full transition-colors shadow-md">Get Started</button>
             </div>
           </div>
         </div>
@@ -234,7 +242,7 @@ export const LandingPage: React.FC = () => {
               <h4 className="text-xl font-bold text-gray-900 mb-2">Starter</h4>
               <p className="text-sm text-gray-500 mb-6">For solopreneurs and small teams.</p>
               <div className="text-4xl font-bold text-gray-900 mb-6">$49<span className="text-lg text-gray-400 font-normal">/mo</span></div>
-              <button onClick={() => navigate('/intake')} className="w-full py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 hover:border-neural-DEFAULT hover:text-neural-DEFAULT hover:bg-white transition-colors mb-8">Start Pilot</button>
+              <button onClick={handleStart} className="w-full py-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 hover:border-neural-DEFAULT hover:text-neural-DEFAULT hover:bg-white transition-colors mb-8">Start Pilot</button>
               <ul className="space-y-4 text-sm text-gray-600 flex-1">
                 <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" /> 1 Active Expert Agent</li>
                 <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" /> Basic Context Repo (50MB)</li>
@@ -250,7 +258,7 @@ export const LandingPage: React.FC = () => {
               <h4 className="text-xl font-bold text-white mb-2">Growth</h4>
               <p className="text-sm text-gray-400 mb-6">For scaling companies & SMEs.</p>
               <div className="text-4xl font-bold text-white mb-6">$199<span className="text-lg text-gray-500 font-normal">/mo</span></div>
-              <button onClick={() => navigate('/intake')} className="w-full py-3 bg-gradient-brand rounded-xl font-bold text-white hover:opacity-90 transition-opacity mb-8 shadow-lg shadow-cyan-electric/20">Start Pilot</button>
+              <button onClick={handleStart} className="w-full py-3 bg-gradient-brand rounded-xl font-bold text-white hover:opacity-90 transition-opacity mb-8 shadow-lg shadow-cyan-electric/20">Start Pilot</button>
               <ul className="space-y-4 text-sm text-gray-300 flex-1">
                 <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-cyan-electric shrink-0" /> Unlimited Experts</li>
                 <li className="flex gap-2"><CheckCircle2 className="w-5 h-5 text-cyan-electric shrink-0" /> Full Context Repo (5GB)</li>

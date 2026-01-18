@@ -241,7 +241,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
                       step === 5 ? `5. Training: ${currentMiniDept}` : '6. Final Polish'}
             </p>
           </div>
-          <button onClick={() => navigate('/dashboard')} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
+          <button onClick={() => navigate('/')} className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
             <Home className="w-5 h-5" />
           </button>
         </div>
@@ -531,7 +531,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
         {/* Footer Nav */}
         <div className="bg-gray-50 px-8 py-4 border-t border-gray-200 flex justify-between shrink-0">
           <button
-            onClick={step === 1 || (isAddMode && step === 4) ? () => navigate('/dashboard') : prevStep}
+            onClick={step === 1 || (isAddMode && step === 4) ? () => navigate('/') : prevStep}
             className="flex items-center text-gray-600 hover:text-gray-900 font-medium px-4 py-2"
           >
             <ArrowLeft className="w-4 h-4 mr-2" /> {step === 1 || (isAddMode && step === 4) ? 'Cancel' : 'Back'}
