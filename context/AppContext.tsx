@@ -9,6 +9,7 @@ interface AppContextType {
   // 1:1 Expert Chat
   conversations: Record<string, Conversation>;
   addMessage: (dept: Department, role: 'user' | 'assistant', content: string, escalation?: any) => void;
+  setConversationMessages: (dept: Department, messages: any[]) => void;
 
   // Context Repository (Files)
   departmentDocuments: Record<string, StoredDocument[]>;
@@ -76,6 +77,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const setConversationMessages = (dept: Department, messages: any[]) => {
+    setConversations(prev => {
+      const conv = prev[dept] || { id: crypto.randomUUID(), department: dept, messages: [], lastUpdated: Date.now() };
+      const updated = {
+        ...prev,
+        [dept]: {
+          ...conv,
+          messages: messages,
+          lastUpdated: Date.now()
+        }
+      };
+      localStorage.setItem('workmind_conversations', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const addDocument = (dept: Department, doc: StoredDocument) => {
     setDepartmentDocuments(prev => {
       const currentDocs = prev[dept] || [];
@@ -118,6 +135,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setClientData,
       conversations,
       addMessage,
+      setConversationMessages,
       departmentDocuments,
       addDocument,
       departmentHubs,

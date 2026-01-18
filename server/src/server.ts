@@ -9,6 +9,7 @@ import workspaceRoutes from './routes/workspaces.js';
 import agentRoutes from './routes/agents.js';
 import threadRoutes from './routes/threads.js';
 import userRoutes from './routes/users.js';
+import chatRoutes from './routes/chat.js';
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/threads', threadRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Serve static frontend files in production
 if (process.env.NODE_ENV === 'production') {

@@ -111,14 +111,14 @@ explain why at a high level, and proceed with the correct approach or escalate.
 * ============================
 */
 export const DEPARTMENT_SCHEMAS: Record<Department, string> = {
-  Sales: 'Sales Schema',
-  Marketing: 'Marketing Schema',
-  Finance: 'Finance Schema',
-  Operations: 'Operations Schema',
-  HR: 'HR Schema',
-  IT: 'IT Schema',
-  'Social Media': 'Social Media Schema',
-  Procurement: 'Procurement Schema',
+    Sales: 'Sales Schema',
+    Marketing: 'Marketing Schema',
+    Finance: 'Finance Schema',
+    Operations: 'Operations Schema',
+    HR: 'HR Schema',
+    IT: 'IT Schema',
+    'Social Media': 'Social Media Schema',
+    Procurement: 'Procurement Schema',
 };
 
 /**
@@ -127,70 +127,70 @@ export const DEPARTMENT_SCHEMAS: Record<Department, string> = {
 * ============================
 */
 export const buildSystemPrompt = (
-  data: IntakeData,
-  department: Department
+    data: IntakeData,
+    department: Department
 ): string => {
-  let prompt = MASTER_PROMPT_TEMPLATE;
+    let prompt = MASTER_PROMPT_TEMPLATE;
 
-  const safe = (value: any): string => {
-    if (value === undefined || value === null) return 'Not specified';
-    if (Array.isArray(value)) return value.length ? value.join(', ') : 'Not specified';
-    if (typeof value === 'object') return JSON.stringify(value);
-    return String(value);
-  };
+    const safe = (value: any): string => {
+        if (value === undefined || value === null) return 'Not specified';
+        if (Array.isArray(value)) return value.length ? value.join(', ') : 'Not specified';
+        if (typeof value === 'object') return JSON.stringify(value);
+        return String(value);
+    };
 
-  const replace = (key: string, value: any) => {
-    prompt = prompt.replaceAll(`{{${key}}}`, safe(value));
-  };
+    const replace = (key: string, value: any) => {
+        prompt = prompt.replaceAll(`{{${key}}}`, safe(value));
+    };
 
-  const deptConfig = data.department_configs?.[department] ?? {};
+    const deptConfig = data.department_configs?.[department] ?? {};
 
-  // Department core
-  replace('department_name', department);
-  replace('department_schema', DEPARTMENT_SCHEMAS[department]);
-  replace('priority', deptConfig.priority);
-  replace('outcomes_90d', deptConfig.outcomes_90d);
-  replace('core_tasks', deptConfig.core_tasks);
-  replace('approval_boundaries', deptConfig.approval_boundaries);
+    // Department core
+    replace('department_name', department);
+    replace('department_schema', DEPARTMENT_SCHEMAS[department]);
+    replace('priority', deptConfig.priority);
+    replace('outcomes_90d', deptConfig.outcomes_90d);
+    replace('core_tasks', deptConfig.core_tasks);
+    replace('approval_boundaries', deptConfig.approval_boundaries);
 
-  // Business context
-  replace('business_name', data.business_name);
-  replace('industry', data.industry);
-  replace('sub_sector', data.sub_sector);
-  replace('business_model', data.business_model);
-  replace('stage', data.stage);
-  replace('countries_served', data.countries_served);
-  replace('founders_roles', data.founders_roles);
-  replace('hq_location', data.hq_location);
+    // Business context
+    replace('business_name', data.business_name);
+    replace('industry', data.industry);
+    replace('sub_sector', data.sub_sector);
+    replace('business_model', data.business_model);
+    replace('stage', data.stage);
+    replace('countries_served', data.countries_served);
+    replace('founders_roles', data.founders_roles);
+    replace('hq_location', data.hq_location);
 
-  // Offer
-  replace('main_offer', data.main_offer);
-  replace('icp', data.icp);
-  replace('promise', data.promise);
-  replace('usp', data.usp);
-  replace('revenue_target_90d', data.revenue_target_90d);
+    // Offer
+    replace('main_offer', data.main_offer);
+    replace('icp', data.icp);
+    replace('promise', data.promise);
+    replace('usp', data.usp);
+    replace('revenue_target_90d', data.revenue_target_90d);
 
-  // Operations
-  replace('lead_sources', data.lead_sources);
-  replace('sales_mechanism', data.sales_mechanism);
-  replace('pricing_model', data.pricing_model);
-  replace('price_points', data.price_points);
-  replace('delivery_process', data.delivery_process);
-  replace('tool_stack', data.tool_stack);
-  replace('team_structure', data.team_structure);
-  replace('decision_approver', data.decision_approver);
-  replace('restricted_policies', data.restricted_policies);
+    // Operations
+    replace('lead_sources', data.lead_sources);
+    replace('sales_mechanism', data.sales_mechanism);
+    replace('pricing_model', data.pricing_model);
+    replace('price_points', data.price_points);
+    replace('delivery_process', data.delivery_process);
+    replace('tool_stack', data.tool_stack);
+    replace('team_structure', data.team_structure);
+    replace('decision_approver', data.decision_approver);
+    replace('restricted_policies', data.restricted_policies);
 
-  // Compliance
-  replace('regulatory_requirements', data.regulatory_details);
-  replace('sensitive_data', data.sensitive_data);
-  replace('hard_constraints', data.hard_constraints);
-  replace('must_avoid', data.must_avoid);
+    // Compliance
+    replace('regulatory_requirements', data.regulatory_details);
+    replace('sensitive_data', data.sensitive_data);
+    replace('hard_constraints', data.hard_constraints);
+    replace('must_avoid', data.must_avoid);
 
-  // Tone
-  replace('brand_tone', data.brand_tone);
-  replace('interaction_style', data.interaction_style);
-  replace('output_format', data.output_format);
+    // Tone
+    replace('brand_tone', data.brand_tone);
+    replace('interaction_style', data.interaction_style);
+    replace('output_format', data.output_format);
 
-  return prompt;
+    return prompt;
 };
