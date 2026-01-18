@@ -30,7 +30,7 @@ export const SignInPage: React.FC = () => {
               appearance={{
                 elements: {
                   rootBox: "w-full",
-                  card: "shadow-none p-0 w-full border-0",
+                  card: "shadow-none p-4 w-full border-0",
                   headerTitle: "hidden", // We have our own header
                   headerSubtitle: "hidden",
                   formButtonPrimary: "bg-indigo-600 hover:bg-indigo-700 text-sm normal-case",

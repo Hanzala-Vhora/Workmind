@@ -30,7 +30,7 @@ export const SignUpPage: React.FC = () => {
                             appearance={{
                                 elements: {
                                     rootBox: "w-full",
-                                    card: "shadow-none p-0 w-full border-0",
+                                    card: "shadow-none p-4 w-full border-0",
                                     headerTitle: "hidden",
                                     headerSubtitle: "hidden",
                                     formButtonPrimary: "bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-700 hover:to-indigo-700 text-sm normal-case",
