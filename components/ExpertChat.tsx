@@ -3,8 +3,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { useApp } from '../context/AppContext';
 import { generateExpertResponse } from '../services/geminiService';
-import { Send, ArrowLeft, AlertTriangle, Paperclip, FileText, Image as ImageIcon, Database, X, Zap, Loader2, CheckCircle, File } from 'lucide-react';
+import { Send, ArrowLeft, AlertTriangle, Paperclip, FileText, Image as ImageIcon, Database, X, Zap, Loader2, CheckCircle, File, User, Sparkles } from 'lucide-react';
 import { ThreadAnalyzer } from './ThreadAnalyzer';
+import { BrainLogo } from './BrainLogo';
 import { StoredDocument } from '../types';
 import { useNavigate } from 'react-router-dom';
 
@@ -118,33 +119,37 @@ export const ExpertChat: React.FC = () => {
   return (
     <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm z-20 relative">
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h2 className="text-xl font-bold text-ui-text flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <BrainLogo width={24} height={24} />
               {activeDepartment} Expert
-              <span className="bg-neural-DEFAULT text-white text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold shadow-sm">AI</span>
             </h2>
-            <p className="text-xs text-gray-500">Trained on {clientData.business_name} • Priority: {clientData.department_configs[activeDepartment]?.priority || 'Normal'}</p>
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-brand-teal" /> AI Powered</span>
+              <span>•</span>
+              <span>{clientData.business_name}</span>
+            </div>
           </div>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => setShowContextRepo(!showContextRepo)}
-            className={`text-sm font-medium px-4 py-2 rounded-lg transition-all border flex items-center gap-2 shadow-sm ${showContextRepo ? 'bg-midnight-DEFAULT text-white border-midnight-DEFAULT' : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-200'}`}
+            className={`text-sm font-medium px-4 py-2 rounded-full transition-all border flex items-center gap-2 ${showContextRepo ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-200'}`}
           >
             <Database className="w-4 h-4" />
-            Context Repo
+            <span className="hidden sm:inline">Context</span>
             {currentDocs.length > 0 && <span className={`text-xs px-1.5 rounded-full ${showContextRepo ? 'bg-white/20' : 'bg-gray-100 text-gray-600'}`}>{currentDocs.length}</span>}
           </button>
           <button
             onClick={() => setShowAnalyzer(!showAnalyzer)}
-            className={`text-sm font-medium px-4 py-2 rounded-lg transition-all border shadow-sm ${showAnalyzer ? 'bg-deepTech-DEFAULT text-white border-deepTech-DEFAULT' : 'text-deepTech-DEFAULT bg-white hover:bg-blue-50 border-deepTech-DEFAULT/20'}`}
+            className={`text-sm font-medium px-4 py-2 rounded-full transition-all border ${showAnalyzer ? 'bg-indigo-600 text-white border-indigo-600' : 'text-indigo-600 bg-white hover:bg-indigo-50 border-indigo-200'}`}
           >
-            {showAnalyzer ? 'Close Analyzer' : 'Email Analyzer'}
+            {showAnalyzer ? 'Close' : 'Analyzer'}
           </button>
         </div>
       </header>
@@ -212,97 +217,127 @@ export const ExpertChat: React.FC = () => {
         />
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col bg-white w-full">
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50">
-            {currentMessages.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-60 pointer-events-none select-none">
-                <div className="w-20 h-20 bg-gray-100 rounded-full mb-6 flex items-center justify-center">
-                  <Zap className="w-10 h-10 text-gray-300" />
+        <div className="flex-1 flex flex-col bg-white w-full relative">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">
+            <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
+              {currentMessages.length === 0 && (
+                <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-400 select-none animate-fadeIn">
+                  <div className="w-24 h-24 bg-gradient-to-br from-indigo-50 to-cyan-50 rounded-3xl mb-8 flex items-center justify-center shadow-sm">
+                    <BrainLogo width={64} height={64} className="opacity-80" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-2">How can I help with {activeDepartment}?</h3>
+                  <p className="text-gray-500 max-w-md text-center">
+                    I'm trained on your company's documents and guidelines. Ask me anything about processes, contracts, or strategies.
+                  </p>
                 </div>
-                <h3 className="text-lg font-bold text-gray-500">Start a conversation</h3>
-                <p className="text-sm text-gray-400 mt-1">Your {activeDepartment} Expert is ready.</p>
-                {currentDocs.length > 0 && <p className="text-xs mt-4 bg-blue-50 text-blue-600 px-3 py-1 rounded-full font-medium">{currentDocs.length} knowledge source(s) active</p>}
-              </div>
-            )}
+              )}
 
-            {currentMessages.map(msg => (
-              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}>
-                <div className={`max-w-[85%] md:max-w-[70%] rounded-2xl p-5 shadow-sm ${msg.role === 'user' ? 'bg-gradient-brand text-white rounded-tr-sm' : 'bg-white text-gray-800 border border-gray-100 rounded-tl-sm'}`}>
-                  {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm prose-slate max-w-none break-words">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                  )}
+              {currentMessages.map((msg, idx) => (
+                <div key={msg.id || idx} className={`group animate-fadeIn flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                  {/* Avatar */}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm ${msg.role === 'user' ? 'bg-gray-200' : 'bg-indigo-50 border border-indigo-100'}`}>
+                    {msg.role === 'user' ? (
+                      <User className="w-5 h-5 text-gray-600" />
+                    ) : (
+                      <BrainLogo width={20} height={20} />
+                    )}
+                  </div>
 
-                  {msg.escalation?.required && (
-                    <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-bold text-yellow-800">Approval Required</p>
-                        <p className="text-xs text-yellow-700 mt-1">
-                          Trigger: <span className="font-mono bg-yellow-100 px-1 rounded">"{msg.escalation.reason}"</span>.
-                          Escalated to: {msg.escalation.approver || 'Department Head'}.
-                        </p>
-                      </div>
+                  {/* Message Content */}
+                  <div className={`flex-1 max-w-[85%] ${msg.role === 'user' ? 'flex justify-end' : ''}`}>
+                    <div className={`relative px-5 py-4 ${msg.role === 'user'
+                        ? 'bg-gray-100 text-gray-800 rounded-2xl rounded-tr-sm'
+                        : 'text-gray-800' // Assistant messages have no background, just text
+                      }`}>
+                      {msg.role === 'assistant' ? (
+                        <div className="prose prose-slate max-w-none prose-headings:font-semibold prose-a:text-indigo-600 prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:rounded prose-pre:bg-slate-900 prose-pre:text-slate-50">
+                          <ReactMarkdown>{msg.content}</ReactMarkdown>
+                        </div>
+                      ) : (
+                        <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                      )}
+
+                      {/* Escalation/Warning Block */}
+                      {msg.escalation?.required && (
+                        <div className="mt-4 p-4 bg-amber-50 border border-amber-100 rounded-xl flex items-start gap-3">
+                          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-semibold text-amber-900">Expert Review Required</p>
+                            <p className="text-xs text-amber-700 mt-1">
+                              Flagged for: <span className="font-medium">"{msg.escalation.reason}"</span>.
+                              Forwarded to {msg.escalation.approver || 'Department Head'}.
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {loading && (
-              <div className="flex justify-start animate-pulse">
-                <div className="bg-white px-6 py-4 rounded-2xl rounded-tl-sm border border-gray-100 shadow-sm flex items-center gap-2">
-                  <span className="w-2 h-2 bg-neural-DEFAULT rounded-full animate-bounce"></span>
-                  <span className="w-2 h-2 bg-neural-DEFAULT rounded-full animate-bounce delay-150"></span>
-                  <span className="w-2 h-2 bg-neural-DEFAULT rounded-full animate-bounce delay-300"></span>
+              ))}
+
+              {loading && (
+                <div className="flex gap-4 animate-fadeIn">
+                  <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 shadow-sm">
+                    <BrainLogo width={20} height={20} />
+                  </div>
+                  <div className="flex items-center gap-1 h-8">
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce"></div>
+                  </div>
                 </div>
-              </div>
-            )}
-            <div ref={messagesEndRef}></div>
+              )}
+              <div ref={messagesEndRef} className="h-4" />
+            </div>
           </div>
 
           {/* Input Area */}
-          <div className="p-6 bg-white border-t border-gray-200">
-            <div className="max-w-4xl mx-auto relative group">
-              <textarea
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-                placeholder={`Ask your ${activeDepartment} expert...`}
-                className="w-full pl-5 pr-24 py-4 rounded-2xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-neural-DEFAULT focus:border-transparent focus:ring-4 focus:ring-neural-DEFAULT/10 outline-none resize-none shadow-inner transition-all text-sm"
-                rows={1}
-                style={{ minHeight: '60px' }}
-              />
+          <div className="p-4 bg-white/90 backdrop-blur pb-8">
+            <div className="max-w-3xl mx-auto relative group">
+              <div className="relative bg-gray-50 rounded-2xl border border-gray-200 shadow-sm focus-within:shadow-md focus-within:ring-1 focus-within:ring-indigo-100 focus-within:border-indigo-200 transition-all overflow-hidden hover:border-gray-300">
+                <textarea
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSend();
+                    }
+                  }}
+                  placeholder={`Ask ${activeDepartment} expert...`}
+                  className="w-full pl-4 pr-24 py-4 bg-transparent outline-none resize-none text-gray-800 placeholder-gray-400 text-base"
+                  rows={1}
+                  style={{ minHeight: '56px', maxHeight: '200px' }}
+                />
 
-              {/* Quick Actions in Input */}
-              <div className="absolute right-3 top-3 flex items-center gap-1">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="p-2 text-gray-400 hover:text-neural-DEFAULT hover:bg-gray-100 transition-all rounded-xl"
-                  title="Upload Document"
-                >
-                  <Paperclip className="w-5 h-5" />
-                </button>
-
-                <button
-                  onClick={handleSend}
-                  disabled={!input.trim() || loading}
-                  className="p-2 bg-gradient-brand text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105"
-                >
-                  <Send className="w-5 h-5" />
-                </button>
+                {/* Actions */}
+                <div className="absolute right-2 bottom-2 flex items-center gap-1.5">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    title="Upload Context"
+                  >
+                    <Paperclip className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={handleSend}
+                    disabled={!input.trim() || loading}
+                    className={`p-2 rounded-lg transition-all ${input.trim() && !loading
+                        ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700'
+                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      }`}
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="text-center mt-3 text-xs text-gray-400 flex justify-center items-center gap-2">
-              <Shield className="w-3 h-3 text-neural-DEFAULT" />
-              <span><strong className="text-gray-600">No Hallucination Guarantee:</strong> Responses strictly grounded in provided context.</span>
+
+              <div className="text-center mt-3">
+                <p className="text-[10px] text-gray-400 flex items-center justify-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                  AI can make mistakes. Verify critical information.
+                </p>
+              </div>
             </div>
           </div>
         </div>
