@@ -7,69 +7,83 @@ import { IntakeData, Department, Message, StoredDocument } from '../types.js';
 const router = Router();
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
-// In-memory store for chat messages - in a real app this would be in a DB
-// Key: departmentId (or just department name since we have one workspace active usually)
-const chatHistory: Record<string, Message[]> = {};
+// In-memory store
+// In real app: DB tables "Chat" and "Message"
+interface ChatSession {
+    id: string;
+    department: Department;
+    title: string;
+    createdAt: number;
+    messages: Message[];
+}
 
-// GET /api/chat/:department
-router.get('/:department', (req, res) => {
+const chats: Record<string, ChatSession> = {};
+
+// GET /api/chat/department/:department
+// Get all chats for a department
+router.get('/department/:department', (req, res) => {
     const { department } = req.params;
-    const history = chatHistory[department] || [];
-    res.json({ history });
+    const deptChats = Object.values(chats)
+        .filter(c => c.department === department)
+        .sort((a, b) => b.createdAt - a.createdAt);
+
+    res.json({ chats: deptChats.map(c => ({ id: c.id, title: c.title, createdAt: c.createdAt })) });
+});
+
+// GET /api/chat/session/:chatId
+// Get specific chat history
+router.get('/session/:chatId', (req, res) => {
+    const { chatId } = req.params;
+    const chat = chats[chatId];
+    if (!chat) return res.status(404).json({ error: 'Chat not found' });
+    res.json({ history: chat.messages });
+});
+
+// DELETE /api/chat/session/:chatId
+router.delete('/session/:chatId', (req, res) => {
+    const { chatId } = req.params;
+    if (chats[chatId]) {
+        delete chats[chatId];
+        res.json({ success: true });
+    } else {
+        res.status(404).json({ error: 'Chat not found' });
+    }
 });
 
 // POST /api/chat
+// Send message (creates new chat if chatId not provided)
 router.post('/', async (req, res) => {
     try {
         const {
             clientData,
             department,
             userMessage,
-            contextDocs = []
+            contextDocs = [],
+            chatId
         }: {
             clientData: IntakeData;
             department: Department;
             userMessage: string;
             contextDocs: StoredDocument[];
+            chatId?: string;
         } = req.body;
 
         if (!department || !userMessage) {
             return res.status(400).json({ error: 'Missing department or message' });
         }
 
-        if (!process.env.API_KEY) {
-            // Mock response if no API key
-            const mockResponse = {
-                text: "API Key is missing on server. Simulating response: " + userMessage,
-                escalation: { required: false }
+        // Generate or retrieve chat session
+        const currentChatId = chatId || crypto.randomUUID();
+        if (!chats[currentChatId]) {
+            chats[currentChatId] = {
+                id: currentChatId,
+                department,
+                title: userMessage.substring(0, 40) + (userMessage.length > 40 ? '...' : ''),
+                createdAt: Date.now(),
+                messages: []
             };
-
-            // Store user message
-            const userMsg: Message = {
-                id: Date.now().toString(),
-                role: 'user',
-                content: userMessage,
-                timestamp: Date.now()
-            };
-
-            if (!chatHistory[department]) chatHistory[department] = [];
-            chatHistory[department].push(userMsg);
-
-            // Store assistant message
-            const assistantMsg: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: mockResponse.text,
-                timestamp: Date.now(),
-                escalation: mockResponse.escalation
-            };
-            chatHistory[department].push(assistantMsg);
-
-            return res.json(mockResponse);
         }
-
-        // Initialize history if needed
-        if (!chatHistory[department]) chatHistory[department] = [];
+        const session = chats[currentChatId];
 
         // Store user message
         const userMsg: Message = {
@@ -78,7 +92,32 @@ router.post('/', async (req, res) => {
             content: userMessage,
             timestamp: Date.now()
         };
-        chatHistory[department].push(userMsg);
+        session.messages.push(userMsg);
+
+        if (!process.env.API_KEY) {
+            // Mock response
+            const mockResponse = {
+                text: "API Key is missing on server. Simulating response: " + userMessage,
+                escalation: { required: false }
+            };
+
+            const assistantMsg: Message = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: mockResponse.text,
+                timestamp: Date.now(),
+                escalation: mockResponse.escalation
+            };
+            session.messages.push(assistantMsg);
+
+            return res.json({
+                text: mockResponse.text,
+                escalation: mockResponse.escalation,
+                messageId: assistantMsg.id,
+                chatId: currentChatId,
+                title: session.title
+            });
+        }
 
         // Prepare system prompt
         let systemInstruction = buildSystemPrompt(clientData, department);
@@ -103,9 +142,8 @@ router.post('/', async (req, res) => {
 
         // Add Docs to parts
         contextDocs.forEach(doc => {
-            // Basic text handling or image handling
             if (doc.type.startsWith('image/') || doc.type === 'application/pdf') {
-                const base64Data = doc.content.split(',')[1] || doc.content; // ensure base64
+                const base64Data = doc.content.split(',')[1] || doc.content;
                 if (base64Data) {
                     messageParts.push({
                         inlineData: {
@@ -120,10 +158,8 @@ router.post('/', async (req, res) => {
             }
         });
 
-        // Add History
-        // We only send the last few messages to keep context window manageable if needed, 
-        // or send all if model supports large context.
-        const historyContext = chatHistory[department].slice(-10, -1).map(h => `${h.role.toUpperCase()}: ${h.content}`).join("\n");
+        // Add History (last 10)
+        const historyContext = session.messages.slice(-11, -1).map(h => `${h.role.toUpperCase()}: ${h.content}`).join("\n");
         if (historyContext) {
             messageParts.push({ text: `\nPREVIOUS CONVERSATION:\n${historyContext}\n` });
         }
@@ -132,7 +168,6 @@ router.post('/', async (req, res) => {
         messageParts.push({ text: `USER QUERY: ${userMessage}` });
 
         const response = await chat.sendMessage({ message: messageParts });
-
         const responseText = response.text || "I apologize, no response generated.";
 
         // Check Escalation
@@ -155,12 +190,14 @@ router.post('/', async (req, res) => {
             timestamp: Date.now(),
             escalation
         };
-        chatHistory[department].push(assistantMsg);
+        session.messages.push(assistantMsg);
 
         res.json({
             text: responseText,
             escalation,
-            messageId: assistantMsg.id
+            messageId: assistantMsg.id,
+            chatId: currentChatId,
+            title: session.title
         });
 
     } catch (error) {

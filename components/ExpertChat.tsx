@@ -13,6 +13,9 @@ export const ExpertChat: React.FC = () => {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [showSidebar, setShowSidebar] = useState(true);
+  const [chats, setChats] = useState<{ id: string; title: string; createdAt: number }[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
 
   // Get API URL from environment
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -32,28 +35,83 @@ export const ExpertChat: React.FC = () => {
   }, [conversations, activeDepartment]);
 
   // Fetch history from server
+  // Fetch department chats on department change
   useEffect(() => {
     if (!activeDepartment) return;
 
-    const fetchHistory = async () => {
+    const fetchChats = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/chat/${activeDepartment}`);
-        if (!res.ok) throw new Error('Failed to fetch history');
-        const data = await res.json();
-        if (data.history) {
-          setConversationMessages(activeDepartment, data.history);
+        const res = await fetch(`${API_URL}/api/chat/department/${activeDepartment}`);
+        if (res.ok) {
+          const data = await res.json();
+          setChats(data.chats || []);
+          // If chats exist, select the most recent one?? No, let user start new or select.
+          // Or maybe default to new chat?
+          setCurrentChatId(null);
+          setMessages([]);
         }
       } catch (err) {
-        console.error("Failed to load chat history", err);
+        console.error("Failed to load chats list", err);
       }
     };
-
-    fetchHistory();
+    fetchChats();
   }, [activeDepartment]);
+
+  // Fetch specific chat history when currentChatId changes
+  useEffect(() => {
+    if (!currentChatId) {
+      setMessages([]);
+      return;
+    }
+
+    const fetchHistory = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${API_URL}/api/chat/session/${currentChatId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setMessages(data.history || []);
+        }
+      } catch (err) {
+        console.error("Failed to load history", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [currentChatId]);
+
+  const refreshChats = async () => {
+    if (!activeDepartment) return;
+    const res = await fetch(`${API_URL}/api/chat/department/${activeDepartment}`);
+    if (res.ok) {
+      const data = await res.json();
+      setChats(data.chats || []);
+    }
+  };
+
+  const deleteChat = async (e: React.MouseEvent, chatId: string) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to delete this chat?")) return;
+
+    try {
+      await fetch(`${API_URL}/api/chat/session/${chatId}`, { method: 'DELETE' });
+      if (currentChatId === chatId) {
+        setCurrentChatId(null);
+        setMessages([]);
+      }
+      refreshChats();
+    } catch (err) {
+      console.error("Failed to delete chat", err);
+    }
+  };
 
   if (!clientData || !activeDepartment) return null;
 
-  const currentMessages = conversations[activeDepartment]?.messages || [];
+  // Use local 'messages' state instead of global context for now, as we moved to multi-chat
+  // const currentMessages = conversations[activeDepartment]?.messages || []; 
+  // We use 'messages' state directly
+  const currentMessages = messages;
   const currentDocs = departmentDocuments[activeDepartment] || [];
 
   const handleSend = async () => {
@@ -64,7 +122,8 @@ export const ExpertChat: React.FC = () => {
     setLoading(true);
 
     // Optimistically add user message
-    addMessage(activeDepartment, 'user', userText);
+    const tempMsg = { role: 'user', content: userText, id: Date.now().toString() };
+    setMessages(prev => [...prev, tempMsg]);
 
     try {
       const res = await fetch(`${API_URL}/api/chat`, {
@@ -74,7 +133,8 @@ export const ExpertChat: React.FC = () => {
           clientData,
           department: activeDepartment,
           userMessage: userText,
-          contextDocs: currentDocs
+          contextDocs: currentDocs,
+          chatId: currentChatId // Pass current ID if exists
         })
       });
 
@@ -82,11 +142,24 @@ export const ExpertChat: React.FC = () => {
 
       const response = await res.json();
 
+      // If this was a new chat, update currentChatId and refresh list
+      if (response.chatId && response.chatId !== currentChatId) {
+        setCurrentChatId(response.chatId);
+        refreshChats();
+      }
+
       // Add assistant message
-      addMessage(activeDepartment, 'assistant', response.text, response.escalation);
+      const assistantMsg = {
+        role: 'assistant',
+        content: response.text,
+        escalation: response.escalation,
+        id: response.messageId
+      };
+      setMessages(prev => [...prev, assistantMsg]);
+
     } catch (error) {
       console.error(error);
-      addMessage(activeDepartment, 'assistant', "Error: Unable to reach the expert engine. Please check your connection.");
+      setMessages(prev => [...prev, { role: 'assistant', content: "Error: Unable to reach the expert engine. Please check your connection." }]);
     } finally {
       setLoading(false);
     }
@@ -170,24 +243,64 @@ export const ExpertChat: React.FC = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          <div className="px-2 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center justify-between">
-            Your Chats
-            <span className="bg-gray-200 text-gray-600 px-1.5 rounded text-[10px]">{clientData.selected_departments.length}</span>
+          {/* Department Selector (Top) */}
+          <div className="mb-6">
+            <p className="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Department</p>
+            <div className="flex flex-wrap gap-2 px-2">
+              {clientData.selected_departments.map(dept => (
+                <button
+                  key={dept}
+                  onClick={() => setActiveDepartment(dept)}
+                  className={`text-xs px-2 py-1 rounded-md border transition-colors ${activeDepartment === dept
+                    ? 'bg-indigo-50 border-indigo-200 text-indigo-700 font-medium'
+                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'}`}
+                >
+                  {dept}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {clientData.selected_departments.map(dept => (
-            <button
-              key={dept}
-              onClick={() => setActiveDepartment(dept)}
-              className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-3 transition-all ${activeDepartment === dept
-                ? 'bg-white shadow-sm ring-1 ring-gray-200 text-indigo-600'
-                : 'text-gray-600 hover:bg-gray-200/50 hover:text-gray-900'
-                }`}
-            >
-              <MessageSquare className={`w-4 h-4 ${activeDepartment === dept ? 'text-indigo-500' : 'text-gray-400'}`} />
-              <span className="text-sm font-medium truncate">{dept}</span>
-            </button>
-          ))}
+          {/* New Chat Button */}
+          <button
+            onClick={() => { setCurrentChatId(null); setMessages([]); }}
+            className="w-full mb-4 flex items-center justify-center gap-2 bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" /> New Chat
+          </button>
+
+          <div className="px-2 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center justify-between">
+            Recent {activeDepartment} Chats
+            <span className="bg-gray-200 text-gray-600 px-1.5 rounded text-[10px]">{chats.length}</span>
+          </div>
+
+          <div className="space-y-1">
+            {chats.length === 0 ? (
+              <p className="text-center text-xs text-gray-400 py-4 italic">No history yet</p>
+            ) : (
+              chats.map(chat => (
+                <div key={chat.id} className="relative group">
+                  <button
+                    onClick={() => setCurrentChatId(chat.id)}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg flex items-center gap-3 transition-all pr-8 ${currentChatId === chat.id
+                      ? 'bg-white shadow-sm ring-1 ring-gray-200 text-indigo-600'
+                      : 'text-gray-600 hover:bg-gray-200/50 hover:text-gray-900 overflow-hidden'
+                      }`}
+                  >
+                    <MessageSquare className={`w-4 h-4 shrink-0 ${currentChatId === chat.id ? 'text-indigo-500' : 'text-gray-400'}`} />
+                    <span className="text-sm font-medium truncate block w-full">{chat.title}</span>
+                  </button>
+                  <button
+                    onClick={(e) => deleteChat(e, chat.id)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-500 transition-opacity"
+                    title="Delete Chat"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         <div className="p-4 border-t border-gray-200 bg-gray-50/50">
