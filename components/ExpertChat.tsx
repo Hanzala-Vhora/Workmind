@@ -32,7 +32,7 @@ export const ExpertChat: React.FC = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [conversations, activeDepartment]);
+  }, [conversations, activeDepartment, messages]);
 
   // Fetch history from server
   // Fetch department chats on department change
