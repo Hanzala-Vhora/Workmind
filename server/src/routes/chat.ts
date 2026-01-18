@@ -94,29 +94,40 @@ router.post('/', async (req, res) => {
         };
         session.messages.push(userMsg);
 
-        if (!process.env.API_KEY) {
-            // Mock response
-            const mockResponse = {
-                text: "API Key is missing on server. Simulating response: " + userMessage,
-                escalation: { required: false }
-            };
+        // Set headers for SSE
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
 
+        if (!process.env.API_KEY) {
+            // Mock streaming response
+            const mockText = "API Key is missing on server. Simulating response: " + userMessage;
+            const words = mockText.split(' ');
+
+            for (const word of words) {
+                res.write(`data: ${JSON.stringify({ text: word + ' ' })}\n\n`);
+                await new Promise(resolve => setTimeout(resolve, 100)); // Simulate delay
+            }
+
+            const escalation = { required: false };
             const assistantMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: mockResponse.text,
+                content: mockText,
                 timestamp: Date.now(),
-                escalation: mockResponse.escalation
+                escalation
             };
             session.messages.push(assistantMsg);
 
-            return res.json({
-                text: mockResponse.text,
-                escalation: mockResponse.escalation,
+            res.write(`data: ${JSON.stringify({
+                done: true,
+                escalation,
                 messageId: assistantMsg.id,
                 chatId: currentChatId,
-                title: session.title
-            });
+                title: session.title,
+                text: mockText
+            })}\n\n`);
+            return res.end();
         }
 
         // Prepare system prompt
@@ -167,15 +178,21 @@ router.post('/', async (req, res) => {
         // Add User Message
         messageParts.push({ text: `USER QUERY: ${userMessage}` });
 
-        const response = await chat.sendMessage({ message: messageParts });
-        const responseText = response.text || "I apologize, no response generated.";
+        const result = await chat.sendMessageStream({ message: messageParts });
+        let fullResponseText = "";
+
+        for await (const chunk of result) {
+            const chunkText = chunk.text || "";
+            fullResponseText += chunkText;
+            res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+        }
 
         // Check Escalation
         const escalationKeywords = ["escalate", "approval required", "outside my scope", "requires approval"];
         let escalation = { required: false, reason: '', approver: clientData.decision_approver };
 
         for (const keyword of escalationKeywords) {
-            if (responseText.toLowerCase().includes(keyword)) {
+            if (fullResponseText.toLowerCase().includes(keyword)) {
                 escalation.required = true;
                 escalation.reason = keyword;
                 break;
@@ -186,23 +203,35 @@ router.post('/', async (req, res) => {
         const assistantMsg: Message = {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
-            content: responseText,
+            content: fullResponseText,
             timestamp: Date.now(),
             escalation
         };
         session.messages.push(assistantMsg);
 
-        res.json({
-            text: responseText,
+        // Send final event with metadata
+        res.write(`data: ${JSON.stringify({
+            done: true,
             escalation,
             messageId: assistantMsg.id,
             chatId: currentChatId,
-            title: session.title
-        });
+            title: session.title,
+            text: fullResponseText // Send full text effectively as a confirmation/sync
+        })}\n\n`);
+
+        res.end();
 
     } catch (error) {
         console.error('Chat API Error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        // If headers haven't been sent, we can send a 500
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Internal Server Error' });
+        } else {
+            // Otherwise, we have to end the stream with an error indicator if possible, or just close it.
+            // A common pattern is sending an error event.
+            res.write(`data: ${JSON.stringify({ error: 'Internal Server Error' })}\n\n`);
+            res.end();
+        }
     }
 });
 

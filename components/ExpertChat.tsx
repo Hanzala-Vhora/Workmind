@@ -125,6 +125,15 @@ export const ExpertChat: React.FC = () => {
     const tempMsg = { role: 'user', content: userText, id: Date.now().toString() };
     setMessages(prev => [...prev, tempMsg]);
 
+    // Create placeholder for assistant message
+    const assistantMsgId = (Date.now() + 1).toString();
+    const assistantPlaceholder = {
+      role: 'assistant',
+      content: '', // Start empty
+      id: assistantMsgId
+    };
+    setMessages(prev => [...prev, assistantPlaceholder]);
+
     try {
       const res = await fetch(`${API_URL}/api/chat`, {
         method: 'POST',
@@ -139,27 +148,70 @@ export const ExpertChat: React.FC = () => {
       });
 
       if (!res.ok) throw new Error("API call failed");
+      if (!res.body) throw new Error("No response body");
 
-      const response = await res.json();
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantContent = "";
+      let buffer = "";
 
-      // If this was a new chat, update currentChatId and refresh list
-      if (response.chatId && response.chatId !== currentChatId) {
-        setCurrentChatId(response.chatId);
-        refreshChats();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() || ""; // Keep the last incomplete part
+
+        for (const part of parts) {
+          if (part.trim().startsWith('data: ')) {
+            const dataStr = part.trim().replace('data: ', '');
+            try {
+              const data = JSON.parse(dataStr);
+
+              if (data.text && !data.done) {
+                assistantContent += data.text;
+                setMessages(prev => prev.map(m =>
+                  m.id === assistantMsgId ? { ...m, content: assistantContent } : m
+                ));
+              }
+
+              if (data.done) {
+                // Final update with all metadata
+                setMessages(prev => prev.map(m =>
+                  m.id === assistantMsgId ? {
+                    ...m,
+                    content: data.text || assistantContent, // Ensure we have full text
+                    escalation: data.escalation,
+                    id: data.messageId || m.id
+                  } : m
+                ));
+
+                if (data.chatId && data.chatId !== currentChatId) {
+                  setCurrentChatId(data.chatId);
+                  refreshChats();
+                }
+              }
+
+              if (data.error) {
+                throw new Error(data.error);
+              }
+
+            } catch (e) {
+              console.error("Error parsing stream chunk", e);
+            }
+          }
+        }
       }
-
-      // Add assistant message
-      const assistantMsg = {
-        role: 'assistant',
-        content: response.text,
-        escalation: response.escalation,
-        id: response.messageId
-      };
-      setMessages(prev => [...prev, assistantMsg]);
 
     } catch (error) {
       console.error(error);
-      setMessages(prev => [...prev, { role: 'assistant', content: "Error: Unable to reach the expert engine. Please check your connection." }]);
+      setMessages(prev => prev.map(m =>
+        m.id === assistantMsgId
+          ? { ...m, content: m.content + "\n\n[Error: Connection interrupted or failed]" }
+          : m
+      ));
     } finally {
       setLoading(false);
     }
