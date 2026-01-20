@@ -294,7 +294,7 @@ export const LandingPage: React.FC = () => {
             <span className="font-bold text-ui-text">WORKMIND.AI</span>
           </div>
           <div className="text-sm text-ui-slate">
-            © 2024 Workmind.ai. All rights reserved.
+            © {new Date().getFullYear()} Workmind.ai. All rights reserved.
           </div>
           <div className="flex gap-4">
             <div className="text-ui-slate text-xs flex items-center gap-2">
