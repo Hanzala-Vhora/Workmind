@@ -10,6 +10,7 @@ import agentRoutes from './routes/agents.js';
 import threadRoutes from './routes/threads.js';
 import userRoutes from './routes/users.js';
 import chatRoutes from './routes/chat.js';
+import uploadRoutes from './routes/upload.js';
 
 dotenv.config();
 
@@ -37,6 +38,7 @@ app.use('/api/agents', agentRoutes);
 app.use('/api/threads', threadRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Serve static frontend files in production
 if (process.env.NODE_ENV === 'production') {

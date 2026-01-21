@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { GoogleGenAI } from '@google/genai';
 import { buildSystemPrompt } from '../utils/prompts.js';
 import { IntakeData, Department, Message, StoredDocument } from '../types.js';
+import prisma from '../db.js';
 
 const router = Router();
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
@@ -137,6 +138,38 @@ router.post('/', async (req, res) => {
         if (contextDocs && contextDocs.length > 0) {
             const docList = contextDocs.map(d => `- ${d.name} (${d.type})`).join('\n');
             systemInstruction += `\n\nAVAILABLE CONTEXT REPOSITORY DOCUMENTS:\n${docList}\n\nYou have access to the contents of these documents. You must prioritize information found in these documents over general knowledge. If the answer to the user's question is contained within these documents, cite the document name explicitly.`;
+        }
+
+        // Fetch PDF chunks from DB
+        const dbChunks = await prisma.documentChunk.findMany({
+            where: { chatId: currentChatId }
+        });
+
+        if (dbChunks.length > 0) {
+            // Simple relevance scoring: count overlap of words
+            const queryTerms = userMessage.toLowerCase().split(/\s+/).filter(t => t.length > 2);
+
+            const scoredChunks = dbChunks.map((chunk: any) => {
+                const text = chunk.content.toLowerCase();
+                let score = 0;
+                queryTerms.forEach((term: string) => {
+                    if (text.includes(term)) score++;
+                });
+                return { chunk, score };
+            });
+
+            // specific "Relevant chunks" logic: Sort by score DESC
+            // Take top 15 (approx 45KB max)
+            scoredChunks.sort((a: { score: number }, b: { score: number }) => b.score - a.score);
+            const selectedChunks = scoredChunks.slice(0, 15).map((s: { chunk: any }) => s.chunk);
+
+            if (selectedChunks.length > 0) {
+                let chunkContext = "\n\nRELEVANT PDF EXCERPTS (Use these to answer):\n";
+                selectedChunks.forEach((c: any, i: number) => {
+                    chunkContext += `\n--- Chunk ${i + 1} from ${c.source} ---\n${c.content}\n`;
+                });
+                systemInstruction += chunkContext;
+            }
         }
 
         // Call Gemini

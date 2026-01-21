@@ -1,0 +1,10 @@
+
+model DocumentChunk {
+  id        String   @id @default(cuid())
+  chatId    String
+  content   String   @db.Text
+  source    String
+  createdAt DateTime @default(now())
+
+  @@index([chatId])
+}
