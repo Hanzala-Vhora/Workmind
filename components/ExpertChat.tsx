@@ -513,8 +513,8 @@ export const ExpertChat: React.FC = () => {
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadStatus === 'uploading'}
                   className={`w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-midnight-DEFAULT/20 disabled:opacity-70 disabled:cursor-wait ${uploadStatus === 'success' ? 'bg-green-600 hover:bg-green-700 text-white' :
-                      uploadStatus === 'error' ? 'bg-red-600 hover:bg-red-700 text-white' :
-                        'bg-midnight-DEFAULT hover:bg-neural-dark text-white'
+                    uploadStatus === 'error' ? 'bg-red-600 hover:bg-red-700 text-white' :
+                      'bg-midnight-DEFAULT hover:bg-neural-dark text-white'
                     }`}
                 >
                   {uploadStatus === 'uploading' && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -639,10 +639,18 @@ export const ExpertChat: React.FC = () => {
                   <div className="absolute right-2 bottom-2 flex items-center gap-1.5">
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      title="Upload Context"
+                      disabled={uploadStatus === 'uploading'}
+                      className={`p-2 rounded-lg transition-colors ${uploadStatus === 'uploading' ? 'text-indigo-600 bg-indigo-50 cursor-wait' :
+                          uploadStatus === 'success' ? 'text-green-600 bg-green-50' :
+                            uploadStatus === 'error' ? 'text-red-500 bg-red-50' :
+                              'text-gray-400 hover:text-indigo-600 hover:bg-gray-100'
+                        }`}
+                      title={uploadStatus === 'uploading' ? 'Uploading...' : 'Upload Context'}
                     >
-                      <Paperclip className="w-5 h-5" />
+                      {uploadStatus === 'uploading' ? <Loader2 className="w-5 h-5 animate-spin" /> :
+                        uploadStatus === 'success' ? <CheckCircle className="w-5 h-5" /> :
+                          uploadStatus === 'error' ? <AlertTriangle className="w-5 h-5" /> :
+                            <Paperclip className="w-5 h-5" />}
                     </button>
                     <button
                       onClick={handleSend}
