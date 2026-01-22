@@ -23,7 +23,7 @@ export const ExpertChat: React.FC = () => {
   // Get API URL from environment
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [showAnalyzer, setShowAnalyzer] = useState(false);
   const [showContextRepo, setShowContextRepo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -229,7 +229,7 @@ export const ExpertChat: React.FC = () => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    setUploading(true);
+    setUploadStatus('uploading');
 
     try {
       // Ensure we have a chat ID to attach this to
@@ -295,11 +295,15 @@ export const ExpertChat: React.FC = () => {
       }
 
       setShowContextRepo(true);
+      setUploadStatus('success');
+      setTimeout(() => setUploadStatus('idle'), 2500);
+
     } catch (err) {
       console.error("General upload error", err);
-      alert("Failed to upload documents. Please try again.");
+      // alert("Failed to upload documents. Please try again.");
+      setUploadStatus('error');
+      setTimeout(() => setUploadStatus('idle'), 3000);
     } finally {
-      setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
@@ -507,11 +511,21 @@ export const ExpertChat: React.FC = () => {
               <div className="p-4 bg-gray-50 border-t border-gray-200">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="w-full bg-midnight-DEFAULT hover:bg-neural-dark text-white py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-midnight-DEFAULT/20 disabled:opacity-70 disabled:cursor-wait"
+                  disabled={uploadStatus === 'uploading'}
+                  className={`w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-midnight-DEFAULT/20 disabled:opacity-70 disabled:cursor-wait ${uploadStatus === 'success' ? 'bg-green-600 hover:bg-green-700 text-white' :
+                      uploadStatus === 'error' ? 'bg-red-600 hover:bg-red-700 text-white' :
+                        'bg-midnight-DEFAULT hover:bg-neural-dark text-white'
+                    }`}
                 >
-                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
-                  {uploading ? 'Uploading...' : 'Upload Document'}
+                  {uploadStatus === 'uploading' && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {uploadStatus === 'success' && <CheckCircle className="w-4 h-4" />}
+                  {uploadStatus === 'error' && <AlertTriangle className="w-4 h-4" />}
+                  {uploadStatus === 'idle' && <Paperclip className="w-4 h-4" />}
+
+                  {uploadStatus === 'uploading' ? 'Uploading...' :
+                    uploadStatus === 'success' ? 'Uploaded Success!' :
+                      uploadStatus === 'error' ? 'Upload Failed' :
+                        'Upload Document'}
                 </button>
               </div>
             </div>
