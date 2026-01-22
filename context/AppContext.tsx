@@ -14,6 +14,7 @@ interface AppContextType {
   // Context Repository (Files)
   departmentDocuments: Record<string, StoredDocument[]>;
   addDocument: (dept: Department, doc: StoredDocument) => void;
+  removeDocument: (dept: Department, docId: string) => void;
 
   // Department Hub (Collaboration)
   departmentHubs: Record<string, HubMessage[]>;
@@ -105,6 +106,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
+  const removeDocument = (dept: Department, docId: string) => {
+    setDepartmentDocuments(prev => {
+      const currentDocs = prev[dept] || [];
+      const updated = {
+        ...prev,
+        [dept]: currentDocs.filter(d => d.id !== docId)
+      };
+      localStorage.setItem('workmind_documents', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const addHubMessage = (dept: Department, msg: HubMessage) => {
     setDepartmentHubs(prev => {
       const currentMsgs = prev[dept] || [];
@@ -138,6 +151,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setConversationMessages,
       departmentDocuments,
       addDocument,
+      removeDocument,
       departmentHubs,
       addHubMessage,
       activeDepartment,

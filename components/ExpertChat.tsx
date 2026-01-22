@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm'; // For tables
 import { useApp } from '../context/AppContext';
-import { Send, ArrowLeft, AlertTriangle, Paperclip, FileText, Image as ImageIcon, Database, X, Zap, Loader2, CheckCircle, File, User, Sparkles, MessageSquare, Menu, Plus } from 'lucide-react';
+import { Send, ArrowLeft, AlertTriangle, Paperclip, FileText, Image as ImageIcon, Database, X, Zap, Loader2, CheckCircle, File, User, Sparkles, MessageSquare, Menu, Plus, Trash2 } from 'lucide-react';
 import { ThreadAnalyzer } from './ThreadAnalyzer';
 import { BrainLogo } from './BrainLogo';
 import { StoredDocument } from '../types';
@@ -11,7 +11,7 @@ import { useUser } from '@clerk/clerk-react';
 
 export const ExpertChat: React.FC = () => {
   const { user } = useUser();
-  const { clientData, activeDepartment, setActiveDepartment, conversations, addMessage, departmentDocuments, addDocument, setConversationMessages } = useApp();
+  const { clientData, activeDepartment, setActiveDepartment, conversations, addMessage, departmentDocuments, addDocument, removeDocument, setConversationMessages } = useApp();
   const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [showSidebar, setShowSidebar] = useState(true);
@@ -224,17 +224,10 @@ export const ExpertChat: React.FC = () => {
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
     setUploading(true);
-
-    // Limit size to 10MB (Backend can handle more if chunked, but reasonable limit)
-    if (file.size > 10 * 1024 * 1024) {
-      alert("File is too large. Max limit is 10MB.");
-      setUploading(false);
-      return;
-    }
 
     try {
       // Ensure we have a chat ID to attach this to
@@ -244,58 +237,87 @@ export const ExpertChat: React.FC = () => {
         setCurrentChatId(attachChatId);
       }
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('chatId', attachChatId);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
 
-      const res = await fetch(`${API_URL}/api/upload`, {
-        method: 'POST',
-        body: formData
-      });
+        // Limit size to 50MB per file (server limit)
+        if (file.size > 50 * 1024 * 1024) {
+          alert(`File ${file.name} is too large. Max limit is 50MB.`);
+          continue;
+        }
 
-      if (!res.ok) {
-        throw new Error("Upload failed");
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('chatId', attachChatId);
+
+          const res = await fetch(`${API_URL}/api/upload`, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!res.ok) {
+            console.error(`Upload failed for ${file.name}`);
+            continue;
+          }
+
+          // Add reference doc to context
+          const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+          const newDoc: StoredDocument = {
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // Ensure unique ID
+            name: file.name,
+            type: file.type || (isPdf ? 'application/pdf' : 'text/plain'),
+            content: isPdf ? "[Uploaded to Server - Processed]" : "Image/Text File",
+            uploadedAt: Date.now()
+          };
+
+          if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+              newDoc.content = e.target?.result as string;
+              addDocument(activeDepartment, newDoc);
+            };
+          } else {
+            addDocument(activeDepartment, newDoc);
+          }
+        } catch (err) {
+          console.error(`Failed to upload ${file.name}`, err);
+        }
       }
 
-      const data = await res.json();
-
-      // Add reference doc to context (without heavy content for PDF)
-      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-
-      const newDoc: StoredDocument = {
-        id: Date.now().toString(),
-        name: file.name,
-        type: file.type || (isPdf ? 'application/pdf' : 'text/plain'),
-        content: isPdf ? "[Uploaded to Server - Processed]" : "Image/Text File", // Minimal content
-        uploadedAt: Date.now()
-      };
-
-      // For images, we still might want to display them locally or send base64?
-      // If user specifically wants PDF text extraction to save bandwidth, we optimized PDF.
-      // Images might still need base64 if backend support isn't there yet.
-      // For now, let's keep image logic if we can, but text/pdf goes to server chunks.
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          newDoc.content = e.target?.result as string;
-          addDocument(activeDepartment, newDoc);
-          setShowContextRepo(true);
-          setUploading(false);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        // PDF / Text -> Rely on server chunks
-        addDocument(activeDepartment, newDoc);
-        setShowContextRepo(true);
-        setUploading(false);
-      }
-
+      setShowContextRepo(true);
     } catch (err) {
-      console.error("Failed to upload document", err);
-      alert("Failed to upload document. Please try again.");
-      setUploading(false);
+      console.error("General upload error", err);
+      alert("Failed to upload documents. Please try again.");
     } finally {
+      setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteDocument = async (doc: StoredDocument) => {
+    if (!confirm(`Delete ${doc.name}?`)) return;
+
+    try {
+      // If we have a chatId (which we usually do if we just uploaded), try to delete chunks
+      // We need chatID. If document doesn't store chatId, we might try currentChatId.
+      // However, our delete API takes chatId and filename.
+      // If the doc was uploaded in PREVIOUS session, we might strictly lose track of chatId unless stored in doc.
+      // But let's try currentChatId if available, or just remove from client state.
+
+      if (currentChatId) {
+        await fetch(`${API_URL}/api/upload?chatId=${currentChatId}&filename=${encodeURIComponent(doc.name)}`, {
+          method: 'DELETE'
+        });
+      }
+
+      removeDocument(activeDepartment, doc.id);
+    } catch (err) {
+      console.error("Failed to delete document", err);
+      // Fallback: remove from UI anyway
+      removeDocument(activeDepartment, doc.id);
     }
   };
 
@@ -448,7 +470,7 @@ export const ExpertChat: React.FC = () => {
                   </div>
                 ) : (
                   currentDocs.map((doc, idx) => (
-                    <div key={doc.id || idx} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex items-start gap-3 hover:border-neural-DEFAULT hover:shadow-md transition-all cursor-default">
+                    <div key={doc.id || idx} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex items-start gap-3 hover:border-neural-DEFAULT hover:shadow-md transition-all cursor-default group">
                       {doc.type.startsWith('image/') ? (
                         <ImageIcon className="w-8 h-8 p-1.5 bg-cyan-50 text-cyan-600 rounded-lg shrink-0" />
                       ) : doc.type === 'application/pdf' ? (
@@ -463,6 +485,13 @@ export const ExpertChat: React.FC = () => {
                           <CheckCircle className="w-3 h-3 text-green-500" />
                         </p>
                       </div>
+                      <button
+                        onClick={() => handleDeleteDocument(doc)}
+                        className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        title="Delete Document"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   ))
                 )}
@@ -487,6 +516,7 @@ export const ExpertChat: React.FC = () => {
             className="hidden"
             onChange={handleFileUpload}
             accept=".pdf,.txt,.md,.json,.csv,.png,.jpg,.jpeg"
+            multiple
           />
 
           {/* Main Chat Area */}

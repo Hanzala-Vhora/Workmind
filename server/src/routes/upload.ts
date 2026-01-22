@@ -65,4 +65,31 @@ router.post('/', upload.single('file'), async (req, res) => {
     }
 });
 
+router.delete('/', async (req, res) => {
+    try {
+        const { chatId, filename } = req.query;
+
+        if (!chatId || !filename) {
+            return res.status(400).json({ error: 'Missing chatId or filename' });
+        }
+
+        const count = await prisma.documentChunk.deleteMany({
+            where: {
+                chatId: String(chatId),
+                source: String(filename)
+            }
+        });
+
+        res.json({
+            success: true,
+            deletedCount: count.count,
+            message: `Deleted chunks for ${filename}`
+        });
+
+    } catch (error) {
+        console.error('Delete error:', error);
+        res.status(500).json({ error: 'Internal server error deleting document' });
+    }
+});
+
 export default router;
