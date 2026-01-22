@@ -8,46 +8,93 @@ import prisma from '../db.js';
 const router = Router();
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
-// In-memory store
-// In real app: DB tables "Chat" and "Message"
-interface ChatSession {
-    id: string;
-    department: Department;
-    title: string;
-    createdAt: number;
-    messages: Message[];
-}
+// Database now used instead of in-memory store
 
-const chats: Record<string, ChatSession> = {};
 
 // GET /api/chat/department/:department
 // Get all chats for a department
-router.get('/department/:department', (req, res) => {
-    const { department } = req.params;
-    const deptChats = Object.values(chats)
-        .filter(c => c.department === department)
-        .sort((a, b) => b.createdAt - a.createdAt);
+router.get('/department/:department', async (req, res) => {
+    try {
+        const { department } = req.params;
+        const { userId } = req.query;
 
-    res.json({ chats: deptChats.map(c => ({ id: c.id, title: c.title, createdAt: c.createdAt })) });
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const deptChats = await prisma.chatSession.findMany({
+            where: {
+                department,
+                userId: String(userId)
+            },
+            orderBy: { createdAt: 'desc' },
+            select: { id: true, title: true, createdAt: true }
+        });
+
+        res.json({
+            chats: deptChats.map(c => ({
+                id: c.id,
+                title: c.title,
+                createdAt: c.createdAt.getTime()
+            }))
+        });
+    } catch (error) {
+        console.error('Error fetching department chats:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
 // GET /api/chat/session/:chatId
 // Get specific chat history
-router.get('/session/:chatId', (req, res) => {
-    const { chatId } = req.params;
-    const chat = chats[chatId];
-    if (!chat) return res.status(404).json({ error: 'Chat not found' });
-    res.json({ history: chat.messages });
+router.get('/session/:chatId', async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const { userId } = req.query;
+
+        const chat = await prisma.chatSession.findUnique({
+            where: { id: chatId },
+            include: {
+                messages: {
+                    orderBy: { createdAt: 'asc' }
+                }
+            }
+        });
+
+        if (!chat) return res.status(404).json({ error: 'Chat not found' });
+
+        // Enforce ownership
+        if (userId && chat.userId !== String(userId)) {
+            return res.status(403).json({ error: 'Unauthorized access to this chat session' });
+        }
+
+        // Map DB messages to API format
+        const history = chat.messages.map(m => ({
+            id: m.id,
+            role: m.role,
+            content: m.content,
+            timestamp: m.createdAt.getTime(),
+            escalation: m.escalation as any
+        }));
+
+        res.json({ history });
+    } catch (error) {
+        console.error('Error fetching chat session:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
 
 // DELETE /api/chat/session/:chatId
-router.delete('/session/:chatId', (req, res) => {
-    const { chatId } = req.params;
-    if (chats[chatId]) {
-        delete chats[chatId];
+router.delete('/session/:chatId', async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        await prisma.chatSession.delete({
+            where: { id: chatId }
+        });
         res.json({ success: true });
-    } else {
-        res.status(404).json({ error: 'Chat not found' });
+    } catch (error) {
+        console.error('Error deleting chat:', error);
+        // Prisma throws error if not found? code P2025
+        res.status(500).json({ error: 'Failed to delete chat' });
     }
 });
 
@@ -60,40 +107,44 @@ router.post('/', async (req, res) => {
             department,
             userMessage,
             contextDocs = [],
-            chatId
+            chatId,
+            userId
         }: {
             clientData: IntakeData;
             department: Department;
             userMessage: string;
             contextDocs: StoredDocument[];
             chatId?: string;
+            userId: string;
         } = req.body;
 
-        if (!department || !userMessage) {
-            return res.status(400).json({ error: 'Missing department or message' });
+        if (!department || !userMessage || !userId) {
+            return res.status(400).json({ error: 'Missing department, message, or userId' });
         }
 
         // Generate or retrieve chat session
         const currentChatId = chatId || crypto.randomUUID();
-        if (!chats[currentChatId]) {
-            chats[currentChatId] = {
+
+        // Ensure chat session exists in DB
+        const session = await prisma.chatSession.upsert({
+            where: { id: currentChatId },
+            update: {},
+            create: {
                 id: currentChatId,
                 department,
+                userId,
                 title: userMessage.substring(0, 40) + (userMessage.length > 40 ? '...' : ''),
-                createdAt: Date.now(),
-                messages: []
-            };
-        }
-        const session = chats[currentChatId];
+            }
+        });
 
         // Store user message
-        const userMsg: Message = {
-            id: Date.now().toString(),
-            role: 'user',
-            content: userMessage,
-            timestamp: Date.now()
-        };
-        session.messages.push(userMsg);
+        const userMsg = await prisma.chatMessage.create({
+            data: {
+                chat: { connect: { id: session.id } },
+                role: 'user',
+                content: userMessage,
+            }
+        });
 
         // Set headers for SSE
         res.setHeader('Content-Type', 'text/event-stream');
@@ -111,14 +162,14 @@ router.post('/', async (req, res) => {
             }
 
             const escalation = { required: false };
-            const assistantMsg: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: mockText,
-                timestamp: Date.now(),
-                escalation
-            };
-            session.messages.push(assistantMsg);
+            const assistantMsg = await prisma.chatMessage.create({
+                data: {
+                    chat: { connect: { id: session.id } },
+                    role: 'assistant',
+                    content: mockText,
+                    escalation: escalation
+                }
+            });
 
             res.write(`data: ${JSON.stringify({
                 done: true,
@@ -185,8 +236,12 @@ router.post('/', async (req, res) => {
         const messageParts: any[] = [];
 
         // Add Docs to parts
+        // Add Docs to parts
         contextDocs.forEach(doc => {
-            if (doc.type.startsWith('image/') || doc.type === 'application/pdf') {
+            if (doc.type === 'application/pdf') {
+                // SKIP Base64 for PDFs to save tokens. Rely on chunks.
+                messageParts.push({ text: `\n[Reference PDF: ${doc.name} (Content processed as text chunks)]\n` });
+            } else if (doc.type.startsWith('image/')) {
                 const base64Data = doc.content.split(',')[1] || doc.content;
                 if (base64Data) {
                     messageParts.push({
@@ -195,7 +250,7 @@ router.post('/', async (req, res) => {
                             data: base64Data
                         }
                     });
-                    messageParts.push({ text: `[Document Reference: ${doc.name}]` });
+                    messageParts.push({ text: `[Image Reference: ${doc.name}]` });
                 }
             } else {
                 messageParts.push({ text: `\n\n--- BEGIN DOCUMENT: ${doc.name} ---\n${doc.content}\n--- END DOCUMENT ---\n\n` });
@@ -203,7 +258,15 @@ router.post('/', async (req, res) => {
         });
 
         // Add History (last 10)
-        const historyContext = session.messages.slice(-11, -1).map(h => `${h.role.toUpperCase()}: ${h.content}`).join("\n");
+        // We need to fetch previous messages from DB to build context
+        const previousMessages = await prisma.chatMessage.findMany({
+            where: { chatId: session.id, id: { not: userMsg.id } }, // exclude current user msg if possible, but actually we just want history
+            orderBy: { createdAt: 'desc' },
+            take: 10
+        });
+
+        // Reverse to chronological order
+        const historyContext = previousMessages.reverse().map(h => `${h.role.toUpperCase()}: ${h.content}`).join("\n");
         if (historyContext) {
             messageParts.push({ text: `\nPREVIOUS CONVERSATION:\n${historyContext}\n` });
         }
@@ -233,14 +296,14 @@ router.post('/', async (req, res) => {
         }
 
         // Store assistant response
-        const assistantMsg: Message = {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            content: fullResponseText,
-            timestamp: Date.now(),
-            escalation
-        };
-        session.messages.push(assistantMsg);
+        const assistantMsg = await prisma.chatMessage.create({
+            data: {
+                chat: { connect: { id: session.id } },
+                role: 'assistant',
+                content: fullResponseText,
+                escalation: escalation
+            }
+        });
 
         // Send final event with metadata
         res.write(`data: ${JSON.stringify({

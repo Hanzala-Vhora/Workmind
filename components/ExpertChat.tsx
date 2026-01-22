@@ -7,8 +7,10 @@ import { ThreadAnalyzer } from './ThreadAnalyzer';
 import { BrainLogo } from './BrainLogo';
 import { StoredDocument } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
 
 export const ExpertChat: React.FC = () => {
+  const { user } = useUser();
   const { clientData, activeDepartment, setActiveDepartment, conversations, addMessage, departmentDocuments, addDocument, setConversationMessages } = useApp();
   const navigate = useNavigate();
   const [input, setInput] = useState('');
@@ -37,16 +39,14 @@ export const ExpertChat: React.FC = () => {
   // Fetch history from server
   // Fetch department chats on department change
   useEffect(() => {
-    if (!activeDepartment) return;
+    if (!activeDepartment || !user?.id) return;
 
     const fetchChats = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/chat/department/${activeDepartment}`);
+        const res = await fetch(`${API_URL}/api/chat/department/${activeDepartment}?userId=${user.id}`);
         if (res.ok) {
           const data = await res.json();
           setChats(data.chats || []);
-          // If chats exist, select the most recent one?? No, let user start new or select.
-          // Or maybe default to new chat?
           setCurrentChatId(null);
           setMessages([]);
         }
@@ -55,19 +55,19 @@ export const ExpertChat: React.FC = () => {
       }
     };
     fetchChats();
-  }, [activeDepartment]);
+  }, [activeDepartment, user?.id]);
 
   // Fetch specific chat history when currentChatId changes
   useEffect(() => {
-    if (!currentChatId) {
-      setMessages([]);
+    if (!currentChatId || !user?.id) {
+      if (!currentChatId) setMessages([]);
       return;
     }
 
     const fetchHistory = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_URL}/api/chat/session/${currentChatId}`);
+        const res = await fetch(`${API_URL}/api/chat/session/${currentChatId}?userId=${user.id}`);
         if (res.ok) {
           const data = await res.json();
           setMessages(data.history || []);
@@ -79,11 +79,11 @@ export const ExpertChat: React.FC = () => {
       }
     };
     fetchHistory();
-  }, [currentChatId]);
+  }, [currentChatId, user?.id]);
 
   const refreshChats = async () => {
-    if (!activeDepartment) return;
-    const res = await fetch(`${API_URL}/api/chat/department/${activeDepartment}`);
+    if (!activeDepartment || !user?.id) return;
+    const res = await fetch(`${API_URL}/api/chat/department/${activeDepartment}?userId=${user.id}`);
     if (res.ok) {
       const data = await res.json();
       setChats(data.chats || []);
@@ -115,7 +115,7 @@ export const ExpertChat: React.FC = () => {
   const currentDocs = departmentDocuments[activeDepartment] || [];
 
   const handleSend = async () => {
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading || !user?.id) return;
 
     const userText = input;
     setInput('');
@@ -143,7 +143,8 @@ export const ExpertChat: React.FC = () => {
           department: activeDepartment,
           userMessage: userText,
           contextDocs: currentDocs,
-          chatId: currentChatId // Pass current ID if exists
+          chatId: currentChatId, // Pass current ID if exists
+          userId: user.id
         })
       });
 
@@ -222,62 +223,79 @@ export const ExpertChat: React.FC = () => {
     setShowAnalyzer(false);
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
 
-    // Limit size to 5MB
-    if (file.size > 5 * 1024 * 1024) {
-      alert("File is too large. Max limit is 5MB.");
+    // Limit size to 10MB (Backend can handle more if chunked, but reasonable limit)
+    if (file.size > 10 * 1024 * 1024) {
+      alert("File is too large. Max limit is 10MB.");
       setUploading(false);
       return;
     }
 
-    const reader = new FileReader();
-    const isImage = file.type.startsWith('image/');
-    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-    const isBinary = isImage || isPdf;
-
-    reader.onload = (e) => {
-      const content = e.target?.result;
-      if (!content) {
-        setUploading(false);
-        return;
+    try {
+      // Ensure we have a chat ID to attach this to
+      let attachChatId = currentChatId;
+      if (!attachChatId) {
+        attachChatId = crypto.randomUUID();
+        setCurrentChatId(attachChatId);
       }
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('chatId', attachChatId);
+
+      const res = await fetch(`${API_URL}/api/upload`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) {
+        throw new Error("Upload failed");
+      }
+
+      const data = await res.json();
+
+      // Add reference doc to context (without heavy content for PDF)
+      const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
 
       const newDoc: StoredDocument = {
         id: Date.now().toString(),
         name: file.name,
         type: file.type || (isPdf ? 'application/pdf' : 'text/plain'),
-        content: content as string,
+        content: isPdf ? "[Uploaded to Server - Processed]" : "Image/Text File", // Minimal content
         uploadedAt: Date.now()
       };
 
-      try {
+      // For images, we still might want to display them locally or send base64?
+      // If user specifically wants PDF text extraction to save bandwidth, we optimized PDF.
+      // Images might still need base64 if backend support isn't there yet.
+      // For now, let's keep image logic if we can, but text/pdf goes to server chunks.
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          newDoc.content = e.target?.result as string;
+          addDocument(activeDepartment, newDoc);
+          setShowContextRepo(true);
+          setUploading(false);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // PDF / Text -> Rely on server chunks
         addDocument(activeDepartment, newDoc);
-        setShowContextRepo(true); // Open sidebar to show success
-      } catch (err) {
-        console.error("Failed to add document", err);
-        alert("Failed to save document. Please try again.");
-      } finally {
+        setShowContextRepo(true);
         setUploading(false);
-        // Reset input to allow uploading same file again if needed
-        if (fileInputRef.current) fileInputRef.current.value = '';
       }
-    };
 
-    reader.onerror = () => {
-      alert("Error reading file.");
+    } catch (err) {
+      console.error("Failed to upload document", err);
+      alert("Failed to upload document. Please try again.");
       setUploading(false);
+    } finally {
       if (fileInputRef.current) fileInputRef.current.value = '';
-    };
-
-    if (isBinary) {
-      reader.readAsDataURL(file);
-    } else {
-      reader.readAsText(file);
     }
   };
 
