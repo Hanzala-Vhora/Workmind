@@ -18,6 +18,7 @@ export const ExpertChat: React.FC = () => {
   const [chats, setChats] = useState<{ id: string; title: string; createdAt: number }[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
+  const [fetchedDocuments, setFetchedDocuments] = useState<StoredDocument[]>([]);
 
   // Get API URL from environment
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -71,6 +72,7 @@ export const ExpertChat: React.FC = () => {
         if (res.ok) {
           const data = await res.json();
           setMessages(data.history || []);
+          setFetchedDocuments(data.documents || []);
         }
       } catch (err) {
         console.error("Failed to load history", err);
@@ -110,9 +112,9 @@ export const ExpertChat: React.FC = () => {
 
   // Use local 'messages' state instead of global context for now, as we moved to multi-chat
   // const currentMessages = conversations[activeDepartment]?.messages || []; 
-  // We use 'messages' state directly
+  // We use 'messages' and 'fetchedDocuments' state directly
   const currentMessages = messages;
-  const currentDocs = departmentDocuments[activeDepartment] || [];
+  const currentDocs = fetchedDocuments;
 
   const handleSend = async () => {
     if (!input.trim() || loading || !user?.id) return;
@@ -277,10 +279,15 @@ export const ExpertChat: React.FC = () => {
             reader.readAsDataURL(file);
             reader.onload = (e) => {
               newDoc.content = e.target?.result as string;
-              addDocument(activeDepartment, newDoc);
+              // addDocument(activeDepartment, newDoc); // No longer use context
+              setFetchedDocuments(prev => [...prev, newDoc]);
+              setShowContextRepo(true);
             };
           } else {
-            addDocument(activeDepartment, newDoc);
+            // PDF / Text -> Rely on server chunks
+            // addDocument(activeDepartment, newDoc); // No longer use context
+            setFetchedDocuments(prev => [...prev, newDoc]);
+            setShowContextRepo(true);
           }
         } catch (err) {
           console.error(`Failed to upload ${file.name}`, err);
@@ -313,11 +320,12 @@ export const ExpertChat: React.FC = () => {
         });
       }
 
-      removeDocument(activeDepartment, doc.id);
+      removeDocument(activeDepartment, doc.id); // clean context just in case
+      setFetchedDocuments(prev => prev.filter(d => d.id !== doc.id));
     } catch (err) {
       console.error("Failed to delete document", err);
       // Fallback: remove from UI anyway
-      removeDocument(activeDepartment, doc.id);
+      setFetchedDocuments(prev => prev.filter(d => d.id !== doc.id));
     }
   };
 

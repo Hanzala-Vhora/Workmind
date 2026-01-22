@@ -31,18 +31,33 @@ router.post('/', upload.single('file'), async (req, res) => {
         }
 
         // Extract text
-        const parser = new PDFParse({ data: req.file.buffer });
-        const data = await parser.getText();
-        const text = data.text;
+        let text = '';
+        if (req.file.mimetype === 'application/pdf') {
+            const parser = new PDFParse({ data: req.file.buffer });
+            const data = await parser.getText();
+            text = data.text;
+        }
 
         // Clean text (optional: remove excessive newlines)
         const cleanText = text.replace(/\n\s*\n/g, '\n').trim();
 
         // Create chunks
         // 2-4KB. Let's aim for ~3000 chars.
-        const chunks = chunkText(cleanText, 3000, 200);
+        const chunks = text ? chunkText(cleanText, 3000, 200) : [];
 
         // Store in DB
+        // 1. Create ChatDocument entry
+        const isPdf = req.file.mimetype === 'application/pdf';
+        await prisma.chatDocument.create({
+            data: {
+                chatId,
+                name: req.file.originalname,
+                type: req.file.mimetype,
+                content: isPdf ? '[PDF Content Processed]' : text.substring(0, 200) // snippet or marker
+            }
+        });
+
+        // 2. Create Chunks linked to Chat
         const chunkData = chunks.map(chunk => ({
             chatId,
             content: chunk,
@@ -73,17 +88,26 @@ router.delete('/', async (req, res) => {
             return res.status(400).json({ error: 'Missing chatId or filename' });
         }
 
-        const count = await prisma.documentChunk.deleteMany({
+        const chunkDelete = prisma.documentChunk.deleteMany({
             where: {
                 chatId: String(chatId),
                 source: String(filename)
             }
         });
 
+        const docDelete = prisma.chatDocument.deleteMany({
+            where: {
+                chatId: String(chatId),
+                name: String(filename)
+            }
+        });
+
+        const [chunkResult, docResult] = await prisma.$transaction([chunkDelete, docDelete]);
+
         res.json({
             success: true,
-            deletedCount: count.count,
-            message: `Deleted chunks for ${filename}`
+            deletedCount: chunkResult.count,
+            message: `Deleted chunks and document record for ${filename}`
         });
 
     } catch (error) {

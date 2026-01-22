@@ -56,7 +56,8 @@ router.get('/session/:chatId', async (req, res) => {
             include: {
                 messages: {
                     orderBy: { createdAt: 'asc' }
-                }
+                },
+                documents: true
             }
         });
 
@@ -76,7 +77,15 @@ router.get('/session/:chatId', async (req, res) => {
             escalation: m.escalation as any
         }));
 
-        res.json({ history });
+        const documents = (chat as any).documents.map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            type: d.type,
+            content: d.content,
+            uploadedAt: new Date(d.createdAt).getTime()
+        }));
+
+        res.json({ history, documents });
     } catch (error) {
         console.error('Error fetching chat session:', error);
         res.status(500).json({ error: 'Internal Server Error' });

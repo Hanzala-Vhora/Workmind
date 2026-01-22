@@ -148,15 +148,7 @@ model RepositoryItem {
 }
 
 
-model DocumentChunk {
-  id        String   @id @default(cuid())
-  chatId    String
-  content   String   @db.Text
-  source    String
-  createdAt DateTime @default(now())
 
-  @@index([chatId])
-}
 
 model ChatSession {
   id        String        @id @default(cuid())
@@ -167,6 +159,9 @@ model ChatSession {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
   messages  ChatMessage[]
+
+  documents ChatDocument[]
+  chunks    DocumentChunk[]
 
   @@index([userId])
 }
@@ -179,6 +174,29 @@ model ChatMessage {
   content    String      @db.Text
   escalation Json?
   createdAt  DateTime    @default(now())
+
+  @@index([chatId])
+}
+
+model ChatDocument {
+  id        String      @id @default(cuid())
+  chatId    String
+  chat      ChatSession @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  name      String
+  type      String
+  content   String?     @db.Text // Optional content/base64 for small files or reference
+  createdAt DateTime    @default(now())
+
+  @@index([chatId])
+}
+
+model DocumentChunk {
+  id        String      @id @default(cuid())
+  chatId    String
+  chat      ChatSession @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  content   String      @db.Text
+  source    String
+  createdAt DateTime    @default(now())
 
   @@index([chatId])
 }
