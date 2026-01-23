@@ -238,7 +238,7 @@ router.post('/', async (req, res) => {
             model: model,
             config: {
                 systemInstruction: systemInstruction,
-                temperature: 0.2,
+                temperature: 0.7,
             },
         });
 
