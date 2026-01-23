@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useUser } from '@clerk/clerk-react';
 import { IntakeData, Conversation, Department, StoredDocument, HubMessage } from '../types';
 
 interface AppContextType {
@@ -35,10 +36,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [activeDepartment, setActiveDepartment] = useState<Department | null>(null);
 
-  // Persist to local storage
+  const { user } = useUser();
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+  // Persist to local storage (only as backup / cache)
   useEffect(() => {
+    // We try to load from local storage immediately to avoid flash or if API fails
     const savedData = localStorage.getItem('workmind_client_data');
-    if (savedData) setClientDataState(JSON.parse(savedData));
+    if (savedData && !clientData) setClientDataState(JSON.parse(savedData));
 
     const savedConvos = localStorage.getItem('workmind_conversations');
     if (savedConvos) setConversations(JSON.parse(savedConvos));
@@ -48,7 +53,118 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const savedHubs = localStorage.getItem('workmind_hubs');
     if (savedHubs) setDepartmentHubs(JSON.parse(savedHubs));
+
+    const savedDept = localStorage.getItem('workmind_active_department');
+    if (savedDept) setActiveDepartment(savedDept as Department);
   }, []);
+
+  // Hydrate from API when User is ready
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchContext = async () => {
+      try {
+        // 1. Check status
+        const statusRes = await fetch(`${API_URL}/api/users/${user.id}/onboarding-status`);
+        if (!statusRes.ok) return;
+
+        const status = await statusRes.json();
+
+        // 2. If form completed, fetch full data
+        if (status.completed && status.formId) {
+          const formRes = await fetch(`${API_URL}/api/intake-forms/${status.formId}`);
+          if (formRes.ok) {
+            const formData = await formRes.json();
+
+            // Map Backend Data to Frontend Types
+            const mappedData: IntakeData = {
+              ...formData,
+
+              // CRITICAL: Ensure business_name and department fields exist locally as expected
+              business_name: formData.companyName || 'Unknown Business',
+              selected_departments: formData.department ? [formData.department as Department] : [],
+
+              // DEFAULTS for fields that might be missing in DB or partial
+              department_configs: {},
+              lead_sources: [],
+              tool_stack: [],
+              countries_served: [],
+              competitors: [],
+              deliverables: [],
+
+              business_model: formData.business_model || '',
+              stage: formData.currentState || '',
+              hq_location: '',
+              founders_roles: '',
+              primary_contact: formData.contactEmail || '',
+
+              main_offer: '',
+              icp: '',
+              buyer_roles: '',
+              main_pain: '',
+              promise: '',
+              key_objections: '',
+              usp: '',
+
+              revenue_streams: '',
+              pricing_model: '',
+              price_points: '',
+              sales_cycle: '',
+              revenue_target_90d: '',
+              revenue_target_12m: '',
+
+              working_channels: '',
+              failing_channels: '',
+              sales_mechanism: '',
+              crm_tool: '',
+              close_rate: '',
+              activity_targets: '',
+
+              delivery_process: '',
+              broken_workflows: '',
+              time_wasters: '',
+              has_sops: 'No',
+              team_structure: '',
+              decision_approver: '',
+
+              is_regulated: 'No',
+              sensitive_data: '',
+
+              brand_tone: 'Professional',
+              brand_keywords: '',
+              writing_samples: '',
+              interaction_style: 'Collaborative',
+              output_format: 'Markdown',
+              client_facing_needed: 'No',
+              deadline: '',
+              reference_brands: '',
+              hard_constraints: '',
+              must_avoid: ''
+            };
+
+            setClientDataState(mappedData);
+            localStorage.setItem('workmind_client_data', JSON.stringify(mappedData));
+
+            // Restore active dept if missing
+            if (!activeDepartment && mappedData.selected_departments?.length > 0) {
+              setActiveDepartment(mappedData.selected_departments[0]);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to hydrate client data", err);
+      }
+    };
+
+    fetchContext();
+  }, [user?.id]);
+
+  // Persist active department changes
+  useEffect(() => {
+    if (activeDepartment) {
+      localStorage.setItem('workmind_active_department', activeDepartment);
+    }
+  }, [activeDepartment]);
 
   const setClientData = (data: IntakeData) => {
     setClientDataState(data);
