@@ -242,9 +242,9 @@ export const ExpertChat: React.FC = () => {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
 
-        // Limit size to 50MB per file (server limit)
-        if (file.size > 50 * 1024 * 1024) {
-          alert(`File ${file.name} is too large. Max limit is 50MB.`);
+        // Limit size to 500MB per file
+        if (file.size > 500 * 1024 * 1024) {
+          alert(`File ${file.name} is too large. Max limit is 500MB.`);
           continue;
         }
 
@@ -641,9 +641,9 @@ export const ExpertChat: React.FC = () => {
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadStatus === 'uploading'}
                       className={`p-2 rounded-lg transition-colors ${uploadStatus === 'uploading' ? 'text-indigo-600 bg-indigo-50 cursor-wait' :
-                          uploadStatus === 'success' ? 'text-green-600 bg-green-50' :
-                            uploadStatus === 'error' ? 'text-red-500 bg-red-50' :
-                              'text-gray-400 hover:text-indigo-600 hover:bg-gray-100'
+                        uploadStatus === 'success' ? 'text-green-600 bg-green-50' :
+                          uploadStatus === 'error' ? 'text-red-500 bg-red-50' :
+                            'text-gray-400 hover:text-indigo-600 hover:bg-gray-100'
                         }`}
                       title={uploadStatus === 'uploading' ? 'Uploading...' : 'Upload Context'}
                     >

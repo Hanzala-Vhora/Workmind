@@ -5,7 +5,10 @@ import { PDFParse } from 'pdf-parse';
 import prisma from '../db.js';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 500 * 1024 * 1024 } // 500MB
+});
 
 // Helper to chunk text
 function chunkText(text: string, chunkSize: number = 3000, overlap: number = 200): string[] {
