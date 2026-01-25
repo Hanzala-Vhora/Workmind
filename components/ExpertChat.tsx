@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm'; // For tables
 import { useApp } from '../context/AppContext';
-import { Send, ArrowLeft, AlertTriangle, Paperclip, FileText, Image as ImageIcon, Database, X, Zap, Loader2, CheckCircle, File, User, Sparkles, MessageSquare, Menu, Plus, Trash2 } from 'lucide-react';
+import { Send, ArrowLeft, AlertTriangle, Paperclip, FileText, Image as ImageIcon, Database, X, Zap, Loader2, CheckCircle, File, User, Sparkles, MessageSquare, Menu, Plus, Trash2, ChevronDown, Cpu } from 'lucide-react';
 import { ThreadAnalyzer } from './ThreadAnalyzer';
 import { BrainLogo } from './BrainLogo';
 import { StoredDocument } from '../types';
@@ -19,6 +19,13 @@ export const ExpertChat: React.FC = () => {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [fetchedDocuments, setFetchedDocuments] = useState<StoredDocument[]>([]);
+
+  const MODELS = [
+    { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash', provider: 'gemini' },
+    { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' },
+  ];
+  const [selectedModel, setSelectedModel] = useState(MODELS[0]);
+  const [showModelMenu, setShowModelMenu] = useState(false);
 
   // Get API URL from environment
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -146,7 +153,9 @@ export const ExpertChat: React.FC = () => {
           userMessage: userText,
           contextDocs: currentDocs,
           chatId: currentChatId, // Pass current ID if exists
-          userId: user.id
+          userId: user.id,
+          modelProvider: selectedModel.provider,
+          model: selectedModel.id
         })
       });
 
@@ -441,6 +450,39 @@ export const ExpertChat: React.FC = () => {
                 <BrainLogo width={24} height={24} />
                 {activeDepartment} Expert
               </h2>
+
+              {/* Model Selector */}
+              <div className="relative ml-2 hidden sm:block">
+                <button
+                  onClick={() => setShowModelMenu(!showModelMenu)}
+                  className="flex items-center gap-1 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded-md transition-colors"
+                >
+                  <Cpu className="w-3 h-3" />
+                  {selectedModel.name}
+                  <ChevronDown className="w-3 h-3 text-gray-400" />
+                </button>
+
+                {showModelMenu && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setShowModelMenu(false)}></div>
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-20 overflow-hidden">
+                      <div className="px-3 py-2 bg-gray-50 border-b border-gray-100 text-[10px] uppercase font-bold text-gray-400 tracking-wider">
+                        Select Model
+                      </div>
+                      {MODELS.map(m => (
+                        <button
+                          key={m.id}
+                          onClick={() => { setSelectedModel(m); setShowModelMenu(false); }}
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${selectedModel.id === m.id ? 'text-indigo-600 font-medium' : 'text-gray-600'}`}
+                        >
+                          {selectedModel.id === m.id && <div className="w-1.5 h-1.5 rounded-full bg-indigo-600"></div>}
+                          {m.name}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex gap-2">
