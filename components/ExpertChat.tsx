@@ -45,6 +45,8 @@ export const ExpertChat: React.FC = () => {
     scrollToBottom();
   }, [conversations, activeDepartment, messages]);
 
+  const [chatsLoading, setChatsLoading] = useState(false);
+
   // Fetch history from server
   // Fetch department chats on department change
   useEffect(() => {
@@ -52,6 +54,7 @@ export const ExpertChat: React.FC = () => {
 
     const fetchChats = async () => {
       try {
+        setChatsLoading(true);
         const res = await fetch(`${API_URL}/api/chat/department/${activeDepartment}?userId=${user.id}`);
         if (res.ok) {
           const data = await res.json();
@@ -61,6 +64,8 @@ export const ExpertChat: React.FC = () => {
         }
       } catch (err) {
         console.error("Failed to load chats list", err);
+      } finally {
+        setChatsLoading(false);
       }
     };
     fetchChats();
@@ -393,7 +398,13 @@ export const ExpertChat: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            {chats.length === 0 ? (
+            {chatsLoading ? (
+              <div className="space-y-2 px-2 py-4">
+                <div className="w-full h-8 bg-gray-200 rounded animate-pulse" />
+                <div className="w-3/4 h-8 bg-gray-200 rounded animate-pulse" />
+                <div className="w-full h-8 bg-gray-200 rounded animate-pulse" />
+              </div>
+            ) : chats.length === 0 ? (
               <p className="text-center text-xs text-gray-400 py-4 italic">No history yet</p>
             ) : (
               chats.map(chat => (
@@ -593,15 +604,22 @@ export const ExpertChat: React.FC = () => {
             <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">
               <div className="max-w-[59rem] mx-auto px-4 py-8 space-y-8">
                 {currentMessages.length === 0 && (
-                  <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-400 select-none animate-fadeIn">
-                    <div className="w-24 h-24 bg-gradient-to-br from-indigo-50 to-cyan-50 rounded-3xl mb-8 flex items-center justify-center shadow-sm">
-                      <BrainLogo width={64} height={64} className="opacity-80" />
+                  loading ? (
+                    <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-400 select-none animate-fadeIn">
+                      <Loader2 className="w-12 h-12 animate-spin text-indigo-400 mb-4" />
+                      <p className="text-gray-500 font-medium">Loading conversation...</p>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-800 mb-2">How can I help with {activeDepartment}?</h3>
-                    <p className="text-gray-500 max-w-md text-center">
-                      I'm trained on your company's documents and guidelines. Ask me anything about processes, contracts, or strategies.
-                    </p>
-                  </div>
+                  ) : (
+                    <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-400 select-none animate-fadeIn">
+                      <div className="w-24 h-24 bg-gradient-to-br from-indigo-50 to-cyan-50 rounded-3xl mb-8 flex items-center justify-center shadow-sm">
+                        <BrainLogo width={64} height={64} className="opacity-80" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-800 mb-2">How can I help with {activeDepartment}?</h3>
+                      <p className="text-gray-500 max-w-md text-center">
+                        I'm trained on your company's documents and guidelines. Ask me anything about processes, contracts, or strategies.
+                      </p>
+                    </div>
+                  )
                 )}
 
                 {currentMessages.map((msg, idx) => (

@@ -41,22 +41,35 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
   const isAddMode = mode === 'add';
+  const [isCheckingStatus, setIsCheckingStatus] = useState(mode === 'initial');
 
   useEffect(() => {
     if (isLoaded && user && mode === 'initial') {
       const checkStatus = async () => {
         try {
+          setIsCheckingStatus(true);
           const status = await apiClient.users.checkOnboardingStatus(user.id);
           if (status.completed) {
             navigate('/dashboard');
           }
         } catch (err) {
           console.error("Failed to check status", err);
+        } finally {
+          setIsCheckingStatus(false);
         }
       };
       checkStatus();
     }
   }, [isLoaded, user, mode, navigate]);
+
+  if (isCheckingStatus || !isLoaded) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+        <Loader className="w-10 h-10 text-neural-DEFAULT animate-spin mb-4" />
+        <p className="text-gray-500 font-medium">Loading your profile...</p>
+      </div>
+    );
+  }
 
   const [step, setStep] = useState(isAddMode ? 4 : 1);
   const [formData, setFormData] = useState<IntakeData>(() => {
@@ -192,7 +205,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
         companyName: formData.business_name,
         contactEmail: formData.primary_contact,
         contactPhone: '',
-        department: formData.selected_departments[0] || 'General',
+        department: (isAddMode && newDepartments.length > 0) ? newDepartments[0] : (formData.selected_departments[0] || 'General'),
         industry: formData.industry,
         companySize: formData.stage,
         currentState: formData.main_offer,
