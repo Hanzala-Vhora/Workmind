@@ -345,7 +345,7 @@ export const ExpertChat: React.FC = () => {
     }
   };
 
-  
+
 
   return (
     <div className="h-screen bg-white flex overflow-hidden">
@@ -632,43 +632,95 @@ export const ExpertChat: React.FC = () => {
                             <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
                               rehypePlugins={[rehypeRaw]}
+                              // components={{
+                              //   h1: ({ children }) => (
+                              //     <h1 className="text-2xl font-bold mt-10 mb-4 text-gray-900">
+                              //       {children}
+                              //     </h1>
+                              //   ),
+                              //   h2: ({ children }) => (
+                              //     <h2 className="text-xl font-semibold mt-8 mb-3 text-gray-900">
+                              //       {children}
+                              //     </h2>
+                              //   ),
+                              //   h3: ({ children }) => (
+                              //     <h3 className="text-lg font-semibold mt-6 mb-2 text-gray-800">
+                              //       {children}
+                              //     </h3>
+                              //   ),
+                              //   p: ({ children }) => (
+                              //     <p className="my-5 leading-8 text-gray-800 text-[16px]">
+                              //       {children}
+                              //     </p>
+                              //   ),
+                              //   ul: ({ children }) => (
+                              //     <ul className="list-disc pl-6 my-6 space-y-3">
+                              //       {children}
+                              //     </ul>
+                              //   ),
+                              //   li: ({ children }) => (
+                              //     <li className="leading-7 text-gray-800">
+                              //       {children}
+                              //     </li>
+                              //   ),
+                              //   strong: ({ children }) => (
+                              //     <strong className="font-semibold text-gray-900">
+                              //       {children}
+                              //     </strong>
+                              //   ),
+                              // }}
                               components={{
                                 h1: ({ children }) => (
-                                  <h1 className="text-2xl font-bold mt-10 mb-4 text-gray-900">
-                                    {children}
-                                  </h1>
+                                  <h1 className="text-2xl font-bold mt-10 mb-4 text-gray-900">{children}</h1>
                                 ),
                                 h2: ({ children }) => (
-                                  <h2 className="text-xl font-semibold mt-8 mb-3 text-gray-900">
-                                    {children}
-                                  </h2>
+                                  <h2 className="text-xl font-semibold mt-8 mb-3 text-gray-900">{children}</h2>
                                 ),
                                 h3: ({ children }) => (
-                                  <h3 className="text-lg font-semibold mt-6 mb-2 text-gray-800">
-                                    {children}
-                                  </h3>
+                                  <h3 className="text-lg font-semibold mt-6 mb-2 text-gray-800">{children}</h3>
                                 ),
                                 p: ({ children }) => (
-                                  <p className="my-5 leading-8 text-gray-800 text-[16px]">
-                                    {children}
-                                  </p>
+                                  <p className="my-5 leading-8 text-gray-800 text-[16px]">{children}</p>
                                 ),
                                 ul: ({ children }) => (
-                                  <ul className="list-disc pl-6 my-6 space-y-3">
-                                    {children}
-                                  </ul>
+                                  <ul className="list-disc pl-6 my-6 space-y-3">{children}</ul>
                                 ),
                                 li: ({ children }) => (
-                                  <li className="leading-7 text-gray-800">
-                                    {children}
-                                  </li>
+                                  <li className="leading-7 text-gray-800">{children}</li>
                                 ),
                                 strong: ({ children }) => (
-                                  <strong className="font-semibold text-gray-900">
+                                  <strong className="font-semibold text-gray-900">{children}</strong>
+                                ),
+
+                                /* ✅ TABLE — isolated */
+                                table: ({ children }) => (
+                                  <div className="not-prose my-6 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm ring-1 ring-black/5">
+                                    <table className="w-full table-fixed border-collapse text-left">
+                                      {children}
+                                    </table>
+                                  </div>
+                                ),
+                                thead: ({ children }) => (
+                                  <thead className="bg-gray-50/50 border-b border-gray-100">{children}</thead>
+                                ),
+                                tbody: ({ children }) => (
+                                  <tbody className="divide-y divide-gray-50 bg-white">{children}</tbody>
+                                ),
+                                tr: ({ children }) => (
+                                  <tr className="hover:bg-gray-50/30 transition-colors">{children}</tr>
+                                ),
+                                th: ({ children }) => (
+                                  <th className="px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-gray-500 text-left">
                                     {children}
-                                  </strong>
+                                  </th>
+                                ),
+                                td: ({ children }) => (
+                                  <td className="px-5 py-4 text-[14px] text-gray-700 leading-relaxed align-top break-words">
+                                    {children}
+                                  </td>
                                 ),
                               }}
+
                             >
                               {msg.content}
                             </ReactMarkdown>
