@@ -586,7 +586,7 @@ export const ExpertChat: React.FC = () => {
           {/* Main Chat Area */}
           <div className="flex-1 flex flex-col bg-white w-full relative">
             <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">
-              <div className="max-w-3xl mx-auto px-4 py-8 space-y-8">
+              <div className="max-w-[59rem] mx-auto px-4 py-8 space-y-8">
                 {currentMessages.length === 0 && (
                   <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-400 select-none animate-fadeIn">
                     <div className="w-24 h-24 bg-gradient-to-br from-indigo-50 to-cyan-50 rounded-3xl mb-8 flex items-center justify-center shadow-sm">
@@ -600,28 +600,60 @@ export const ExpertChat: React.FC = () => {
                 )}
 
                 {currentMessages.map((msg, idx) => (
-                  <div key={msg.id || idx} className={`group animate-fadeIn flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                  <div key={msg.id || idx} className={`group animate-fadeIn flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row justify-start max-w-4xl'}`}>
                     {/* Avatar */}
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm ${msg.role === 'user' ? 'bg-gray-200' : 'bg-indigo-50 border border-indigo-100'}`}>
+                    <div className={`w-8 h-8 rounded-sm flex items-center justify-center shrink-0 shadow-sm mt-1 ${msg.role === 'user' ? 'bg-gray-200 rounded-full' : 'bg-transparent'}`}>
                       {msg.role === 'user' ? (
                         <User className="w-5 h-5 text-gray-600" />
                       ) : (
-                        <BrainLogo width={20} height={20} />
+                        <BrainLogo width={28} height={28} />
                       )}
                     </div>
 
                     {/* Message Content */}
-                    <div className={`flex-1 max-w-[85%] ${msg.role === 'user' ? 'flex justify-end' : ''}`}>
-                      <div className={`relative px-5 py-4 ${msg.role === 'user'
-                        ? 'bg-gray-100 text-gray-800 rounded-2xl rounded-tr-sm'
-                        : 'text-gray-800' // Assistant messages have no background, just text
+                    <div className={`flex-1 min-w-0 ${msg.role === 'user' ? 'flex justify-end' : ''}`}>
+                      <div className={`relative ${msg.role === 'user'
+                        ? 'bg-[#f4f4f4] text-gray-900 rounded-3xl px-6 py-4 max-w-[85%]'
+                        : 'text-gray-800 px-5 pt-1' // Added padding for assistant
                         }`}>
                         {msg.role === 'assistant' ? (
-                          <div className="prose prose-slate max-w-none prose-headings:font-semibold prose-a:text-indigo-600 prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:rounded prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-table:border-collapse prose-th:border prose-th:border-gray-200 prose-th:bg-gray-50 prose-th:p-2 prose-td:border prose-td:border-gray-200 prose-td:p-2">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.content}</ReactMarkdown>
+                          <div className="prose prose-neutral max-w-none 
+                            prose-p:text-[16px] prose-p:leading-9 prose-p:my-6 prose-p:text-gray-800
+                            prose-headings:font-bold prose-headings:text-gray-900 prose-headings:mt-10 prose-headings:mb-5 
+                            prose-ul:my-8 prose-ul:list-disc prose-ul:pl-6
+                            prose-li:my-3 prose-li:text-gray-800 prose-li:leading-9
+                            prose-strong:font-bold prose-strong:text-gray-900
+                            prose-code:text-indigo-600 prose-code:bg-indigo-50/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-medium text-base">
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                table: ({ node, ...props }) => (
+                                  <div className="my-6 border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm ring-1 ring-black/5">
+                                    <table className="w-full text-left border-collapse table-fixed" {...props} />
+                                  </div>
+                                ),
+                                thead: ({ node, ...props }) => (
+                                  <thead className="bg-gray-50/50 border-b border-gray-100" {...props} />
+                                ),
+                                tbody: ({ node, ...props }) => (
+                                  <tbody className="bg-white divide-y divide-gray-50" {...props} />
+                                ),
+                                tr: ({ node, ...props }) => (
+                                  <tr className="hover:bg-gray-50/30 transition-colors" {...props} />
+                                ),
+                                th: ({ node, ...props }) => (
+                                  <th className="px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider align-bottom border-r border-transparent last:border-0" {...props} />
+                                ),
+                                td: ({ node, ...props }) => (
+                                  <td className="px-5 py-4 text-[14px] text-gray-700 leading-relaxed align-top break-words border-r border-transparent last:border-0" {...props} />
+                                ),
+                              }}
+                            >
+                              {msg.content}
+                            </ReactMarkdown>
                           </div>
                         ) : (
-                          <p className="whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                          <p className="whitespace-pre-wrap leading-7 text-[15px]">{msg.content}</p>
                         )}
 
                         {/* Escalation/Warning Block */}
@@ -660,8 +692,8 @@ export const ExpertChat: React.FC = () => {
 
             {/* Input Area */}
             <div className="p-4 bg-white/90 backdrop-blur pb-8">
-              <div className="max-w-3xl mx-auto relative group">
-                <div className="relative bg-gray-50 rounded-2xl border border-gray-200 shadow-sm focus-within:shadow-md focus-within:ring-1 focus-within:ring-indigo-100 focus-within:border-indigo-200 transition-all overflow-hidden hover:border-gray-300">
+              <div className="max-w-3xl mx-auto relative px-4">
+                <div className="relative bg-[#f4f4f4] rounded-[26px] border border-transparent focus-within:border-gray-300 focus-within:bg-white focus-within:ring-1 focus-within:ring-gray-200 transition-all overflow-hidden shadow-sm hover:border-gray-300">
                   <textarea
                     value={input}
                     onChange={e => setInput(e.target.value)}
@@ -671,21 +703,21 @@ export const ExpertChat: React.FC = () => {
                         handleSend();
                       }
                     }}
-                    placeholder={`Ask ${activeDepartment} expert...`}
-                    className="w-full pl-4 pr-24 py-4 bg-transparent outline-none resize-none text-gray-800 placeholder-gray-400 text-base"
+                    placeholder={`Message ${activeDepartment} expert...`}
+                    className="w-full pl-5 pr-14 py-4 bg-transparent outline-none resize-none text-gray-900 placeholder-gray-500 text-[16px] leading-6"
                     rows={1}
-                    style={{ minHeight: '56px', maxHeight: '200px' }}
+                    style={{ minHeight: '52px', maxHeight: '200px' }}
                   />
 
                   {/* Actions */}
-                  <div className="absolute right-2 bottom-2 flex items-center gap-1.5">
+                  <div className="absolute right-2 bottom-1.5 flex items-center gap-1">
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       disabled={uploadStatus === 'uploading'}
-                      className={`p-2 rounded-lg transition-colors ${uploadStatus === 'uploading' ? 'text-indigo-600 bg-indigo-50 cursor-wait' :
+                      className={`p-2 rounded-full transition-colors ${uploadStatus === 'uploading' ? 'text-indigo-600 bg-indigo-50 cursor-wait' :
                         uploadStatus === 'success' ? 'text-green-600 bg-green-50' :
                           uploadStatus === 'error' ? 'text-red-500 bg-red-50' :
-                            'text-gray-400 hover:text-indigo-600 hover:bg-gray-100'
+                            'text-gray-400 hover:text-gray-600 hover:bg-gray-200'
                         }`}
                       title={uploadStatus === 'uploading' ? 'Uploading...' : 'Upload Context'}
                     >
@@ -697,20 +729,19 @@ export const ExpertChat: React.FC = () => {
                     <button
                       onClick={handleSend}
                       disabled={!input.trim() || loading}
-                      className={`p-2 rounded-lg transition-all ${input.trim() && !loading
-                        ? 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700'
+                      className={`p-2 rounded-full transition-all ${input.trim() && !loading
+                        ? 'bg-black text-white shadow-md hover:opacity-90'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                         }`}
                     >
-                      <Send className="w-5 h-5" />
+                      <Send className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
                 <div className="text-center mt-3">
-                  <p className="text-[10px] text-gray-400 flex items-center justify-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                    AI can make mistakes. Verify critical information.
+                  <p className="text-[11px] text-gray-400">
+                    Workmind can make mistakes. Verify critical information.
                   </p>
                 </div>
               </div>
@@ -730,7 +761,7 @@ export const ExpertChat: React.FC = () => {
           <Shield />
         </div>
       </div>
-    </div>
+    </div >
   );
 };
 
