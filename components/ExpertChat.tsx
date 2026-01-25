@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm'; // For tables
+import rehypeRaw from 'rehype-raw'; // For HTML tags like <br>
 import { useApp } from '../context/AppContext';
 import { Send, ArrowLeft, AlertTriangle, Paperclip, FileText, Image as ImageIcon, Database, X, Zap, Loader2, CheckCircle, File, User, Sparkles, MessageSquare, Menu, Plus, Trash2, ChevronDown, Cpu } from 'lucide-react';
 import { ThreadAnalyzer } from './ThreadAnalyzer';
@@ -173,49 +174,51 @@ export const ExpertChat: React.FC = () => {
 
         const chunk = decoder.decode(value, { stream: true });
         buffer += chunk;
-        const parts = buffer.split('\n\n');
-        buffer = parts.pop() || ""; // Keep the last incomplete part
 
-        for (const part of parts) {
-          if (part.trim().startsWith('data: ')) {
-            const dataStr = part.trim().replace('data: ', '');
-            try {
-              const data = JSON.parse(dataStr);
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
 
-              if (data.text && !data.done) {
-                assistantContent += data.text;
-                setMessages(prev => prev.map(m =>
-                  m.id === assistantMsgId ? { ...m, content: assistantContent } : m
-                ));
-              }
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
 
-              if (data.done) {
-                // Final update with all metadata
-                setMessages(prev => prev.map(m =>
-                  m.id === assistantMsgId ? {
+          const json = line.replace('data: ', '').trim();
+          if (!json) continue;
+
+          const data = JSON.parse(json);
+
+          if (data.text && !data.done) {
+            assistantContent += data.text;
+            setMessages(prev =>
+              prev.map(m =>
+                m.id === assistantMsgId
+                  ? { ...m, content: assistantContent }
+                  : m
+              )
+            );
+          }
+
+          if (data.done) {
+            setMessages(prev =>
+              prev.map(m =>
+                m.id === assistantMsgId
+                  ? {
                     ...m,
-                    content: data.text || assistantContent, // Ensure we have full text
+                    content: data.text || assistantContent,
                     escalation: data.escalation,
                     id: data.messageId || m.id
-                  } : m
-                ));
+                  }
+                  : m
+              )
+            );
 
-                if (data.chatId && data.chatId !== currentChatId) {
-                  setCurrentChatId(data.chatId);
-                  refreshChats();
-                }
-              }
-
-              if (data.error) {
-                throw new Error(data.error);
-              }
-
-            } catch (e) {
-              console.error("Error parsing stream chunk", e);
+            if (data.chatId && data.chatId !== currentChatId) {
+              setCurrentChatId(data.chatId);
+              refreshChats();
             }
           }
         }
       }
+
 
     } catch (error) {
       console.error(error);
@@ -341,6 +344,8 @@ export const ExpertChat: React.FC = () => {
       setFetchedDocuments(prev => prev.filter(d => d.id !== doc.id));
     }
   };
+
+  
 
   return (
     <div className="h-screen bg-white flex overflow-hidden">
@@ -626,31 +631,49 @@ export const ExpertChat: React.FC = () => {
                             prose-code:text-indigo-600 prose-code:bg-indigo-50/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-medium text-base">
                             <ReactMarkdown
                               remarkPlugins={[remarkGfm]}
+                              rehypePlugins={[rehypeRaw]}
                               components={{
-                                table: ({ node, ...props }) => (
-                                  <div className="my-6 border border-gray-100 rounded-xl overflow-hidden bg-white shadow-sm ring-1 ring-black/5">
-                                    <table className="w-full text-left border-collapse table-fixed" {...props} />
-                                  </div>
+                                h1: ({ children }) => (
+                                  <h1 className="text-2xl font-bold mt-10 mb-4 text-gray-900">
+                                    {children}
+                                  </h1>
                                 ),
-                                thead: ({ node, ...props }) => (
-                                  <thead className="bg-gray-50/50 border-b border-gray-100" {...props} />
+                                h2: ({ children }) => (
+                                  <h2 className="text-xl font-semibold mt-8 mb-3 text-gray-900">
+                                    {children}
+                                  </h2>
                                 ),
-                                tbody: ({ node, ...props }) => (
-                                  <tbody className="bg-white divide-y divide-gray-50" {...props} />
+                                h3: ({ children }) => (
+                                  <h3 className="text-lg font-semibold mt-6 mb-2 text-gray-800">
+                                    {children}
+                                  </h3>
                                 ),
-                                tr: ({ node, ...props }) => (
-                                  <tr className="hover:bg-gray-50/30 transition-colors" {...props} />
+                                p: ({ children }) => (
+                                  <p className="my-5 leading-8 text-gray-800 text-[16px]">
+                                    {children}
+                                  </p>
                                 ),
-                                th: ({ node, ...props }) => (
-                                  <th className="px-5 py-3.5 text-xs font-semibold text-gray-500 uppercase tracking-wider align-bottom border-r border-transparent last:border-0" {...props} />
+                                ul: ({ children }) => (
+                                  <ul className="list-disc pl-6 my-6 space-y-3">
+                                    {children}
+                                  </ul>
                                 ),
-                                td: ({ node, ...props }) => (
-                                  <td className="px-5 py-4 text-[14px] text-gray-700 leading-relaxed align-top break-words border-r border-transparent last:border-0" {...props} />
+                                li: ({ children }) => (
+                                  <li className="leading-7 text-gray-800">
+                                    {children}
+                                  </li>
+                                ),
+                                strong: ({ children }) => (
+                                  <strong className="font-semibold text-gray-900">
+                                    {children}
+                                  </strong>
                                 ),
                               }}
                             >
                               {msg.content}
                             </ReactMarkdown>
+
+
                           </div>
                         ) : (
                           <p className="whitespace-pre-wrap leading-7 text-[15px]">{msg.content}</p>
