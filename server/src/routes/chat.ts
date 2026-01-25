@@ -115,7 +115,7 @@ router.delete('/session/:chatId', async (req, res) => {
 // Send message (creates new chat if chatId not provided)
 router.post('/', async (req, res) => {
     try {
-        const {
+        let {
             clientData,
             department,
             userMessage,
@@ -199,8 +199,64 @@ router.post('/', async (req, res) => {
             return res.end();
         }
 
+        if (!clientData || Object.keys(clientData).length === 0) {
+            console.log(`[DEBUG] clientData is missing for user ${userId}. Fetching from DB...`);
+            try {
+                const workspace = await prisma.workspace.findFirst({
+                    where: { userId },
+                    include: { intakeForms: { orderBy: { updatedAt: 'desc' }, take: 1 } }
+                });
+
+                if (workspace && workspace.intakeForms.length > 0) {
+                    const form = workspace.intakeForms[0];
+                    clientData = {
+                        business_name: form.companyName,
+                        industry: form.industry,
+                        sub_sector: '',
+                        business_model: '',
+                        stage: form.currentState || '',
+                        countries_served: '',
+                        founders_roles: '',
+                        hq_location: '',
+                        main_offer: '',
+                        icp: '',
+                        promise: '',
+                        usp: '',
+                        revenue_target_90d: '',
+                        lead_sources: [],
+                        sales_mechanism: '',
+                        pricing_model: '',
+                        price_points: '',
+                        delivery_process: '',
+                        tool_stack: [],
+                        team_structure: '',
+                        decision_approver: '',
+                        restricted_policies: '',
+                        regulatory_details: '',
+                        sensitive_data: '',
+                        hard_constraints: '',
+                        must_avoid: '',
+                        brand_tone: 'Professional',
+                        interaction_style: 'Collaborative',
+                        output_format: 'Markdown',
+                        department_configs: {},
+                        selected_departments: [form.department as Department || department]
+                    };
+                    console.log(`[DEBUG] Fetched clientData from DB for company: ${clientData.business_name}`);
+                } else {
+                    console.warn(`[WARN] No intake form found. Using defaults.`);
+                    clientData = { business_name: 'Unknown Company' } as any;
+                }
+            } catch (dbError) {
+                console.error("Error fetching fallback clientData", dbError);
+                clientData = { business_name: 'Unknown Company' } as any;
+            }
+        }
+
         // Prepare system prompt
+        console.log(`[DEBUG] Building prompt for Department: "${department}"`);
         let systemInstruction = buildSystemPrompt(clientData, department);
+        console.log(`[DEBUG] Generated System Prompt Preamble: ${systemInstruction.substring(0, 300)}...`);
 
         // Context Docs
         if (contextDocs && contextDocs.length > 0) {
