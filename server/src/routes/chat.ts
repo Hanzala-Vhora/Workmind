@@ -1,12 +1,16 @@
 
 import { Router } from 'express';
 import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 import { buildSystemPrompt } from '../utils/prompts.js';
 import { IntakeData, Department, Message, StoredDocument } from '../types.js';
 import prisma from '../db.js';
 
 const router = Router();
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+});
 
 // Database now used instead of in-memory store
 
@@ -111,13 +115,15 @@ router.delete('/session/:chatId', async (req, res) => {
 // Send message (creates new chat if chatId not provided)
 router.post('/', async (req, res) => {
     try {
-        const {
+        let {
             clientData,
             department,
             userMessage,
             contextDocs = [],
             chatId,
-            userId
+            userId,
+            modelProvider = 'gemini',
+            model
         }: {
             clientData: IntakeData;
             department: Department;
@@ -125,6 +131,8 @@ router.post('/', async (req, res) => {
             contextDocs: StoredDocument[];
             chatId?: string;
             userId: string;
+            modelProvider?: 'gemini' | 'openai';
+            model?: string;
         } = req.body;
 
         if (!department || !userMessage || !userId) {
@@ -191,8 +199,95 @@ router.post('/', async (req, res) => {
             return res.end();
         }
 
+        if (!clientData || Object.keys(clientData).length === 0) {
+            console.log(`[DEBUG] clientData is missing for user ${userId}. Fetching from DB...`);
+            try {
+                const workspace = await prisma.workspace.findFirst({
+                    where: { userId },
+                    include: { intakeForms: { orderBy: { updatedAt: 'desc' }, take: 1 } }
+                });
+
+                if (workspace && workspace.intakeForms.length > 0) {
+                    const form = workspace.intakeForms[0];
+                    clientData = {
+                        business_name: form.companyName,
+                        industry: form.industry,
+                        sub_sector: '',
+                        business_model: 'B2B',
+                        stage: form.currentState || 'Growth',
+                        countries_served: [],
+                        hq_location: '',
+                        founders_roles: '',
+                        primary_contact: form.contactEmail,
+
+                        main_offer: '',
+                        icp: '',
+                        buyer_roles: '',
+                        main_pain: '',
+                        promise: '',
+                        competitors: [],
+                        key_objections: '',
+                        usp: '',
+
+                        revenue_streams: '',
+                        pricing_model: 'One-time',
+                        price_points: '',
+                        sales_cycle: '1-3 months',
+                        revenue_target_90d: '',
+                        revenue_target_12m: '',
+
+                        lead_sources: [],
+                        working_channels: '',
+                        failing_channels: '',
+                        sales_mechanism: '',
+                        crm_tool: '',
+                        close_rate: '',
+
+                        delivery_process: '',
+                        tool_stack: [],
+                        broken_workflows: '',
+                        time_wasters: '',
+                        has_sops: 'No',
+                        team_structure: '',
+                        decision_approver: '',
+
+                        is_regulated: 'No',
+                        regulatory_details: '',
+                        sensitive_data: 'None',
+                        restricted_policies: '',
+
+                        brand_tone: 'Professional',
+                        brand_keywords: '',
+                        writing_samples: '',
+                        interaction_style: 'Collaborative',
+
+                        deliverables: [],
+                        output_format: 'Markdown',
+                        client_facing_needed: 'No',
+                        deadline: '',
+
+                        reference_brands: '',
+                        hard_constraints: '',
+                        must_avoid: '',
+
+                        department_configs: {},
+                        selected_departments: [form.department as Department || department]
+                    };
+                    console.log(`[DEBUG] Fetched clientData from DB for company: ${clientData.business_name}`);
+                } else {
+                    console.warn(`[WARN] No intake form found. Using defaults.`);
+                    clientData = { business_name: 'Unknown Company' } as any;
+                }
+            } catch (dbError) {
+                console.error("Error fetching fallback clientData", dbError);
+                clientData = { business_name: 'Unknown Company' } as any;
+            }
+        }
+
         // Prepare system prompt
+        console.log(`[DEBUG] Building prompt for Department: "${department}"`);
         let systemInstruction = buildSystemPrompt(clientData, department);
+        console.log(`[DEBUG] Generated System Prompt Preamble: ${systemInstruction.substring(0, 300)}...`);
 
         // Context Docs
         if (contextDocs && contextDocs.length > 0) {
@@ -233,63 +328,102 @@ router.post('/', async (req, res) => {
         }
 
         // Call Gemini
-        const model = "gemini-2.0-flash-exp";
-        const chat = ai.chats.create({
-            model: model,
-            config: {
-                systemInstruction: systemInstruction,
-                temperature: 0.7,
-            },
-        });
-
-        const messageParts: any[] = [];
-
-        // Add Docs to parts
-        // Add Docs to parts
-        contextDocs.forEach(doc => {
-            if (doc.type === 'application/pdf') {
-                // SKIP Base64 for PDFs to save tokens. Rely on chunks.
-                messageParts.push({ text: `\n[Reference PDF: ${doc.name} (Content processed as text chunks)]\n` });
-            } else if (doc.type.startsWith('image/')) {
-                const base64Data = doc.content.split(',')[1] || doc.content;
-                if (base64Data) {
-                    messageParts.push({
-                        inlineData: {
-                            mimeType: doc.type,
-                            data: base64Data
-                        }
-                    });
-                    messageParts.push({ text: `[Image Reference: ${doc.name}]` });
-                }
-            } else {
-                messageParts.push({ text: `\n\n--- BEGIN DOCUMENT: ${doc.name} ---\n${doc.content}\n--- END DOCUMENT ---\n\n` });
-            }
-        });
-
-        // Add History (last 10)
-        // We need to fetch previous messages from DB to build context
+        // Context Retrieval for History
         const previousMessages = await prisma.chatMessage.findMany({
-            where: { chatId: session.id, id: { not: userMsg.id } }, // exclude current user msg if possible, but actually we just want history
+            where: { chatId: session.id, id: { not: userMsg.id } },
             orderBy: { createdAt: 'desc' },
             take: 10
         });
+        const prevMsgsAsc = previousMessages.reverse();
 
-        // Reverse to chronological order
-        const historyContext = previousMessages.reverse().map(h => `${h.role.toUpperCase()}: ${h.content}`).join("\n");
-        if (historyContext) {
-            messageParts.push({ text: `\nPREVIOUS CONVERSATION:\n${historyContext}\n` });
-        }
-
-        // Add User Message
-        messageParts.push({ text: `USER QUERY: ${userMessage}` });
-
-        const result = await chat.sendMessageStream({ message: messageParts });
         let fullResponseText = "";
 
-        for await (const chunk of result) {
-            const chunkText = chunk.text || "";
-            fullResponseText += chunkText;
-            res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+        if (modelProvider === 'openai') {
+            const messages: any[] = [
+                { role: 'system', content: systemInstruction }
+            ];
+
+            // Add History
+            prevMsgsAsc.forEach(msg => {
+                messages.push({ role: msg.role === 'assistant' ? 'assistant' : 'user', content: msg.content });
+            });
+
+            // Add Context Docs as User message context
+            let contextMsg = "";
+            contextDocs.forEach(doc => {
+                contextMsg += `\n[Reference: ${doc.name} (${doc.type})]\n${doc.content.substring(0, 2000)}...\n`;
+            });
+            if (contextMsg) {
+                messages.push({ role: 'system', content: `Context Documents:\n${contextMsg}` });
+            }
+
+            messages.push({ role: 'user', content: userMessage });
+
+            try {
+                const stream = await openai.chat.completions.create({
+                    model: model || 'gpt-4o',
+                    messages: messages,
+                    stream: true,
+                });
+
+                for await (const chunk of stream) {
+                    const chunkText = chunk.choices[0]?.delta?.content || "";
+                    if (chunkText) {
+                        fullResponseText += chunkText;
+                        res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+                    }
+                }
+            } catch (err: any) {
+                console.error("OpenAI Error:", err);
+                res.write(`data: ${JSON.stringify({ text: "Error calling OpenAI: " + err.message })}\n\n`);
+                fullResponseText += "Error calling OpenAI: " + err.message;
+            }
+
+        } else {
+            // Gemini Logic
+            const geminiModel = model || "gemini-2.0-flash-exp";
+            const chat = ai.chats.create({
+                model: geminiModel,
+                config: {
+                    systemInstruction: systemInstruction,
+                    temperature: 0.7,
+                },
+            });
+
+            const messageParts: any[] = [];
+
+            // Add Docs (Gemini style)
+            contextDocs.forEach(doc => {
+                if (doc.type === 'application/pdf') {
+                    messageParts.push({ text: `\n[Reference PDF: ${doc.name} (Content processed as text chunks)]\n` });
+                } else if (doc.type.startsWith('image/')) {
+                    const base64Data = doc.content.split(',')[1] || doc.content;
+                    if (base64Data) {
+                        messageParts.push({
+                            inlineData: { mimeType: doc.type, data: base64Data }
+                        });
+                        messageParts.push({ text: `[Image Reference: ${doc.name}]` });
+                    }
+                } else {
+                    messageParts.push({ text: `\n\n--- BEGIN DOCUMENT: ${doc.name} ---\n${doc.content}\n--- END DOCUMENT ---\n\n` });
+                }
+            });
+
+            // Add History
+            const historyContext = prevMsgsAsc.map(h => `${h.role.toUpperCase()}: ${h.content}`).join("\n");
+            if (historyContext) {
+                messageParts.push({ text: `\nPREVIOUS CONVERSATION:\n${historyContext}\n` });
+            }
+
+            messageParts.push({ text: `USER QUERY: ${userMessage}` });
+
+            const result = await chat.sendMessageStream({ message: messageParts });
+
+            for await (const chunk of result) {
+                const chunkText = chunk.text || "";
+                fullResponseText += chunkText;
+                res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+            }
         }
 
         // Check Escalation

@@ -1,9 +1,9 @@
 // server/src/server.ts
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import type { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import intakeFormRoutes from './routes/intakeForms.js';
 import workspaceRoutes from './routes/workspaces.js';
 import agentRoutes from './routes/agents.js';
@@ -12,7 +12,7 @@ import userRoutes from './routes/users.js';
 import chatRoutes from './routes/chat.js';
 import uploadRoutes from './routes/upload.js';
 
-dotenv.config();
+
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;

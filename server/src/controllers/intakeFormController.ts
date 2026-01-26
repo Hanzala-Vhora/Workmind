@@ -65,10 +65,22 @@ export const createIntakeForm = async (req: Request, res: Response) => {
 
 export const getIntakeForms = async (req: Request, res: Response) => {
   try {
-    const { workspaceId } = req.query;
+    const { workspaceId, userId } = req.query;
 
-    if (!workspaceId) {
-      return res.status(400).json({ error: 'workspaceId required' });
+    if (!workspaceId && !userId) {
+      return res.status(400).json({ error: 'workspaceId or userId required' });
+    }
+
+    if (userId) {
+      const forms = await prisma.intakeForm.findMany({
+        where: {
+          workspace: {
+            userId: String(userId)
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      return res.json(forms);
     }
 
     const forms = await prisma.intakeForm.findMany({

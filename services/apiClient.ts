@@ -26,8 +26,17 @@ export const apiClient = {
       return response.json();
     },
 
-    getAll: async (workspaceId: string) => {
-      const response = await fetch(`${API_BASE_URL}/intake-forms?workspaceId=${workspaceId}`);
+    getAll: async (params: string | { workspaceId?: string; userId?: string }) => {
+      let queryString = '';
+      if (typeof params === 'string') {
+        queryString = `workspaceId=${params}`;
+      } else {
+        const parts = [];
+        if (params.workspaceId) parts.push(`workspaceId=${params.workspaceId}`);
+        if (params.userId) parts.push(`userId=${params.userId}`);
+        queryString = parts.join('&');
+      }
+      const response = await fetch(`${API_BASE_URL}/intake-forms?${queryString}`);
       if (!response.ok) throw new Error(`Failed to fetch intake forms: ${response.statusText}`);
       return response.json();
     },
