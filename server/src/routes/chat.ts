@@ -381,7 +381,7 @@ router.post('/', async (req, res) => {
 
         } else {
             // Gemini Logic
-            const geminiModel = model || "gemini-2.0-flash-exp";
+            const geminiModel = model || "gemini-2.0-flash";
             const chat = ai.chats.create({
                 model: geminiModel,
                 config: {
