@@ -15,6 +15,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
+    "types": ["node"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"]

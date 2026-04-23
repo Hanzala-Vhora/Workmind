@@ -108,6 +108,8 @@ export interface StoredDocument {
     type: string;
     content: string;
     uploadedAt: number;
+    chatId?: string;
+    pageCount?: number;
 }
 
 export interface Message {

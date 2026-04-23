@@ -12,6 +12,121 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
+const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
+
+function getProviderApiKey(modelProvider: 'gemini' | 'openai' | 'claude'): string {
+    if (modelProvider === 'openai') return process.env.OPENAI_API_KEY || '';
+    if (modelProvider === 'claude') return process.env.ANTHROPIC_API_KEY || '';
+    return process.env.API_KEY || '';
+}
+
+function toInlineImageContent(doc: StoredDocument) {
+    const base64Data = doc.content.split(',')[1] || doc.content;
+    return base64Data
+        ? {
+            type: 'image' as const,
+            source: {
+                type: 'base64' as const,
+                media_type: doc.type,
+                data: base64Data
+            }
+        }
+        : null;
+}
+
+async function streamClaudeResponse(params: {
+    model: string;
+    systemInstruction: string;
+    previousMessages: Array<{ role: string; content: string }>;
+    contextDocs: StoredDocument[];
+    userMessage: string;
+    res: any;
+}) {
+    const { model, systemInstruction, previousMessages, contextDocs, userMessage, res } = params;
+
+    const contentBlocks: any[] = [];
+
+    contextDocs.forEach(doc => {
+        if (doc.type.startsWith('image/')) {
+            const imageBlock = toInlineImageContent(doc);
+            if (imageBlock) {
+                contentBlocks.push(imageBlock);
+                contentBlocks.push({ type: 'text', text: `[Image reference: ${doc.name}]` });
+            }
+            return;
+        }
+
+        contentBlocks.push({
+            type: 'text',
+            text: `[Reference: ${doc.name} (${doc.type})]\n${doc.content.slice(0, 12000)}`
+        });
+    });
+
+    contentBlocks.push({ type: 'text', text: userMessage });
+
+    const anthropicMessages = [
+        ...previousMessages.map(msg => ({
+            role: msg.role === 'assistant' ? 'assistant' : 'user',
+            content: msg.content
+        })),
+        { role: 'user', content: contentBlocks }
+    ];
+
+    const response = await fetch(CLAUDE_API_URL, {
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json',
+            'x-api-key': process.env.ANTHROPIC_API_KEY || '',
+            'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+            model,
+            max_tokens: 4096,
+            system: systemInstruction,
+            messages: anthropicMessages,
+            stream: true
+        })
+    });
+
+    if (!response.ok || !response.body) {
+        const errorText = await response.text();
+        throw new Error(`Claude request failed: ${response.status} ${errorText}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let fullResponseText = '';
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const events = buffer.split('\n\n');
+        buffer = events.pop() || '';
+
+        for (const event of events) {
+            const lines = event.split('\n');
+            const dataLine = lines.find(line => line.startsWith('data: '));
+            if (!dataLine) continue;
+
+            const payload = dataLine.slice(6).trim();
+            if (!payload || payload === '[DONE]') continue;
+
+            const parsed = JSON.parse(payload);
+            const chunkText = parsed?.delta?.text || '';
+
+            if (parsed?.type === 'content_block_delta' && chunkText) {
+                fullResponseText += chunkText;
+                res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
+            }
+        }
+    }
+
+    return fullResponseText;
+}
+
 // Database now used instead of in-memory store
 
 
@@ -55,6 +170,10 @@ router.get('/session/:chatId', async (req, res) => {
         const { chatId } = req.params;
         const { userId } = req.query;
 
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
         const chat = await prisma.chatSession.findUnique({
             where: { id: chatId },
             include: {
@@ -68,7 +187,7 @@ router.get('/session/:chatId', async (req, res) => {
         if (!chat) return res.status(404).json({ error: 'Chat not found' });
 
         // Enforce ownership
-        if (userId && chat.userId !== String(userId)) {
+        if (chat.userId !== String(userId)) {
             return res.status(403).json({ error: 'Unauthorized access to this chat session' });
         }
 
@@ -86,7 +205,8 @@ router.get('/session/:chatId', async (req, res) => {
             name: d.name,
             type: d.type,
             content: d.content,
-            uploadedAt: new Date(d.createdAt).getTime()
+            uploadedAt: new Date(d.createdAt).getTime(),
+            chatId: d.chatId
         }));
 
         res.json({ history, documents });
@@ -100,6 +220,25 @@ router.get('/session/:chatId', async (req, res) => {
 router.delete('/session/:chatId', async (req, res) => {
     try {
         const { chatId } = req.params;
+        const { userId } = req.query;
+
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const session = await prisma.chatSession.findUnique({
+            where: { id: chatId },
+            select: { userId: true }
+        });
+
+        if (!session) {
+            return res.status(404).json({ error: 'Chat not found' });
+        }
+
+        if (session.userId !== String(userId)) {
+            return res.status(403).json({ error: 'Unauthorized access to this chat session' });
+        }
+
         await prisma.chatSession.delete({
             where: { id: chatId }
         });
@@ -131,7 +270,7 @@ router.post('/', async (req, res) => {
             contextDocs: StoredDocument[];
             chatId?: string;
             userId: string;
-            modelProvider?: 'gemini' | 'openai';
+            modelProvider?: 'gemini' | 'openai' | 'claude';
             model?: string;
         } = req.body;
 
@@ -142,17 +281,30 @@ router.post('/', async (req, res) => {
         // Generate or retrieve chat session
         const currentChatId = chatId || crypto.randomUUID();
 
-        // Ensure chat session exists in DB
-        const session = await prisma.chatSession.upsert({
+        const existingSession = await prisma.chatSession.findUnique({
             where: { id: currentChatId },
-            update: {},
-            create: {
-                id: currentChatId,
-                department,
-                userId,
-                title: userMessage.substring(0, 40) + (userMessage.length > 40 ? '...' : ''),
-            }
+            select: { id: true, userId: true, title: true }
         });
+
+        if (existingSession && existingSession.userId !== userId) {
+            return res.status(403).json({ error: 'Unauthorized access to this chat session' });
+        }
+
+        const session = existingSession
+            ? await prisma.chatSession.update({
+                where: { id: currentChatId },
+                data: existingSession.title ? {} : {
+                    title: userMessage.substring(0, 40) + (userMessage.length > 40 ? '...' : '')
+                }
+            })
+            : await prisma.chatSession.create({
+                data: {
+                    id: currentChatId,
+                    department,
+                    userId,
+                    title: userMessage.substring(0, 40) + (userMessage.length > 40 ? '...' : ''),
+                }
+            });
 
         // Store user message
         const userMsg = await prisma.chatMessage.create({
@@ -168,9 +320,11 @@ router.post('/', async (req, res) => {
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
 
-        if (!process.env.API_KEY) {
+        const providerApiKey = getProviderApiKey(modelProvider);
+
+        if (!providerApiKey) {
             // Mock streaming response
-            const mockText = "API Key is missing on server. Simulating response: " + userMessage;
+            const mockText = `API key for ${modelProvider} is missing on server. Simulating response: ${userMessage}`;
             const words = mockText.split(' ');
 
             for (const word of words) {
@@ -379,6 +533,26 @@ router.post('/', async (req, res) => {
                 fullResponseText += "Error calling OpenAI: " + err.message;
             }
 
+        } else if (modelProvider === 'claude') {
+            const claudeModel = model || 'claude-3-5-sonnet-latest';
+
+            try {
+                fullResponseText = await streamClaudeResponse({
+                    model: claudeModel,
+                    systemInstruction,
+                    previousMessages: prevMsgsAsc.map(msg => ({
+                        role: msg.role,
+                        content: msg.content
+                    })),
+                    contextDocs,
+                    userMessage,
+                    res
+                });
+            } catch (err: any) {
+                console.error("Claude Error:", err);
+                res.write(`data: ${JSON.stringify({ text: "Error calling Claude: " + err.message })}\n\n`);
+                fullResponseText += "Error calling Claude: " + err.message;
+            }
         } else {
             // Gemini Logic
             const geminiModel = model || "gemini-2.0-flash";

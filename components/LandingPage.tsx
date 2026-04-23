@@ -221,7 +221,12 @@ export const LandingPage: React.FC = () => {
             <div className="p-6 bg-gradient-brand rounded-2xl flex flex-col justify-center items-center text-center shadow-lg shadow-cyan-electric/20 transform hover:scale-105 transition-all">
               <h3 className="text-xl font-bold mb-2">Ready to deploy?</h3>
               <p className="text-sm text-white/80 mb-4">Get your custom experts running in minutes.</p>
-              <button onClick={handleStart} className="bg-white text-deepTech-DEFAULT px-6 py-2 rounded-full text-sm font-bold hover:bg-gray-100 w-full transition-colors shadow-md">Get Started</button>
+              <button
+                onClick={handleStart}
+                className="w-full rounded-full bg-white px-6 py-2 text-sm font-bold text-[#0F172A] shadow-md transition-colors hover:bg-gray-100 inline-flex items-center justify-center"
+              >
+                Get Started
+              </button>
             </div>
           </div>
         </div>

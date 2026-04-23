@@ -24,6 +24,7 @@ export const ExpertChat: React.FC = () => {
   const MODELS = [
     { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'gemini' },
     { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'gemini' },
+    { id: 'claude-3-5-sonnet-latest', name: 'Claude 3.5 Sonnet', provider: 'claude' },
     { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' },
   ];
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
@@ -62,6 +63,7 @@ export const ExpertChat: React.FC = () => {
           setChats(data.chats || []);
           setCurrentChatId(null);
           setMessages([]);
+          setFetchedDocuments([]);
         }
       } catch (err) {
         console.error("Failed to load chats list", err);
@@ -111,10 +113,11 @@ export const ExpertChat: React.FC = () => {
     if (!confirm("Are you sure you want to delete this chat?")) return;
 
     try {
-      await fetch(`${API_URL}/api/chat/session/${chatId}`, { method: 'DELETE' });
+      await fetch(`${API_URL}/api/chat/session/${chatId}?userId=${user.id}`, { method: 'DELETE' });
       if (currentChatId === chatId) {
         setCurrentChatId(null);
         setMessages([]);
+        setFetchedDocuments([]);
       }
       refreshChats();
     } catch (err) {
@@ -270,6 +273,8 @@ export const ExpertChat: React.FC = () => {
           const formData = new FormData();
           formData.append('file', file);
           formData.append('chatId', attachChatId);
+          formData.append('userId', user.id);
+          formData.append('department', activeDepartment);
 
           const res = await fetch(`${API_URL}/api/upload`, {
             method: 'POST',
@@ -289,7 +294,9 @@ export const ExpertChat: React.FC = () => {
             name: file.name,
             type: file.type || (isPdf ? 'application/pdf' : 'text/plain'),
             content: isPdf ? "[Uploaded to Server - Processed]" : "Image/Text File",
-            uploadedAt: Date.now()
+            uploadedAt: Date.now(),
+            chatId: attachChatId,
+            pageCount: undefined
           };
 
           if (file.type.startsWith('image/')) {
@@ -298,13 +305,13 @@ export const ExpertChat: React.FC = () => {
             reader.onload = (e) => {
               newDoc.content = e.target?.result as string;
               // addDocument(activeDepartment, newDoc); // No longer use context
-              setFetchedDocuments(prev => [...prev, newDoc]);
+              setFetchedDocuments(prev => [...prev.filter(existing => existing.name !== newDoc.name), newDoc]);
               setShowContextRepo(true);
             };
           } else {
             // PDF / Text -> Rely on server chunks
             // addDocument(activeDepartment, newDoc); // No longer use context
-            setFetchedDocuments(prev => [...prev, newDoc]);
+            setFetchedDocuments(prev => [...prev.filter(existing => existing.name !== newDoc.name), newDoc]);
             setShowContextRepo(true);
           }
         } catch (err) {
@@ -312,6 +319,7 @@ export const ExpertChat: React.FC = () => {
         }
       }
 
+      await refreshChats();
       setShowContextRepo(true);
       setUploadStatus('success');
       setTimeout(() => setUploadStatus('idle'), 2500);
@@ -337,7 +345,7 @@ export const ExpertChat: React.FC = () => {
       // But let's try currentChatId if available, or just remove from client state.
 
       if (currentChatId) {
-        await fetch(`${API_URL}/api/upload?chatId=${currentChatId}&filename=${encodeURIComponent(doc.name)}`, {
+        await fetch(`${API_URL}/api/upload?chatId=${doc.chatId || currentChatId}&filename=${encodeURIComponent(doc.name)}&userId=${user?.id}`, {
           method: 'DELETE'
         });
       }
@@ -387,7 +395,7 @@ export const ExpertChat: React.FC = () => {
 
           {/* New Chat Button */}
           <button
-            onClick={() => { setCurrentChatId(null); setMessages([]); }}
+            onClick={() => { setCurrentChatId(null); setMessages([]); setFetchedDocuments([]); }}
             className="w-full mb-4 flex items-center justify-center gap-2 bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" /> New Chat
@@ -596,7 +604,7 @@ export const ExpertChat: React.FC = () => {
             ref={fileInputRef}
             className="hidden"
             onChange={handleFileUpload}
-            accept=".pdf,.txt,.md,.json,.csv,.png,.jpg,.jpeg"
+            accept=".pdf,.docx,.txt,.md,.json,.csv,.png,.jpg,.jpeg,.webp"
             multiple
           />
 
