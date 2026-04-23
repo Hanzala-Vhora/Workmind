@@ -4,6 +4,9 @@ import express from 'express';
 import path from 'path';
 import type { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import cluster from 'node:cluster';
+import { cpus } from 'node:os';
+import process from 'node:process';
 import intakeFormRoutes from './routes/intakeForms.js';
 import workspaceRoutes from './routes/workspaces.js';
 import agentRoutes from './routes/agents.js';
@@ -31,7 +34,6 @@ app.get('/health', (req, res) => {
 });
 
 // Routes
-// Routes
 app.use('/api/intake-forms', intakeFormRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/agents', agentRoutes);
@@ -43,22 +45,37 @@ app.use('/api/upload', uploadRoutes);
 // Serve static frontend files in production
 if (process.env.NODE_ENV === 'production') {
   const __dirname = path.resolve();
-  // Assuming the build runs from root, and backend starts from server/, we need to find the dist folder correctly.
-  // If we run `node server/dist/server.js` from root:
   app.use(express.static(path.join(__dirname, '../dist')));
 
-  // Handle client-side routing
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist', 'index.html'));
   });
 }
 
-// 404 handler (only if not handled by static files)
+// 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+const startServer = () => {
+  app.listen(PORT, () => {
+    console.log(`Worker ${process.pid} started server on http://localhost:${PORT}`);
+  });
+};
+
+if (process.env.NODE_ENV === 'production' && cluster.isPrimary) {
+  const numCPUs = cpus().length;
+  console.log(`Primary ${process.pid} is running. Forking ${numCPUs} workers...`);
+
+  for (let i = 0; i < numCPUs; i++) {
+    cluster.fork();
+  }
+
+  cluster.on('exit', (worker, code, signal) => {
+    console.log(`Worker ${worker.process.pid} died. Respawning...`);
+    cluster.fork();
+  });
+} else {
+  startServer();
+}
+
