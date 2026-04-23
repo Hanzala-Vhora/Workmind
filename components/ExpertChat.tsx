@@ -24,7 +24,7 @@ export const ExpertChat: React.FC = () => {
   const MODELS = [
     { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'gemini' },
     { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'gemini' },
-    { id: 'claude-3-5-sonnet-20240620', name: 'Claude 3.5 Sonnet', provider: 'claude' },
+    { id: 'claude-sonnet-4-20250514', name: 'Claude 3.5 Sonnet', provider: 'claude' },
     { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' },
   ];
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);

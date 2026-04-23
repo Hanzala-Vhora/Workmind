@@ -534,7 +534,7 @@ router.post('/', async (req, res) => {
             }
 
         } else if (modelProvider === 'claude') {
-            const claudeModel = model || 'claude-3-5-sonnet-20240620';
+            const claudeModel = model || 'claude-sonnet-4-20250514';
 
             try {
                 fullResponseText = await streamClaudeResponse({
