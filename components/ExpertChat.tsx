@@ -495,39 +495,6 @@ export const ExpertChat: React.FC = () => {
                 <BrainLogo width={24} height={24} />
                 {activeDepartment} Expert
               </h2>
-
-              {/* Model Selector */}
-              <div className="relative ml-2 hidden sm:block">
-                <button
-                  onClick={() => setShowModelMenu(!showModelMenu)}
-                  className="flex items-center gap-1 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded-md transition-colors"
-                >
-                  <Cpu className="w-3 h-3" />
-                  {selectedModel.name}
-                  <ChevronDown className="w-3 h-3 text-gray-400" />
-                </button>
-
-                {showModelMenu && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setShowModelMenu(false)}></div>
-                    <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-20 overflow-hidden">
-                      <div className="px-3 py-2 bg-gray-50 border-b border-gray-100 text-[10px] uppercase font-bold text-gray-400 tracking-wider">
-                        Select Model
-                      </div>
-                      {MODELS.map(m => (
-                        <button
-                          key={m.id}
-                          onClick={() => { setSelectedModel(m); setShowModelMenu(false); }}
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2 ${selectedModel.id === m.id ? 'text-indigo-600 font-medium' : 'text-gray-600'}`}
-                        >
-                          {selectedModel.id === m.id && <div className="w-1.5 h-1.5 rounded-full bg-indigo-600"></div>}
-                          {m.name}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </div>
             </div>
           </div>
           <div className="flex gap-2">

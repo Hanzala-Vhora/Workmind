@@ -344,7 +344,7 @@ router.post('/', async (req, res) => {
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
 
-        const providerApiKey = getProviderApiKey(modelProvider);
+        const providerApiKey = getProviderApiKey((modelProvider || 'gemini') as 'gemini' | 'openai' | 'claude');
 
         if (!providerApiKey) {
             // Mock streaming response
