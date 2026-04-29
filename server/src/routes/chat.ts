@@ -668,7 +668,7 @@ router.post('/', async (req, res) => {
             inputTokens,
             outputTokens,
             model: model || 'default',
-            provider: modelProvider
+            provider: modelProvider || 'gemini'
         });
 
         // Send final event with metadata
