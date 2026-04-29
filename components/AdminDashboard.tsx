@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Users, CreditCard, Activity, ArrowLeft, Search, Plus, TrendingUp, AlertCircle, Database } from 'lucide-react';
+import { Users, CreditCard, Activity, ArrowLeft, Search, Plus, TrendingUp, AlertCircle, Database, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const AdminDashboard: React.FC = () => {
