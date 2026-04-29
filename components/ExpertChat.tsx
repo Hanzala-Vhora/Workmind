@@ -99,6 +99,26 @@ export const ExpertChat: React.FC = () => {
     fetchHistory();
   }, [currentChatId, user?.id]);
 
+  // Fetch default AI config
+  useEffect(() => {
+    const fetchAIConfig = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/settings/ai-config`);
+        if (res.ok) {
+          const data = await res.json();
+          // Find the model in our local MODELS list that matches the backend default
+          const defaultModel = MODELS.find(m => m.id === data.model) || 
+                               MODELS.find(m => m.provider === data.modelProvider) || 
+                               MODELS[0];
+          setSelectedModel(defaultModel);
+        }
+      } catch (err) {
+        console.error("Failed to fetch AI config", err);
+      }
+    };
+    fetchAIConfig();
+  }, []);
+
   const refreshChats = async () => {
     if (!activeDepartment || !user?.id) return;
     const res = await fetch(`${API_URL}/api/chat/department/${activeDepartment}?userId=${user.id}`);

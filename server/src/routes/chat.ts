@@ -261,7 +261,7 @@ router.post('/', async (req, res) => {
             contextDocs = [],
             chatId,
             userId,
-            modelProvider = 'gemini',
+            modelProvider,
             model
         }: {
             clientData: IntakeData;
@@ -276,6 +276,30 @@ router.post('/', async (req, res) => {
 
         if (!department || !userMessage || !userId) {
             return res.status(400).json({ error: 'Missing department, message, or userId' });
+        }
+
+        // If provider/model not in request, fetch from database or env
+        if (!modelProvider || !model) {
+            try {
+                const dbSettings = await prisma.systemSetting.findMany({
+                    where: { key: { in: ['DEFAULT_MODEL_PROVIDER', 'DEFAULT_MODEL'] } }
+                });
+                const settingsMap = dbSettings.reduce((acc, curr) => {
+                    acc[curr.key] = curr.value;
+                    return acc;
+                }, {} as Record<string, string>);
+
+                if (!modelProvider) {
+                    modelProvider = (settingsMap['DEFAULT_MODEL_PROVIDER'] || process.env.DEFAULT_MODEL_PROVIDER || 'gemini') as any;
+                }
+                if (!model) {
+                    model = settingsMap['DEFAULT_MODEL'] || process.env.DEFAULT_MODEL || '';
+                }
+            } catch (err) {
+                console.warn('Failed to fetch DB settings in chat, using fallback:', err);
+                if (!modelProvider) modelProvider = (process.env.DEFAULT_MODEL_PROVIDER as any) || 'gemini';
+                if (!model) model = process.env.DEFAULT_MODEL || '';
+            }
         }
 
         // Generate or retrieve chat session
