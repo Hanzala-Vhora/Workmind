@@ -15,6 +15,7 @@ import userRoutes from './routes/users.js';
 import chatRoutes from './routes/chat.js';
 import uploadRoutes from './routes/upload.js';
 import settingsRoutes from './routes/settings.js';
+import adminRoutes from './routes/admin.js';
 
 
 
@@ -43,6 +44,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Serve static frontend files in production
 if (process.env.NODE_ENV === 'production') {

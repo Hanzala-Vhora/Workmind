@@ -12,7 +12,7 @@ import { useUser } from '@clerk/clerk-react';
 
 export const ExpertChat: React.FC = () => {
   const { user } = useUser();
-  const { clientData, activeDepartment, setActiveDepartment, conversations, addMessage, departmentDocuments, addDocument, removeDocument, setConversationMessages } = useApp();
+  const { clientData, activeDepartment, setActiveDepartment, conversations, addMessage, departmentDocuments, addDocument, removeDocument, setConversationMessages, userProfile, refreshUserProfile } = useApp();
   const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [showSidebar, setShowSidebar] = useState(true);
@@ -244,6 +244,9 @@ export const ExpertChat: React.FC = () => {
               setCurrentChatId(data.chatId);
               refreshChats();
             }
+
+            // Refresh credits after message is done
+            refreshUserProfile();
           }
         }
       }
@@ -462,13 +465,27 @@ export const ExpertChat: React.FC = () => {
         </div>
 
         <div className="p-4 border-t border-gray-200 bg-gray-50/50">
+          {/* Wallet / Credits Section */}
+          <div className="mb-4 px-2">
+            <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl p-3 text-white shadow-sm">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Your Wallet</span>
+                <Zap className="w-3 h-3 text-amber-300 fill-amber-300" />
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-xl font-black">{userProfile?.credits?.toFixed(1) || '0.0'}</span>
+                <span className="text-[10px] opacity-90">Credits</span>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center gap-3 px-2">
             <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs">
               {clientData.business_name.substring(0, 2).toUpperCase()}
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-medium text-gray-900 truncate">{clientData.business_name}</p>
-              <p className="text-xs text-gray-500 truncate">Premium Plan</p>
+              <p className="text-xs text-gray-500 truncate">{userProfile?.role === 'admin' ? 'Admin Access' : 'Premium Plan'}</p>
             </div>
           </div>
         </div>

@@ -23,6 +23,8 @@ interface AppContextType {
 
   activeDepartment: Department | null;
   setActiveDepartment: (dept: Department | null) => void;
+  userProfile: any | null;
+  refreshUserProfile: () => Promise<void>;
   resetApp: () => void;
 }
 
@@ -35,6 +37,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [departmentHubs, setDepartmentHubs] = useState<Record<string, HubMessage[]>>({});
 
   const [activeDepartment, setActiveDepartment] = useState<Department | null>(null);
+  const [userProfile, setUserProfile] = useState<any | null>(null);
 
   const { user } = useUser();
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -159,6 +162,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchContext();
   }, [user?.id]);
 
+  const refreshUserProfile = async () => {
+    if (!user?.id) return;
+    try {
+      const res = await fetch(`${API_URL}/api/users/${user.id}/profile`);
+      if (res.ok) {
+        const data = await res.json();
+        setUserProfile(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch user profile", err);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id) refreshUserProfile();
+  }, [user?.id]);
+
   // Persist active department changes
   useEffect(() => {
     if (activeDepartment) {
@@ -272,6 +292,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addHubMessage,
       activeDepartment,
       setActiveDepartment,
+      userProfile,
+      refreshUserProfile,
       resetApp
     }}>
       {children}

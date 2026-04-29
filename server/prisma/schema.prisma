@@ -14,12 +14,15 @@ model User {
   email     String     @unique
   name      String?
   role      String     @default("user")
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  credits      Float      @default(0)
+  totalCostUSD Float      @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
-  workspaces Workspace[]
-  agents     Agent[]
-  chatSessions ChatSession[]
+  workspaces    Workspace[]
+  agents        Agent[]
+  chatSessions  ChatSession[]
+  usageLogs     UsageLog[]
 }
 
 model Workspace {
@@ -206,4 +209,19 @@ model SystemSetting {
   key       String   @unique
   value     String
   updatedAt DateTime @updatedAt
+}
+
+model UsageLog {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputTokens  Int
+  outputTokens Int
+  creditsUsed  Float
+  costUSD      Float
+  model        String
+  provider     String
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
 }

@@ -5,6 +5,7 @@ import OpenAI from 'openai';
 import { buildSystemPrompt } from '../utils/prompts.js';
 import { IntakeData, Department, Message, StoredDocument } from '../types.js';
 import prisma from '../db.js';
+import { deductCredits } from '../utils/billing.js';
 
 const router = Router();
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
@@ -276,6 +277,17 @@ router.post('/', async (req, res) => {
 
         if (!department || !userMessage || !userId) {
             return res.status(400).json({ error: 'Missing department, message, or userId' });
+        }
+
+        // Check Credits
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (user && user.credits <= 0) {
+            // Set headers for SSE so we can send the error
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            res.write(`data: ${JSON.stringify({ error: 'Insufficient credits. Please top up your wallet.' })}\n\n`);
+            return res.end();
         }
 
         // If provider/model not in request, fetch from database or env
@@ -646,6 +658,19 @@ router.post('/', async (req, res) => {
             }
         });
 
+        // Deduct Credits (Approximate tokens if not strictly available from stream yet)
+        // For production, you'd use exact token counts from the provider's final chunk
+        const inputTokens = Math.ceil(systemInstruction.length / 4) + Math.ceil(userMessage.length / 4);
+        const outputTokens = Math.ceil(fullResponseText.length / 4);
+        
+        const { totalCreditsUsed } = await deductCredits({
+            userId,
+            inputTokens,
+            outputTokens,
+            model: model || 'default',
+            provider: modelProvider
+        });
+
         // Send final event with metadata
         res.write(`data: ${JSON.stringify({
             done: true,
@@ -653,7 +678,8 @@ router.post('/', async (req, res) => {
             messageId: assistantMsg.id,
             chatId: currentChatId,
             title: session.title,
-            text: fullResponseText // Send full text effectively as a confirmation/sync
+            creditsUsed: totalCreditsUsed,
+            text: fullResponseText 
         })}\n\n`);
 
         res.end();

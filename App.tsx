@@ -8,6 +8,7 @@ import { IntakeForm } from './components/IntakeForm';
 import { Dashboard } from './components/Dashboard';
 import { ExpertChat } from './components/ExpertChat';
 import { DepartmentHub } from './components/DepartmentHub';
+import { AdminDashboard } from './components/AdminDashboard';
 import { SignInPage } from './components/auth/SignInPage';
 import { SignUpPage } from './components/auth/SignUpPage';
 import { Department } from './types';
@@ -110,6 +111,9 @@ const AppRoutes: React.FC = () => {
       } />
       <Route path="/hub" element={
         <ProtectedRoute><DepartmentHub /></ProtectedRoute>
+      } />
+      <Route path="/admin" element={
+        <ProtectedRoute><AdminDashboard /></ProtectedRoute>
       } />
       <Route path="*" element={<LandingPage />} />
     </Routes>

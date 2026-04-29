@@ -54,4 +54,35 @@ router.get('/:userId/onboarding-status', async (req, res) => {
     }
 });
 
+router.get('/:userId/profile', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        let user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                credits: true,
+                totalCostUSD: true,
+                role: true
+            }
+        });
+
+        // If user doesn't exist in our DB yet, they might be new from Clerk
+        if (!user) {
+            // We'll return default starting credits or 0
+            return res.json({
+                id: userId,
+                credits: 0,
+                totalCostUSD: 0,
+                role: 'user'
+            });
+        }
+
+        res.json(user);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default router;

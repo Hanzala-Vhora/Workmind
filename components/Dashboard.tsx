@@ -21,7 +21,7 @@ const DEPT_ICONS: Record<Department, any> = {
 };
 
 export const Dashboard: React.FC = () => {
-  const { clientData, setClientData, setActiveDepartment, resetApp } = useApp();
+  const { clientData, setClientData, setActiveDepartment, resetApp, userProfile } = useApp();
   const navigate = useNavigate();
   const { signOut } = useClerk();
   const { user, isLoaded } = useUser();
@@ -173,15 +173,20 @@ export const Dashboard: React.FC = () => {
             );
           })}
 
-          <button
-            onClick={() => navigate('/add-expert')}
-            className="w-full mt-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-sm font-bold text-white shadow-lg group"
-          >
-            <div className="bg-cyan-electric text-neural-dark rounded-full w-5 h-5 flex items-center justify-center">
-              <Plus className="w-3 h-3 font-bold" />
-            </div>
             New Expert
           </button>
+
+          {userProfile?.role === 'admin' && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="w-full mt-2 flex items-center gap-2 px-4 py-3 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/20 transition-all text-sm font-bold text-white shadow-lg group"
+            >
+              <div className="bg-white text-indigo-600 rounded-full w-5 h-5 flex items-center justify-center">
+                <Layout className="w-3 h-3 font-bold" />
+              </div>
+              Admin Panel
+            </button>
+          )}
 
         </nav>
         <div className="p-4 border-t border-white/10 bg-black/10">
