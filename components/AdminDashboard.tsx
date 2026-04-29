@@ -172,8 +172,91 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Billing Model Info */}
+                <div className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                                <TrendingUp className="w-5 h-5 text-indigo-400" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-black tracking-tight">System Billing Model</h2>
+                                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">How Credits & Costs are Calculated</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-6">
+                                <div>
+                                    <h3 className="text-sm font-bold text-indigo-400 mb-3 flex items-center gap-2">
+                                        <Zap className="w-4 h-4" /> Credit Deduction Rule
+                                    </h3>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                            <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Input Tokens</p>
+                                            <p className="text-lg font-black">1 <span className="text-xs font-normal text-gray-400">Credit / 500 Tokens</span></p>
+                                        </div>
+                                        <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
+                                            <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Output Tokens</p>
+                                            <p className="text-lg font-black">1 <span className="text-xs font-normal text-gray-400">Credit / 300 Tokens</span></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="text-sm font-bold text-green-400 mb-3 flex items-center gap-2">
+                                        <Database className="w-4 h-4" /> Internal Platform Cost
+                                    </h3>
+                                    <p className="text-xs text-gray-400 leading-relaxed">
+                                        We track the actual API cost to ensure profitability. For Claude 3.5 Sonnet:
+                                    </p>
+                                    <div className="mt-2 space-y-2">
+                                        <div className="flex justify-between text-xs py-1 border-b border-white/5">
+                                            <span className="text-gray-500">Input Cost (per 1M)</span>
+                                            <span className="font-bold">$3.00</span>
+                                        </div>
+                                        <div className="flex justify-between text-xs py-1 border-b border-white/5">
+                                            <span className="text-gray-500">Output Cost (per 1M)</span>
+                                            <span className="font-bold">$15.00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
+                                <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                                    <Activity className="w-4 h-4 text-purple-400" /> Real Example
+                                </h3>
+                                <div className="space-y-4">
+                                    <div className="p-3 bg-black/40 rounded-xl">
+                                        <p className="text-[10px] text-gray-500 uppercase font-bold mb-2">Scenario: User sends 1,200 tokens & AI replies with 450 tokens</p>
+                                        <div className="space-y-2 text-xs">
+                                            <div className="flex justify-between">
+                                                <span>Input Charge (1200 / 500)</span>
+                                                <span className="text-indigo-400">+2.4 Credits</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span>Output Charge (450 / 300)</span>
+                                                <span className="text-indigo-400">+1.5 Credits</span>
+                                            </div>
+                                            <div className="pt-2 mt-2 border-t border-white/10 flex justify-between font-black text-sm">
+                                                <span>Total Deduction</span>
+                                                <span className="text-white">3.9 Credits</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 italic">
+                                        * At this usage, your actual cost is ~$0.010, while the user consumes ~4 credits.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Recent Usage Logs */}
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mt-6">
                     <h2 className="font-bold text-gray-900 mb-4">Recent Platform Usage</h2>
                     <div className="space-y-4">
                         {stats?.recentLogs?.map((log: any) => (

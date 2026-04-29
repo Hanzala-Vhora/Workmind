@@ -209,13 +209,13 @@ export const Dashboard: React.FC = () => {
 
           {/* Wallet / Credits Section */}
           <div className="mt-4 px-2">
-            <div className={`rounded-xl p-3 text-white shadow-sm transition-all ${userProfile?.credits <= 0 ? 'bg-red-600' : 'bg-white/10'}`}>
+            <div className={`rounded-xl p-3 text-white shadow-sm transition-all ${userProfile?.credits <= 0 ? 'bg-red-600' : 'bg-gray-900/90 border border-white/10'}`}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Credits</span>
-                <Zap className={`w-3 h-3 ${userProfile?.credits <= 0 ? 'text-white animate-pulse' : 'text-cyan-electric fill-cyan-electric'}`} />
+                <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Credits Balance</span>
+                <Zap className={`w-3 h-3 ${userProfile?.credits <= 0 ? 'text-white animate-pulse' : 'text-amber-400 fill-amber-400'}`} />
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-xl font-black">{userProfile?.credits?.toFixed(1) || '0.0'}</span>
+                <span className="text-xl font-black text-white">{userProfile?.credits?.toFixed(1) || '0.0'}</span>
               </div>
               {userProfile?.credits <= 0 && (
                 <p className="text-[9px] mt-2 font-bold bg-black/20 p-1.5 rounded leading-tight border border-white/10 text-center">

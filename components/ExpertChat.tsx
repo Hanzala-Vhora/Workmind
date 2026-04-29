@@ -474,17 +474,17 @@ export const ExpertChat: React.FC = () => {
         <div className="p-4 border-t border-gray-200 bg-gray-50/50">
           {/* Wallet / Credits Section */}
           <div className="mb-4 px-2">
-            <div className={`rounded-xl p-3 text-white shadow-sm transition-all ${userProfile?.credits <= 0 ? 'bg-red-600' : 'bg-gradient-to-br from-indigo-500 to-purple-600'}`}>
+            <div className={`rounded-xl p-3 text-white shadow-sm transition-all ${userProfile?.credits <= 0 ? 'bg-red-600' : 'bg-gray-900 border border-gray-800'}`}>
               <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider opacity-80">Credits</span>
-                <Zap className={`w-3 h-3 ${userProfile?.credits <= 0 ? 'text-white animate-pulse' : 'text-amber-300 fill-amber-300'}`} />
+                <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Credits Balance</span>
+                <Zap className={`w-3 h-3 ${userProfile?.credits <= 0 ? 'text-white animate-pulse' : 'text-amber-400 fill-amber-400'}`} />
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-xl font-black">{userProfile?.credits?.toFixed(1) || '0.0'}</span>
+                <span className="text-xl font-black text-white">{userProfile?.credits?.toFixed(1) || '0.0'}</span>
               </div>
               {userProfile?.credits <= 0 && (
-                <p className="text-[9px] mt-2 font-bold bg-black/10 p-2 rounded leading-tight border border-white/10">
-                  WALLET EMPTY. Please contact admin to add credits.
+                <p className="text-[9px] mt-2 font-bold bg-black/20 p-2 rounded leading-tight border border-white/10">
+                  WALLET EMPTY. CONTACT ADMIN.
                 </p>
               )}
             </div>
