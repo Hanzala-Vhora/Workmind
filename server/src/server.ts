@@ -66,8 +66,8 @@ const startServer = () => {
 };
 
 if (process.env.NODE_ENV === 'production' && cluster.isPrimary) {
-  const numCPUs = cpus().length;
-  console.log(`Primary ${process.pid} is running. Forking ${numCPUs} workers...`);
+  const numCPUs = Math.min(cpus().length, 2);
+  console.log(`Primary ${process.pid} is running. Forking ${numCPUs} workers to save memory...`);
 
   for (let i = 0; i < numCPUs; i++) {
     cluster.fork();
