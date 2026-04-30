@@ -12,6 +12,7 @@ export const AdminDashboard: React.FC = () => {
     const [search, setSearch] = useState('');
     const [assignModal, setAssignModal] = useState<{ show: boolean; userId: string; email: string }>({ show: false, userId: '', email: '' });
     const [creditAmount, setCreditAmount] = useState('100');
+    const [permissionsModal, setPermissionsModal] = useState<{ show: boolean; userId: string; email: string; allowedModels: string[] }>({ show: false, userId: '', email: '', allowedModels: [] });
     const [systemSettings, setSystemSettings] = useState<{ defaultProvider: string; defaultModel: string }>({ defaultProvider: '', defaultModel: '' });
     const [currentPage, setCurrentPage] = useState(1);
     const logsPerPage = 10;
