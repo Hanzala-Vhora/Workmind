@@ -89,21 +89,42 @@ router.get('/dashboard-stats', isAdmin, async (req, res) => {
             _count: { id: true }
         });
 
-        const recentLogs = await prisma.usageLog.findMany({
-            take: 50,
-            orderBy: { createdAt: 'desc' },
-            include: {
-                user: {
-                    select: { email: true }
-                }
-            }
-        });
-
         res.json({
             totalUsers: stats._count.id,
             totalPlatformCostUSD: stats._sum.totalCostUSD || 0,
-            totalCreditsInCirculation: stats._sum.credits || 0,
-            recentLogs
+            totalCreditsInCirculation: stats._sum.credits || 0
+        });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET /api/admin/usage-logs (Paginated)
+router.get('/usage-logs', isAdmin, async (req, res) => {
+    try {
+        const page = parseInt(req.query.page as string) || 1;
+        const limit = parseInt(req.query.limit as string) || 10;
+        const skip = (page - 1) * limit;
+
+        const [logs, total] = await Promise.all([
+            prisma.usageLog.findMany({
+                skip,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    user: {
+                        select: { email: true }
+                    }
+                }
+            }),
+            prisma.usageLog.count()
+        ]);
+
+        res.json({
+            logs,
+            total,
+            page,
+            totalPages: Math.ceil(total / limit)
         });
     } catch (error: any) {
         res.status(500).json({ error: error.message });

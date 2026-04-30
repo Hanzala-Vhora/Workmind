@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Users, CreditCard, Activity, ArrowLeft, Search, Plus, TrendingUp, AlertCircle, Database, Zap } from 'lucide-react';
+import { Users, CreditCard, Activity, ArrowLeft, Search, Plus, TrendingUp, AlertCircle, Database, Zap, Cpu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export const AdminDashboard: React.FC = () => {
@@ -12,8 +12,11 @@ export const AdminDashboard: React.FC = () => {
     const [search, setSearch] = useState('');
     const [assignModal, setAssignModal] = useState<{ show: boolean; userId: string; email: string }>({ show: false, userId: '', email: '' });
     const [creditAmount, setCreditAmount] = useState('100');
-    const [permissionsModal, setPermissionsModal] = useState<{ show: boolean; userId: string; email: string; allowedModels: string[] }>({ show: false, userId: '', email: '', allowedModels: [] });
     const [systemSettings, setSystemSettings] = useState<{ defaultProvider: string; defaultModel: string }>({ defaultProvider: '', defaultModel: '' });
+    const [currentPage, setCurrentPage] = useState(1);
+    const logsPerPage = 10;
+    const [logsData, setLogsData] = useState<{ logs: any[]; total: number; totalPages: number }>({ logs: [], total: 0, totalPages: 0 });
+    const [logsLoading, setLogsLoading] = useState(false);
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -42,9 +45,30 @@ export const AdminDashboard: React.FC = () => {
         }
     };
 
+    const fetchUsageLogs = async (page: number) => {
+        if (userProfile?.role !== 'admin') return;
+        setLogsLoading(true);
+        try {
+            const headers = { 'x-user-role': 'admin' };
+            const res = await fetch(`${API_URL}/api/admin/usage-logs?page=${page}&limit=${logsPerPage}`, { headers });
+            if (res.ok) {
+                const data = await res.json();
+                setLogsData(data);
+            }
+        } catch (err) {
+            console.error("Logs fetch error", err);
+        } finally {
+            setLogsLoading(false);
+        }
+    };
+
     useEffect(() => {
         fetchAdminData();
     }, [userProfile]);
+
+    useEffect(() => {
+        fetchUsageLogs(currentPage);
+    }, [currentPage, userProfile]);
 
     const handleAssignCredits = async () => {
         try {
@@ -182,7 +206,7 @@ export const AdminDashboard: React.FC = () => {
                             <Activity className="w-5 h-5" />
                         </div>
                         <p className="text-sm font-medium text-gray-500">Total AI Messages</p>
-                        <p className="text-2xl font-black text-gray-900">{stats?.recentLogs?.length || 0}+</p>
+                        <p className="text-2xl font-black text-gray-900">{logsData.total || 0}</p>
                     </div>
                 </div>
 
@@ -345,26 +369,91 @@ export const AdminDashboard: React.FC = () => {
 
                 {/* Recent Usage Logs */}
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mt-6">
-                    <h2 className="font-bold text-gray-900 mb-4">Recent Platform Usage</h2>
-                    <div className="space-y-4">
-                        {stats?.recentLogs?.map((log: any) => (
-                            <div key={log.id} className="flex items-center justify-between p-3 rounded-xl bg-gray-50/50 border border-gray-100">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm border border-gray-100">
-                                        <Activity className="w-4 h-4 text-indigo-500" />
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="font-bold text-gray-900">Recent Platform Usage</h2>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-400 font-medium">Page {currentPage} of {logsData.totalPages || 1}</span>
+                            {logsLoading && <Loader className="w-3 h-3 animate-spin text-indigo-500" />}
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-4 min-h-[100px] relative">
+                        {logsLoading && (
+                            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center rounded-2xl">
+                                <Loader className="w-8 h-8 animate-spin text-indigo-500" />
+                            </div>
+                        )}
+                        
+                        {logsData.logs.map((log: any) => (
+                            <div key={log.id} className="flex items-center justify-between p-4 rounded-2xl bg-gray-50/50 border border-gray-100 hover:border-indigo-100 transition-all group">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm border border-gray-100 group-hover:scale-110 transition-transform">
+                                        <Activity className="w-5 h-5 text-indigo-500" />
                                     </div>
                                     <div>
-                                        <p className="text-xs font-bold text-gray-900">{log.user?.email || 'Unknown User'}</p>
-                                        <p className="text-[10px] text-gray-400">{new Date(log.createdAt).toLocaleString()}</p>
+                                        <p className="text-sm font-bold text-gray-900">{log.user?.email || 'Unknown User'}</p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <p className="text-[10px] text-gray-400 font-medium">{new Date(log.createdAt).toLocaleString()}</p>
+                                            <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                            <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">{log.modelId?.split('/').pop() || 'AI'}</p>
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-xs font-black text-gray-900">-{log.creditsUsed?.toFixed(2)} <span className="text-[8px] uppercase text-gray-400">Credits</span></p>
-                                    <p className="text-[9px] text-red-500 font-medium">${log.costUSD?.toFixed(4)} cost</p>
+                                    <p className="text-sm font-black text-gray-900">-{log.creditsUsed?.toFixed(2)} <span className="text-[10px] uppercase text-gray-400">Credits</span></p>
+                                    <p className="text-[10px] text-red-500 font-bold mt-0.5">${log.costUSD?.toFixed(4)} cost</p>
                                 </div>
                             </div>
                         ))}
+
+                        {logsData.logs.length === 0 && !logsLoading && (
+                            <div className="text-center py-12">
+                                <Activity className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                                <p className="text-gray-400 text-sm">No activity logs found.</p>
+                            </div>
+                        )}
                     </div>
+
+                    {/* Pagination Controls */}
+                    {logsData.totalPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 mt-8 pt-6 border-t border-gray-50">
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                disabled={currentPage === 1}
+                                className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl transition-all"
+                            >
+                                Previous
+                            </button>
+                            
+                            <div className="flex items-center gap-1">
+                                {[...Array(logsData.totalPages)].map((_, i) => {
+                                    const page = i + 1;
+                                    if (page === 1 || page === logsData.totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                                        return (
+                                            <button
+                                                key={page}
+                                                onClick={() => setCurrentPage(page)}
+                                                className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${currentPage === page ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-gray-400 hover:bg-gray-100'}`}
+                                            >
+                                                {page}
+                                            </button>
+                                        );
+                                    } else if (page === currentPage - 2 || page === currentPage + 2) {
+                                        return <span key={page} className="text-gray-300 px-1">...</span>;
+                                    }
+                                    return null;
+                                })}
+                            </div>
+
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.min(logsData.totalPages, prev + 1))}
+                                disabled={currentPage === logsData.totalPages}
+                                className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl transition-all"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    )}
                 </div>
             </main>
 
