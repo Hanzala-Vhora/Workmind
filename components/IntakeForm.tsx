@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useApp } from '../context/AppContext';
 import { Department, IntakeData } from '../types';
-import { ArrowRight, Check, Loader, Building2, Globe, Rocket, Target, Zap, TrendingUp, DollarSign, HelpCircle, Flag } from 'lucide-react';
+import { ArrowRight, Check, Loader, Building2, Globe, Rocket, Target, Zap, TrendingUp, DollarSign, HelpCircle, Flag, Briefcase, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../services/apiClient';
 import { clsx } from 'clsx';
@@ -75,7 +75,6 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Simple validation
     const newErrors: Record<string, string> = {};
     if (!formData.business_name) newErrors.business_name = 'Required';
     if (!formData.stage) newErrors.stage = 'Required';
@@ -84,6 +83,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -110,13 +110,11 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
 
       await apiClient.intakeForms.create(intakeFormData);
       
-      // Store locally
       setClientData({
         business_name: formData.business_name,
         industry: formData.industries[0],
         stage: formData.stage,
         selected_departments: formData.help_needed,
-        // ... map other fields as needed for the context
       } as any);
 
       navigate('/dashboard');
@@ -131,201 +129,285 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
   if (!isLoaded) return null;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-20 px-4">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-12 animate-fadeIn">
-          <h1 className="text-4xl font-bold text-brand-navy mb-4">
-            {isAddMode ? 'Add a new Expert' : 'Tell us about your business'}
+    <div className="min-h-screen bg-slate-50/50 py-16 px-4 selection:bg-indigo-100 selection:text-indigo-900">
+      <div className="max-w-3xl mx-auto">
+        {/* Header Section */}
+        <div className="text-center mb-16 space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-bold uppercase tracking-wider mb-2">
+            <Sparkles className="w-3 h-3" />
+            AI Workspace Configuration
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+            {isAddMode ? 'Expand your AI Team' : 'Build your Digital Twin'}
           </h1>
-          <p className="text-ui-slate text-lg">
-            {isAddMode ? 'Configure an additional AI department for your workspace.' : 'Help us customize your AI Workmind OS experience.'}
+          <p className="text-slate-500 text-lg max-w-xl mx-auto font-medium">
+            {isAddMode 
+              ? 'Configure specialized AI experts to handle specific departments in your business.' 
+              : 'Tell us about your business to help your AI agents understand your unique voice and goals.'}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-12 bg-white p-10 rounded-3xl shadow-xl shadow-brand-navy/5 border border-ui-border">
+        <form onSubmit={handleSubmit} className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
           
-          {/* 1. Business Name */}
-          <FloatingInput 
-            label="Business Name"
-            placeholder="e.g., Google.com"
-            value={formData.business_name}
-            onChange={v => update('business_name', v)}
-            icon={<Building2 className="w-5 h-5" />}
-            error={errors.business_name}
-          />
-
-          {/* 2. What does your business do? */}
-          <FloatingTextArea 
-            label="What does your business do?"
-            placeholder="e.g., We help restaurants get more online orders"
-            value={formData.business_description}
-            onChange={v => update('business_description', v)}
-            icon={<Globe className="w-5 h-5" />}
-          />
-
-          {/* 3. Industry (Multi Select) */}
-          <div className="space-y-4">
-            <label className="flex items-center gap-2 text-sm font-semibold text-brand-navy uppercase tracking-wider">
-              <Rocket className="w-4 h-4 text-cyan-bio" />
-              Industry
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {INDUSTRIES.map(industry => (
-                <button
-                  key={industry}
-                  type="button"
-                  onClick={() => toggleMulti('industries', industry)}
-                  className={clsx(
-                    "px-4 py-2 rounded-full border-2 transition-all duration-200 text-sm font-medium",
-                    formData.industries.includes(industry)
-                      ? "bg-cyan-bio border-cyan-bio text-white shadow-md shadow-cyan-bio/20"
-                      : "bg-white border-ui-border text-ui-slate hover:border-cyan-bio/50 hover:text-cyan-bio"
-                  )}
-                >
-                  {industry}
-                </button>
-              ))}
-            </div>
-            {errors.industries && <p className="text-xs text-red-500 mt-1">{errors.industries}</p>}
-          </div>
-
-          {/* 4. Target Customer */}
-          <FloatingInput 
-            label="Target Customer"
-            placeholder="e.g., Small business owners"
-            value={formData.target_customer}
-            onChange={v => update('target_customer', v)}
-            icon={<Target className="w-5 h-5" />}
-          />
-
-          {/* 5. What makes you different? */}
-          <FloatingInput 
-            label="What makes you different?"
-            placeholder="e.g., Faster delivery + AI automation"
-            value={formData.differentiator}
-            onChange={v => update('differentiator', v)}
-            icon={<Zap className="w-5 h-5" />}
-          />
-
-          {/* 6. Business Stage (Select Dropdown) */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <label className="flex items-center gap-2 text-sm font-semibold text-brand-navy uppercase tracking-wider">
-                <TrendingUp className="w-4 h-4 text-neural" />
-                Business Stage
-              </label>
-              <select 
-                value={formData.stage}
-                onChange={e => update('stage', e.target.value)}
-                className="w-full bg-white border-2 border-ui-border rounded-xl px-4 py-3 outline-none focus:border-neural transition-colors appearance-none cursor-pointer"
-              >
-                <option value="" disabled>Select Stage</option>
-                {BUSINESS_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              {errors.stage && <p className="text-xs text-red-500 mt-1">{errors.stage}</p>}
+          {/* Section 1: Core Identity */}
+          <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-200 space-y-10">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-200">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Core Identity</h2>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">Business Basics</p>
+              </div>
             </div>
 
-            {/* 7. Revenue Model (Select Dropdown) */}
-            <div className="space-y-4">
-              <label className="flex items-center gap-2 text-sm font-semibold text-brand-navy uppercase tracking-wider">
-                <DollarSign className="w-4 h-4 text-green-500" />
-                Revenue Model
-              </label>
-              <select 
-                value={formData.revenue_model}
-                onChange={e => update('revenue_model', e.target.value)}
-                className="w-full bg-white border-2 border-ui-border rounded-xl px-4 py-3 outline-none focus:border-green-500 transition-colors appearance-none cursor-pointer"
-              >
-                <option value="" disabled>Select Model</option>
-                {REVENUE_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
+            <div className="grid grid-cols-1 gap-10">
+              {/* 1. Business Name */}
+              <FloatingInput 
+                label="Business Name"
+                placeholder="e.g., Apple Inc."
+                value={formData.business_name}
+                onChange={v => update('business_name', v)}
+                icon={<Building2 className="w-5 h-5" />}
+                error={errors.business_name}
+              />
+
+              {/* 2. What does your business do? */}
+              <FloatingTextArea 
+                label="Business Mission & Description"
+                placeholder="e.g., We build high-end consumer electronics that empower people to create..."
+                value={formData.business_description}
+                onChange={v => update('business_description', v)}
+                icon={<Globe className="w-5 h-5" />}
+              />
             </div>
           </div>
 
-          {/* 8. Help Needed (Multi Select) */}
-          <div className="space-y-4">
-            <label className="flex items-center gap-2 text-sm font-semibold text-brand-navy uppercase tracking-wider">
-              <HelpCircle className="w-4 h-4 text-purple-500" />
-              What do you need help with?
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {DEPARTMENTS.map(dept => (
-                <button
-                  key={dept}
-                  type="button"
-                  onClick={() => toggleMulti('help_needed', dept)}
-                  className={clsx(
-                    "flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all duration-200 text-sm font-semibold text-left",
-                    formData.help_needed.includes(dept)
-                      ? "bg-purple-50 border-purple-500 text-purple-700 shadow-sm"
-                      : "bg-white border-ui-border text-ui-slate hover:border-purple-300 hover:bg-purple-50/30"
-                  )}
-                >
-                  {dept}
-                  {formData.help_needed.includes(dept) && <Check className="w-4 h-4" />}
-                </button>
-              ))}
+          {/* Section 2: Market Context */}
+          <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-200 space-y-10">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-100">
+                <Rocket className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Market Context</h2>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">Positioning & Strategy</p>
+              </div>
             </div>
-            {errors.help_needed && <p className="text-xs text-red-500 mt-1">{errors.help_needed}</p>}
+
+            <div className="space-y-10">
+              {/* 3. Industry (Multi Select) */}
+              <div className="space-y-4">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
+                  Primary Industries
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {INDUSTRIES.map(industry => (
+                    <button
+                      key={industry}
+                      type="button"
+                      onClick={() => toggleMulti('industries', industry)}
+                      className={clsx(
+                        "px-6 py-2.5 rounded-2xl border-2 transition-all duration-300 text-sm font-bold",
+                        formData.industries.includes(industry)
+                          ? "bg-slate-900 border-slate-900 text-white shadow-lg shadow-slate-200 scale-105"
+                          : "bg-slate-50 border-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                      )}
+                    >
+                      {industry}
+                    </button>
+                  ))}
+                </div>
+                {errors.industries && <p className="text-xs text-red-500 mt-2 font-bold flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.industries}</p>}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <FloatingInput 
+                  label="Target Customer"
+                  placeholder="e.g., Mid-market CEOs"
+                  value={formData.target_customer}
+                  onChange={v => update('target_customer', v)}
+                  icon={<Target className="w-5 h-5" />}
+                />
+                <FloatingInput 
+                  label="Your Unique Differentiator"
+                  placeholder="e.g., 24/7 Human-in-the-loop AI"
+                  value={formData.differentiator}
+                  onChange={v => update('differentiator', v)}
+                  icon={<Zap className="w-5 h-5" />}
+                />
+              </div>
+            </div>
           </div>
 
-          {/* 9. Your Current Goal */}
-          <FloatingTextArea 
-            label="Your Current Goal"
-            placeholder="e.g., Get more leads in 3 months"
-            value={formData.goal}
-            onChange={v => update('goal', v)}
-            icon={<Flag className="w-5 h-5" />}
-          />
+          {/* Section 3: Operations */}
+          <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-200 space-y-10">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-100">
+                <TrendingUp className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Operations</h2>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">Growth & Revenue</p>
+              </div>
+            </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-4 bg-brand-navy text-white rounded-2xl font-bold text-lg hover:bg-brand-navy/90 transition-all shadow-xl shadow-brand-navy/20 flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader className="w-5 h-5 animate-spin" />
-                Setting up your OS...
-              </>
-            ) : (
-              <>
-                Get Started
-                <ArrowRight className="w-5 h-5" />
-              </>
-            )}
-          </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              <div className="space-y-4">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
+                  Business Stage
+                </label>
+                <div className="relative">
+                  <select 
+                    value={formData.stage}
+                    onChange={e => update('stage', e.target.value)}
+                    className="w-full bg-slate-50 border-2 border-transparent rounded-2xl px-5 py-4 outline-none focus:bg-white focus:border-amber-500 transition-all appearance-none cursor-pointer font-bold text-slate-700"
+                  >
+                    <option value="" disabled>Select Stage</option>
+                    {BUSINESS_STAGES.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <TrendingUp className="w-4 h-4 text-slate-400" />
+                  </div>
+                </div>
+                {errors.stage && <p className="text-xs text-red-500 mt-2 font-bold">{errors.stage}</p>}
+              </div>
+
+              <div className="space-y-4">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
+                  Revenue Model
+                </label>
+                <div className="relative">
+                  <select 
+                    value={formData.revenue_model}
+                    onChange={e => update('revenue_model', e.target.value)}
+                    className="w-full bg-slate-50 border-2 border-transparent rounded-2xl px-5 py-4 outline-none focus:bg-white focus:border-amber-500 transition-all appearance-none cursor-pointer font-bold text-slate-700"
+                  >
+                    <option value="" disabled>Select Model</option>
+                    {REVENUE_MODELS.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                  <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <DollarSign className="w-4 h-4 text-slate-400" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 4: AI Deployment */}
+          <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-200 space-y-10">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-100">
+                <HelpCircle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">AI Deployment</h2>
+                <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">Expert Configuration</p>
+              </div>
+            </div>
+
+            <div className="space-y-10">
+              <div className="space-y-4">
+                <label className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
+                  Which experts do you need?
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {DEPARTMENTS.map(dept => (
+                    <button
+                      key={dept}
+                      type="button"
+                      onClick={() => toggleMulti('help_needed', dept)}
+                      className={clsx(
+                        "flex flex-col items-center justify-center p-6 rounded-[1.5rem] border-2 transition-all duration-300 text-center gap-3 group",
+                        formData.help_needed.includes(dept)
+                          ? "bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-200 scale-105"
+                          : "bg-slate-50 border-transparent text-slate-500 hover:bg-slate-100 hover:text-indigo-600 hover:border-indigo-100"
+                      )}
+                    >
+                      <div className={clsx(
+                        "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+                        formData.help_needed.includes(dept) ? "bg-white/20" : "bg-white shadow-sm"
+                      )}>
+                        <Briefcase className={clsx("w-5 h-5", formData.help_needed.includes(dept) ? "text-white" : "text-indigo-500")} />
+                      </div>
+                      <span className="text-xs font-black uppercase tracking-tight">{dept}</span>
+                      {formData.help_needed.includes(dept) && (
+                        <div className="absolute top-3 right-3 bg-white rounded-full p-0.5">
+                          <Check className="w-3 h-3 text-indigo-600 stroke-[3]" />
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {errors.help_needed && <p className="text-xs text-red-500 mt-4 font-bold">{errors.help_needed}</p>}
+              </div>
+
+              <FloatingTextArea 
+                label="Your Immediate 90-Day Goal"
+                placeholder="e.g., Automate client onboarding and reach $50k MRR..."
+                value={formData.goal}
+                onChange={v => update('goal', v)}
+                icon={<Flag className="w-5 h-5" />}
+              />
+            </div>
+          </div>
+
+          {/* Submit Button Area */}
+          <div className="pt-8 text-center space-y-6">
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="group relative w-full max-w-md mx-auto py-5 bg-slate-900 text-white rounded-[2rem] font-black text-lg hover:bg-black transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-slate-200 flex items-center justify-center gap-3 disabled:opacity-50 overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 to-emerald-500/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+              {isSubmitting ? (
+                <>
+                  <Loader className="w-6 h-6 animate-spin text-indigo-400" />
+                  <span>Calibrating Neural Engine...</span>
+                </>
+              ) : (
+                <>
+                  <span>Initialize Workmind OS</span>
+                  <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </button>
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">
+              Secured with Clerk Enterprise Encryption
+            </p>
+          </div>
         </form>
       </div>
     </div>
   );
 };
 
-// UI Components with Animations
+// Re-engineered Shadcn-style components
 const FloatingInput = ({ label, value, onChange, placeholder, icon, error }: any) => {
   const [focused, setFocused] = useState(false);
-  const active = focused || value.length > 0;
+  const active = focused || (value && value.length > 0);
 
   return (
-    <div className="relative group">
+    <div className="relative w-full">
       <div className={clsx(
-        "flex items-center gap-4 border-2 rounded-2xl px-5 py-4 transition-all duration-300",
-        error ? "border-red-500 bg-red-50/50" : focused ? "border-cyan-bio ring-4 ring-cyan-bio/10 bg-white" : "border-ui-border group-hover:border-ui-slate/30 bg-white"
+        "relative flex items-center gap-4 border-2 rounded-2xl px-6 py-5 transition-all duration-300",
+        error ? "border-red-500 bg-red-50/50" : focused ? "border-indigo-500 ring-4 ring-indigo-500/5 bg-white shadow-lg shadow-indigo-100/20" : "border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200"
       )}>
-        <div className={clsx("transition-colors duration-300 shrink-0", focused ? "text-cyan-bio" : "text-ui-slate")}>
+        <div className={clsx("transition-colors duration-300 shrink-0", focused ? "text-indigo-500" : "text-slate-400")}>
           {icon}
         </div>
         <div className="relative flex-1">
           <label className={clsx(
-            "absolute left-0 transition-all duration-300 pointer-events-none select-none px-1",
-            active ? "-top-7 -left-1 text-xs font-bold text-cyan-bio" : "top-0 text-ui-slate text-base"
+            "absolute left-0 transition-all duration-300 pointer-events-none select-none px-1 z-10",
+            active 
+              ? "-top-[2.2rem] -left-1 text-[10px] font-black text-indigo-600 uppercase tracking-widest opacity-100" 
+              : "top-0 text-slate-400 text-lg font-medium opacity-100"
           )}>
             {label}
           </label>
           <input
             type="text"
-            className="w-full bg-transparent outline-none text-brand-navy font-semibold text-lg placeholder-transparent focus:placeholder-ui-slate/30"
+            className="w-full bg-transparent outline-none text-slate-900 font-bold text-lg placeholder-transparent focus:placeholder-slate-300"
             placeholder={placeholder}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
@@ -334,33 +416,35 @@ const FloatingInput = ({ label, value, onChange, placeholder, icon, error }: any
           />
         </div>
       </div>
-      {error && <p className="text-xs text-red-500 mt-1 ml-2 font-medium">{error}</p>}
+      {error && <p className="text-[10px] text-red-500 mt-2 ml-4 font-black uppercase tracking-wider">{error}</p>}
     </div>
   );
 };
 
 const FloatingTextArea = ({ label, value, onChange, placeholder, icon }: any) => {
   const [focused, setFocused] = useState(false);
-  const active = focused || value.length > 0;
+  const active = focused || (value && value.length > 0);
 
   return (
-    <div className="relative group">
+    <div className="relative w-full">
       <div className={clsx(
-        "flex items-start gap-4 border-2 rounded-2xl px-5 py-4 transition-all duration-300",
-        focused ? "border-cyan-bio ring-4 ring-cyan-bio/10 bg-white" : "border-ui-border group-hover:border-ui-slate/30 bg-white"
+        "relative flex items-start gap-4 border-2 rounded-[2rem] px-6 py-5 transition-all duration-300",
+        focused ? "border-indigo-500 ring-4 ring-indigo-500/5 bg-white shadow-lg shadow-indigo-100/20" : "border-slate-100 bg-slate-50/50 hover:bg-white hover:border-slate-200"
       )}>
-        <div className={clsx("mt-1 transition-colors duration-300 shrink-0", focused ? "text-cyan-bio" : "text-ui-slate")}>
+        <div className={clsx("mt-1 transition-colors duration-300 shrink-0", focused ? "text-indigo-500" : "text-slate-400")}>
           {icon}
         </div>
         <div className="relative flex-1">
           <label className={clsx(
-            "absolute left-0 transition-all duration-300 pointer-events-none select-none px-1",
-            active ? "-top-7 -left-1 text-xs font-bold text-cyan-bio" : "top-1 text-ui-slate text-base"
+            "absolute left-0 transition-all duration-300 pointer-events-none select-none px-1 z-10",
+            active 
+              ? "-top-[2.2rem] -left-1 text-[10px] font-black text-indigo-600 uppercase tracking-widest opacity-100" 
+              : "top-0 text-slate-400 text-lg font-medium opacity-100"
           )}>
             {label}
           </label>
           <textarea
-            className="w-full bg-transparent outline-none text-brand-navy font-semibold text-lg placeholder-transparent focus:placeholder-ui-slate/30 h-32 resize-none pt-1"
+            className="w-full bg-transparent outline-none text-slate-900 font-bold text-lg placeholder-transparent focus:placeholder-slate-300 h-32 resize-none pt-0.5 leading-relaxed"
             placeholder={placeholder}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
@@ -372,3 +456,7 @@ const FloatingTextArea = ({ label, value, onChange, placeholder, icon }: any) =>
     </div>
   );
 };
+
+const AlertCircle = ({ className }: { className?: string }) => (
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+);
