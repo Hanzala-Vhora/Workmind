@@ -279,14 +279,23 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'Missing department, message, or userId' });
         }
 
-        // Check Credits
+        // Check Credits and Permissions
         const user = await prisma.user.findUnique({ where: { id: userId } });
+        
         if (user && user.credits <= 0) {
-            // Set headers for SSE so we can send the error
             res.setHeader('Content-Type', 'text/event-stream');
             res.setHeader('Cache-Control', 'no-cache');
             res.setHeader('Connection', 'keep-alive');
             res.write(`data: ${JSON.stringify({ error: 'Insufficient credits. Please top up your wallet.' })}\n\n`);
+            return res.end();
+        }
+
+        // Check if provider is allowed
+        if (user && modelProvider && !user.allowedModels.includes(modelProvider)) {
+            res.setHeader('Content-Type', 'text/event-stream');
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Connection', 'keep-alive');
+            res.write(`data: ${JSON.stringify({ error: `Access Denied: You are not authorized to use ${modelProvider} models.` })}\n\n`);
             return res.end();
         }
 

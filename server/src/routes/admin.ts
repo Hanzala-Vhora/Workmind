@@ -29,6 +29,7 @@ router.get('/users', isAdmin, async (req, res) => {
                 credits: true,
                 totalCostUSD: true,
                 role: true,
+                allowedModels: true,
                 createdAt: true
             }
         });
@@ -57,6 +58,24 @@ router.post('/assign-credits', isAdmin, async (req, res) => {
         });
         
         res.json({ success: true, newBalance: user.credits });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// POST /api/admin/update-user-permissions
+router.post('/update-user-permissions', isAdmin, async (req, res) => {
+    try {
+        const { userId, allowedModels } = req.body;
+        
+        const user = await prisma.user.update({
+            where: { id: userId },
+            data: {
+                allowedModels: allowedModels
+            }
+        });
+        
+        res.json({ success: true, user });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

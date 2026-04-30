@@ -12,6 +12,8 @@ export const AdminDashboard: React.FC = () => {
     const [search, setSearch] = useState('');
     const [assignModal, setAssignModal] = useState<{ show: boolean; userId: string; email: string }>({ show: false, userId: '', email: '' });
     const [creditAmount, setCreditAmount] = useState('100');
+    const [permissionsModal, setPermissionsModal] = useState<{ show: boolean; userId: string; email: string; allowedModels: string[] }>({ show: false, userId: '', email: '', allowedModels: [] });
+    const [systemSettings, setSystemSettings] = useState<{ defaultProvider: string; defaultModel: string }>({ defaultProvider: '', defaultModel: '' });
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -27,6 +29,12 @@ export const AdminDashboard: React.FC = () => {
 
             if (usersRes.ok) setUsers(await usersRes.json());
             if (statsRes.ok) setStats(await statsRes.json());
+
+            const settingsRes = await fetch(`${API_URL}/api/settings/ai-config`, { headers });
+            if (settingsRes.ok) {
+                const data = await settingsRes.json();
+                setSystemSettings({ defaultProvider: data.modelProvider, defaultModel: data.model });
+            }
         } catch (err) {
             console.error("Admin fetch error", err);
         } finally {
@@ -57,6 +65,42 @@ export const AdminDashboard: React.FC = () => {
             console.error("Assign error", err);
         }
     };
+    
+    const handleUpdatePermissions = async () => {
+        try {
+            const res = await fetch(`${API_URL}/api/admin/update-user-permissions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-user-role': 'admin' },
+                body: JSON.stringify({
+                    userId: permissionsModal.userId,
+                    allowedModels: permissionsModal.allowedModels
+                })
+            });
+            if (res.ok) {
+                setPermissionsModal({ show: false, userId: '', email: '', allowedModels: [] });
+                fetchAdminData();
+            }
+        } catch (err) {
+            console.error("Permission update error", err);
+        }
+    };
+
+    const handleUpdateGlobalSettings = async () => {
+        try {
+            const headers = { 'Content-Type': 'application/json', 'x-user-role': 'admin' };
+            await fetch(`${API_URL}/api/settings/ai-config`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    modelProvider: systemSettings.defaultProvider,
+                    model: systemSettings.defaultModel
+                })
+            });
+            alert("Global settings updated!");
+        } catch (err) {
+            console.error("Global settings update error", err);
+        }
+    };
 
     if (userProfile?.role !== 'admin') {
         return (
@@ -84,11 +128,38 @@ export const AdminDashboard: React.FC = () => {
                     </h1>
                 </div>
                 <div className="flex items-center gap-3">
+                    <button onClick={handleUpdateGlobalSettings} className="text-xs px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-black transition-all">Save All Changes</button>
                     <span className="text-xs font-medium text-gray-500">Platform Cost: <span className="text-red-600 font-bold">${stats?.totalPlatformCostUSD?.toFixed(2) || '0.00'}</span></span>
                 </div>
             </header>
 
             <main className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
+                {/* Global Settings Section */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><Plus className="w-4 h-4 text-indigo-500" /> Global Default Provider</h2>
+                        <select 
+                            className="w-full bg-gray-50 border-transparent rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500"
+                            value={systemSettings.defaultProvider}
+                            onChange={(e) => setSystemSettings({ ...systemSettings, defaultProvider: e.target.value })}
+                        >
+                            <option value="gemini">Google Gemini</option>
+                            <option value="openai">OpenAI (GPT-4o)</option>
+                            <option value="claude">Anthropic Claude</option>
+                        </select>
+                    </div>
+                    <div>
+                        <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><Activity className="w-4 h-4 text-indigo-500" /> Default Model ID</h2>
+                        <input 
+                            type="text"
+                            placeholder="e.g. gemini-2.0-flash-exp"
+                            className="w-full bg-gray-50 border-transparent rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500"
+                            value={systemSettings.defaultModel}
+                            onChange={(e) => setSystemSettings({ ...systemSettings, defaultModel: e.target.value })}
+                        />
+                    </div>
+                </div>
+
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
@@ -137,6 +208,7 @@ export const AdminDashboard: React.FC = () => {
                                 <tr>
                                     <th className="px-6 py-3">User</th>
                                     <th className="px-6 py-3 text-center">Credits Left</th>
+                                    <th className="px-6 py-3 text-center">Model Access</th>
                                     <th className="px-6 py-3 text-center">Cost to Us</th>
                                     <th className="px-6 py-3 text-right">Actions</th>
                                 </tr>
@@ -154,9 +226,25 @@ export const AdminDashboard: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
+                                            <div className="flex gap-1 justify-center">
+                                                {['gemini', 'openai', 'claude'].map(m => (
+                                                    <span key={m} className={`text-[8px] px-1.5 py-0.5 rounded uppercase font-bold ${u.allowedModels?.includes(m) ? 'bg-indigo-100 text-indigo-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                        {m.charAt(0)}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
                                             <span className="text-sm font-medium text-gray-600">${u.totalCostUSD?.toFixed(2)}</span>
                                         </td>
-                                        <td className="px-6 py-4 text-right">
+                                        <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                            <button
+                                                onClick={() => setPermissionsModal({ show: true, userId: u.id, email: u.email, allowedModels: u.allowedModels || [] })}
+                                                className="p-2 hover:bg-indigo-50 rounded-lg text-indigo-600 transition-colors"
+                                                title="Manage Permissions"
+                                            >
+                                                <Database className="w-4 h-4" />
+                                            </button>
                                             <button
                                                 onClick={() => setAssignModal({ show: true, userId: u.id, email: u.email })}
                                                 className="p-2 hover:bg-indigo-50 rounded-lg text-indigo-600 transition-colors"
@@ -173,7 +261,7 @@ export const AdminDashboard: React.FC = () => {
                 </div>
 
                 {/* Billing Model Info */}
-                <div className="bg-gradient-to-br from-gray-900 to-black rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden">
+                <div className="bg-slate-900 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden border border-slate-800">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-6">
@@ -194,11 +282,11 @@ export const AdminDashboard: React.FC = () => {
                                     </h3>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                                            <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Input Tokens</p>
+                                            <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Input Tokens</p>
                                             <p className="text-lg font-black">1 <span className="text-xs font-normal text-gray-400">Credit / 500 Tokens</span></p>
                                         </div>
                                         <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                                            <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Output Tokens</p>
+                                            <p className="text-[10px] text-slate-400 uppercase font-bold mb-1">Output Tokens</p>
                                             <p className="text-lg font-black">1 <span className="text-xs font-normal text-gray-400">Credit / 300 Tokens</span></p>
                                         </div>
                                     </div>
@@ -230,7 +318,7 @@ export const AdminDashboard: React.FC = () => {
                                 </h3>
                                 <div className="space-y-4">
                                     <div className="p-3 bg-black/40 rounded-xl">
-                                        <p className="text-[10px] text-gray-500 uppercase font-bold mb-2">Scenario: User sends 1,200 tokens & AI replies with 450 tokens</p>
+                                        <p className="text-[10px] text-slate-400 uppercase font-bold mb-2">Scenario: User sends 1,200 tokens & AI replies with 450 tokens</p>
                                         <div className="space-y-2 text-xs">
                                             <div className="flex justify-between">
                                                 <span>Input Charge (1200 / 500)</span>
@@ -309,6 +397,55 @@ export const AdminDashboard: React.FC = () => {
                                     className="flex-1 py-3 bg-indigo-600 text-white font-black rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all"
                                 >
                                     Assign Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Permissions Modal */}
+            {permissionsModal.show && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl animate-fadeIn">
+                        <h3 className="text-xl font-black text-gray-900 mb-2">Model Access</h3>
+                        <p className="text-sm text-gray-500 mb-6 font-medium">Configure allowed AI providers for <span className="text-indigo-600 font-bold">{permissionsModal.email}</span></p>
+
+                        <div className="space-y-4">
+                            {['gemini', 'openai', 'claude'].map(provider => (
+                                <label key={provider} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl cursor-pointer hover:bg-gray-100 transition-all border-2 border-transparent has-[:checked]:border-indigo-500 has-[:checked]:bg-white">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                                            <Cpu className="w-4 h-4 text-indigo-500" />
+                                        </div>
+                                        <span className="text-sm font-bold capitalize">{provider}</span>
+                                    </div>
+                                    <input 
+                                        type="checkbox"
+                                        className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                        checked={permissionsModal.allowedModels.includes(provider)}
+                                        onChange={(e) => {
+                                            const models = e.target.checked 
+                                                ? [...permissionsModal.allowedModels, provider]
+                                                : permissionsModal.allowedModels.filter(m => m !== provider);
+                                            setPermissionsModal({ ...permissionsModal, allowedModels: models });
+                                        }}
+                                    />
+                                </label>
+                            ))}
+
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => setPermissionsModal({ show: false, userId: '', email: '', allowedModels: [] })}
+                                    className="flex-1 py-3 font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleUpdatePermissions}
+                                    className="flex-1 py-3 bg-indigo-600 text-white font-black rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all"
+                                >
+                                    Save Rules
                                 </button>
                             </div>
                         </div>

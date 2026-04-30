@@ -22,11 +22,18 @@ export const ExpertChat: React.FC = () => {
   const [fetchedDocuments, setFetchedDocuments] = useState<StoredDocument[]>([]);
 
   const MODELS = [
+    { id: 'auto', name: 'Auto Select', provider: 'auto' },
     { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', provider: 'gemini' },
     { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', provider: 'gemini' },
     { id: 'claude-sonnet-4-20250514', name: 'Claude 3.5 Sonnet', provider: 'claude' },
     { id: 'gpt-4o', name: 'GPT-4o', provider: 'openai' },
   ];
+  
+  // Filter models based on user permissions
+  const availableModels = MODELS.filter(m => 
+    m.id === 'auto' || (userProfile?.allowedModels || []).includes(m.provider)
+  );
+
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [showModelMenu, setShowModelMenu] = useState(false);
 
@@ -191,8 +198,8 @@ export const ExpertChat: React.FC = () => {
           contextDocs: currentDocs,
           chatId: currentChatId, // Pass current ID if exists
           userId: user.id,
-          modelProvider: selectedModel.provider,
-          model: selectedModel.id
+          modelProvider: selectedModel.provider === 'auto' ? undefined : selectedModel.provider,
+          model: selectedModel.id === 'auto' ? undefined : selectedModel.id
         })
       });
 
@@ -526,6 +533,42 @@ export const ExpertChat: React.FC = () => {
             </div>
           </div>
           <div className="flex gap-2">
+            {/* Model Selector */}
+            <div className="relative">
+              <button
+                onClick={() => setShowModelMenu(!showModelMenu)}
+                className="text-sm font-bold px-4 py-2 rounded-full transition-all border bg-white text-gray-700 hover:bg-gray-50 border-gray-200 flex items-center gap-2"
+              >
+                <Cpu className="w-4 h-4 text-indigo-500" />
+                <span className="hidden lg:inline">{selectedModel.name}</span>
+                <ChevronDown className={`w-3 h-3 transition-transform ${showModelMenu ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showModelMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 z-[60] animate-fadeIn">
+                  <div className="px-4 py-2 border-b border-gray-50 mb-1">
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Select Brain Model</p>
+                  </div>
+                  {availableModels.map((model) => (
+                    <button
+                      key={model.id}
+                      onClick={() => {
+                        setSelectedModel(model);
+                        setShowModelMenu(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between group ${selectedModel.id === model.id ? 'bg-indigo-50 text-indigo-700' : 'text-gray-600 hover:bg-gray-50'}`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-bold">{model.name}</span>
+                        <span className="text-[9px] opacity-60 uppercase">{model.provider}</span>
+                      </div>
+                      {selectedModel.id === model.id && <div className="w-1.5 h-1.5 rounded-full bg-indigo-600" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button
               onClick={() => setShowContextRepo(!showContextRepo)}
               className={`text-sm font-medium px-4 py-2 rounded-full transition-all border flex items-center gap-2 ${showContextRepo ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-200'}`}
