@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { useApp } from '../context/AppContext';
-import { Department } from '../types';
+import { Department, IntakeData } from '../types';
 import { ArrowRight, Check, Loader, Building2, Globe, Rocket, Target, Zap, TrendingUp, DollarSign, HelpCircle, Flag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../services/apiClient';
@@ -10,23 +10,41 @@ import { clsx } from 'clsx';
 
 const DEPARTMENTS: Department[] = ['Sales', 'Marketing', 'Finance', 'Operations', 'HR', 'IT', 'Social Media', 'Procurement'];
 
+export const INITIAL_DATA: IntakeData = {
+  business_name: '', website: '', industry: '', sub_sector: '', business_model: 'B2B', stage: 'Growth', countries_served: [], hq_location: '', founders_roles: '', primary_contact: '',
+  main_offer: '', icp: '', buyer_roles: '', main_pain: '', promise: '', competitors: [], key_objections: '', usp: '',
+  revenue_streams: '', pricing_model: 'One-time', price_points: '', sales_cycle: '1-3 months', revenue_target_90d: '', revenue_target_12m: '',
+  lead_sources: [], working_channels: '', failing_channels: '', sales_mechanism: '', crm_tool: '', close_rate: '',
+  delivery_process: '', tool_stack: [], broken_workflows: '', time_wasters: '', has_sops: 'No', team_structure: '', decision_approver: '',
+  is_regulated: 'No', sensitive_data: 'None',
+  selected_departments: [], department_configs: {},
+  brand_tone: 'Professional', brand_keywords: '', writing_samples: '', interaction_style: 'Collaborative',
+  deliverables: [], output_format: 'Markdown', client_facing_needed: 'No', deadline: '',
+  reference_brands: '', hard_constraints: '', must_avoid: ''
+};
+
 const INDUSTRIES = ['SaaS', 'E-commerce', 'Healthcare', 'Education', 'Finance', 'Marketing', 'Other'];
 const BUSINESS_STAGES = ['Idea', 'Starting', 'Growing', 'Established'];
 const REVENUE_MODELS = ['Service-based', 'Product sales', 'Subscription', 'Freemium', 'Other'];
 
-export const IntakeForm: React.FC = () => {
-  const { setClientData } = useApp();
+interface IntakeFormProps {
+  mode?: 'initial' | 'add';
+}
+
+export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
+  const { setClientData, clientData } = useApp();
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
+  const isAddMode = mode === 'add';
 
   const [formData, setFormData] = useState({
-    business_name: '',
-    business_description: '',
-    industries: [] as string[],
-    target_customer: '',
-    differentiator: '',
-    stage: '',
-    revenue_model: '',
+    business_name: isAddMode ? (clientData?.business_name || '') : '',
+    business_description: isAddMode ? (clientData?.main_offer || '') : '',
+    industries: isAddMode ? [clientData?.industry || ''].filter(Boolean) : [] as string[],
+    target_customer: isAddMode ? (clientData?.icp || '') : '',
+    differentiator: isAddMode ? (clientData?.usp || '') : '',
+    stage: isAddMode ? (clientData?.stage || '') : '',
+    revenue_model: isAddMode ? (clientData?.pricing_model || '') : '',
     help_needed: [] as Department[],
     goal: ''
   });
@@ -116,8 +134,12 @@ export const IntakeForm: React.FC = () => {
     <div className="min-h-screen bg-[#F8FAFC] py-20 px-4">
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-12 animate-fadeIn">
-          <h1 className="text-4xl font-bold text-brand-navy mb-4">Tell us about your business</h1>
-          <p className="text-ui-slate text-lg">Help us customize your AI Workmind OS experience.</p>
+          <h1 className="text-4xl font-bold text-brand-navy mb-4">
+            {isAddMode ? 'Add a new Expert' : 'Tell us about your business'}
+          </h1>
+          <p className="text-ui-slate text-lg">
+            {isAddMode ? 'Configure an additional AI department for your workspace.' : 'Help us customize your AI Workmind OS experience.'}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-12 bg-white p-10 rounded-3xl shadow-xl shadow-brand-navy/5 border border-ui-border">
