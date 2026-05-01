@@ -36,8 +36,8 @@ export async function scrapeWebsite(url: string): Promise<string> {
                 const usernameMatches = url.match(/instagram\.com\/([^\/?#]+)/);
                 inputArgs = { usernames: [usernameMatches ? usernameMatches[1] : url] };
             } else if (url.includes('linkedin.com')) {
-                actorId = 'bebity/linkedin-scraper';
-                inputArgs = { urls: [url] };
+                actorId = 'apify/website-content-crawler';
+                inputArgs = { startUrls: [{ url }] };
             }
 
             const run = await client.actor(actorId).call(inputArgs);
@@ -123,7 +123,7 @@ Keep it highly relevant and structured. Avoid fluff.`;
         }
 
         // Apply fallback models based on provider if not specified in DB
-        if (modelProvider === 'claude' && !modelName) modelName = 'claude-3-5-sonnet-20240620';
+        if (modelProvider === 'claude' && !modelName) modelName = 'claude-sonnet-4-20250514';
         if (modelProvider === 'openai' && !modelName) modelName = 'gpt-4o-mini';
         if (modelProvider === 'gemini' && !modelName) modelName = 'gemini-2.0-flash';
 
