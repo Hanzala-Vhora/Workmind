@@ -17,7 +17,7 @@ export const INITIAL_DATA: IntakeData = {
   lead_sources: [], working_channels: '', failing_channels: '', sales_mechanism: '', crm_tool: '', close_rate: '',
   delivery_process: '', tool_stack: [], broken_workflows: '', time_wasters: '', has_sops: 'No', team_structure: '', decision_approver: '',
   is_regulated: 'No', sensitive_data: 'None',
-  selected_departments: [], department_configs: {},
+  selected_departments: DEPARTMENTS, department_configs: {},
   brand_tone: 'Professional', brand_keywords: '', writing_samples: '', interaction_style: 'Collaborative',
   deliverables: [], output_format: 'Markdown', client_facing_needed: 'No', deadline: '',
   reference_brands: '', hard_constraints: '', must_avoid: ''
@@ -45,7 +45,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
     differentiator: isAddMode ? (clientData?.usp || '') : '',
     stage: isAddMode ? (clientData?.stage || '') : '',
     revenue_model: isAddMode ? (clientData?.pricing_model || '') : '',
-    help_needed: [] as Department[],
+    help_needed: DEPARTMENTS,
     goal: ''
   });
 
@@ -74,12 +74,11 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const newErrors: Record<string, string> = {};
     if (!formData.business_name) newErrors.business_name = 'Required';
     if (!formData.stage) newErrors.stage = 'Required';
     if (formData.industries.length === 0) newErrors.industries = 'Select at least one';
-    if (formData.help_needed.length === 0) newErrors.help_needed = 'Select at least one';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -105,11 +104,11 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
         resources: formData.target_customer,
         timeline: 'Immediate',
         budget: formData.revenue_model,
-        department: formData.help_needed[0] || 'General'
+        department: formData.help_needed.join(', ') || 'All Departments'
       };
 
       await apiClient.intakeForms.create(intakeFormData);
-      
+
       setClientData({
         business_name: formData.business_name,
         industry: formData.industries[0],
@@ -141,14 +140,14 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
             {isAddMode ? 'Expand your AI Team' : 'Build your Digital Twin'}
           </h1>
           <p className="text-slate-500 text-lg max-w-xl mx-auto font-medium">
-            {isAddMode 
-              ? 'Configure specialized AI experts to handle specific departments in your business.' 
+            {isAddMode
+              ? 'Configure specialized AI experts to handle specific departments in your business.'
               : 'Tell us about your business to help your AI agents understand your unique voice and goals.'}
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          
+
           {/* Section 1: Core Identity */}
           <div className="bg-white p-8 md:p-10 rounded-[2.5rem] shadow-xl shadow-slate-200/50 border border-slate-200 space-y-10">
             <div className="flex items-center gap-4 mb-2">
@@ -163,7 +162,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
 
             <div className="grid grid-cols-1 gap-10">
               {/* 1. Business Name */}
-              <FloatingInput 
+              <FloatingInput
                 label="Business Name"
                 placeholder="e.g., Apple Inc."
                 value={formData.business_name}
@@ -173,7 +172,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
               />
 
               {/* 2. What does your business do? */}
-              <FloatingTextArea 
+              <FloatingTextArea
                 label="Business Mission & Description"
                 placeholder="e.g., We build high-end consumer electronics that empower people to create..."
                 value={formData.business_description}
@@ -222,14 +221,14 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <FloatingInput 
+                <FloatingInput
                   label="Target Customer"
                   placeholder="e.g., Mid-market CEOs"
                   value={formData.target_customer}
                   onChange={v => update('target_customer', v)}
                   icon={<Target className="w-5 h-5" />}
                 />
-                <FloatingInput 
+                <FloatingInput
                   label="Your Unique Differentiator"
                   placeholder="e.g., 24/7 Human-in-the-loop AI"
                   value={formData.differentiator}
@@ -258,7 +257,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
                   Business Stage
                 </label>
                 <div className="relative">
-                  <select 
+                  <select
                     value={formData.stage}
                     onChange={e => update('stage', e.target.value)}
                     className="w-full bg-slate-50 border-2 border-transparent rounded-2xl px-5 py-4 outline-none focus:bg-white focus:border-amber-500 transition-all appearance-none cursor-pointer font-bold text-slate-700"
@@ -278,7 +277,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
                   Revenue Model
                 </label>
                 <div className="relative">
-                  <select 
+                  <select
                     value={formData.revenue_model}
                     onChange={e => update('revenue_model', e.target.value)}
                     className="w-full bg-slate-50 border-2 border-transparent rounded-2xl px-5 py-4 outline-none focus:bg-white focus:border-amber-500 transition-all appearance-none cursor-pointer font-bold text-slate-700"
@@ -307,42 +306,7 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
             </div>
 
             <div className="space-y-10">
-              <div className="space-y-4">
-                <label className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                  Which experts do you need?
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {DEPARTMENTS.map(dept => (
-                    <button
-                      key={dept}
-                      type="button"
-                      onClick={() => toggleMulti('help_needed', dept)}
-                      className={clsx(
-                        "flex flex-col items-center justify-center p-6 rounded-[1.5rem] border-2 transition-all duration-300 text-center gap-3 group",
-                        formData.help_needed.includes(dept)
-                          ? "bg-indigo-600 border-indigo-600 text-white shadow-xl shadow-indigo-200 scale-105"
-                          : "bg-slate-50 border-transparent text-slate-500 hover:bg-slate-100 hover:text-indigo-600 hover:border-indigo-100"
-                      )}
-                    >
-                      <div className={clsx(
-                        "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
-                        formData.help_needed.includes(dept) ? "bg-white/20" : "bg-white shadow-sm"
-                      )}>
-                        <Briefcase className={clsx("w-5 h-5", formData.help_needed.includes(dept) ? "text-white" : "text-indigo-500")} />
-                      </div>
-                      <span className="text-xs font-black uppercase tracking-tight">{dept}</span>
-                      {formData.help_needed.includes(dept) && (
-                        <div className="absolute top-3 right-3 bg-white rounded-full p-0.5">
-                          <Check className="w-3 h-3 text-indigo-600 stroke-[3]" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-                {errors.help_needed && <p className="text-xs text-red-500 mt-4 font-bold">{errors.help_needed}</p>}
-              </div>
-
-              <FloatingTextArea 
+              <FloatingTextArea
                 label="Your Immediate 90-Day Goal"
                 placeholder="e.g., Automate client onboarding and reach $50k MRR..."
                 value={formData.goal}
@@ -399,8 +363,8 @@ const FloatingInput = ({ label, value, onChange, placeholder, icon, error }: any
         <div className="relative flex-1">
           <label className={clsx(
             "absolute left-0 transition-all duration-300 pointer-events-none select-none px-1 z-10",
-            active 
-              ? "-top-[2.2rem] -left-1 text-[10px] font-black text-indigo-600 uppercase tracking-widest opacity-100" 
+            active
+              ? "-top-[2.2rem] -left-1 text-[10px] font-black text-indigo-600 uppercase tracking-widest opacity-100"
               : "top-0 text-slate-400 text-lg font-medium opacity-100"
           )}>
             {label}
@@ -437,8 +401,8 @@ const FloatingTextArea = ({ label, value, onChange, placeholder, icon }: any) =>
         <div className="relative flex-1">
           <label className={clsx(
             "absolute left-0 transition-all duration-300 pointer-events-none select-none px-1 z-10",
-            active 
-              ? "-top-[2.2rem] -left-1 text-[10px] font-black text-indigo-600 uppercase tracking-widest opacity-100" 
+            active
+              ? "-top-[2.2rem] -left-1 text-[10px] font-black text-indigo-600 uppercase tracking-widest opacity-100"
               : "top-0 text-slate-400 text-lg font-medium opacity-100"
           )}>
             {label}
@@ -458,5 +422,5 @@ const FloatingTextArea = ({ label, value, onChange, placeholder, icon }: any) =>
 };
 
 const AlertCircle = ({ className }: { className?: string }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
 );
