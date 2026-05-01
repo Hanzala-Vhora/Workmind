@@ -262,6 +262,7 @@ export const AdminDashboard: React.FC = () => {
                                     <th className="px-6 py-3">User</th>
                                     <th className="px-6 py-3 text-center">Credits Left</th>
                                     <th className="px-6 py-3 text-center">Model Access</th>
+                                    <th className="px-6 py-3 text-center">Tokens (In/Out)</th>
                                     <th className="px-6 py-3 text-center">Cost to Us</th>
                                     <th className="px-6 py-3 text-right">Actions</th>
                                 </tr>
@@ -285,6 +286,12 @@ export const AdminDashboard: React.FC = () => {
                                                         {m.charAt(0)}
                                                     </span>
                                                 ))}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <div className="flex flex-col items-center gap-0.5 text-[10px] font-medium text-gray-500 whitespace-nowrap">
+                                                <span><span className="font-bold text-gray-700">{u.totalInputTokens?.toLocaleString() || 0}</span> in</span>
+                                                <span><span className="font-bold text-gray-700">{u.totalOutputTokens?.toLocaleString() || 0}</span> out</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">

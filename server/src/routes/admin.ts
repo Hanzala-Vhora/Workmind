@@ -30,10 +30,28 @@ router.get('/users', isAdmin, async (req, res) => {
                 totalCostUSD: true,
                 role: true,
                 allowedModels: true,
-                createdAt: true
+                createdAt: true,
+                usageLogs: {
+                    select: {
+                        inputTokens: true,
+                        outputTokens: true
+                    }
+                }
             }
         });
-        res.json(users);
+
+        const enhancedUsers = users.map(user => {
+            const totalInputTokens = user.usageLogs.reduce((sum, log) => sum + (log.inputTokens || 0), 0);
+            const totalOutputTokens = user.usageLogs.reduce((sum, log) => sum + (log.outputTokens || 0), 0);
+            const { usageLogs, ...userWithoutLogs } = user;
+            return {
+                ...userWithoutLogs,
+                totalInputTokens,
+                totalOutputTokens
+            };
+        });
+
+        res.json(enhancedUsers);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }
