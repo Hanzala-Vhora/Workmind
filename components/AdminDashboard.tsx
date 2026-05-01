@@ -452,6 +452,14 @@ export const AdminDashboard: React.FC = () => {
                                             <p className="text-[10px] text-gray-400 font-medium">{new Date(log.createdAt).toLocaleString()}</p>
                                             <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
                                             <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">{log.modelId?.split('/').pop() || 'AI'}</p>
+                                            {(log.inputTokens > 0 || log.outputTokens > 0) && (
+                                                <>
+                                                    <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                                    <p className="text-[10px] text-gray-500 font-medium whitespace-nowrap"><span className="font-bold text-gray-700">{log.inputTokens || 0}</span> in</p>
+                                                    <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                                                    <p className="text-[10px] text-gray-500 font-medium whitespace-nowrap"><span className="font-bold text-gray-700">{log.outputTokens || 0}</span> out</p>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
