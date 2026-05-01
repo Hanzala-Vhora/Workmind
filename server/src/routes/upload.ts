@@ -3,6 +3,7 @@ import multer from 'multer';
 import mammoth from 'mammoth';
 import { PDFParse } from 'pdf-parse';
 import prisma from '../db.js';
+import { scrapeWebsite, analyzeWebsiteContent } from '../utils/scraper.js';
 
 const router = Router();
 
@@ -219,6 +220,96 @@ router.post('/', upload.single('file'), async (req, res) => {
     } catch (error) {
         console.error('Upload error:', error);
         res.status(500).json({ error: 'Internal server error processing upload' });
+    }
+});
+
+router.post('/url', async (req, res) => {
+    try {
+        const { url, chatId, userId, department } = req.body;
+        if (!url || !chatId || !userId || !department) {
+            return res.status(400).json({ error: 'Missing url, chatId, userId, or department' });
+        }
+
+        const existingSession = await prisma.chatSession.findUnique({
+            where: { id: String(chatId) },
+            select: { id: true, userId: true }
+        });
+
+        if (existingSession && existingSession.userId !== String(userId)) {
+            return res.status(403).json({ error: 'Unauthorized access to this chat session' });
+        }
+
+        if (!existingSession) {
+            await prisma.chatSession.create({
+                data: {
+                    id: String(chatId),
+                    userId: String(userId),
+                    department: String(department),
+                    title: `New ${department} chat`
+                }
+            });
+        }
+
+        const rawContent = await scrapeWebsite(url);
+        const analysisText = await analyzeWebsiteContent(rawContent, '');
+
+        const filename = url;
+        const cleanText = normalizeWhitespace(analysisText);
+        const chunks = cleanText ? chunkText(cleanText) : [];
+        const storedContent = cleanText.slice(0, 5000);
+
+        await prisma.$transaction([
+            prisma.documentChunk.deleteMany({
+                where: {
+                    chatId: String(chatId),
+                    source: filename
+                }
+            }),
+            prisma.chatDocument.deleteMany({
+                where: {
+                    chatId: String(chatId),
+                    name: filename
+                }
+            }),
+            prisma.chatDocument.create({
+                data: {
+                    chatId: String(chatId),
+                    name: filename,
+                    type: 'text/html',
+                    content: storedContent
+                }
+            }),
+            ...(chunks.length > 0
+                ? [
+                    prisma.documentChunk.createMany({
+                        data: chunks.map(chunk => ({
+                            chatId: String(chatId),
+                            content: chunk,
+                            source: filename
+                        }))
+                    })
+                ]
+                : [])
+        ]);
+
+        res.json({
+            success: true,
+            chunks: chunks.length,
+            extractedCharacters: cleanText.length,
+            message: `Processed URL ${filename}`,
+            document: {
+               id: Date.now().toString(),
+               name: filename,
+               type: 'text/html',
+               content: storedContent,
+               uploadedAt: Date.now(),
+               chatId: String(chatId)
+            }
+        });
+
+    } catch (error: any) {
+        console.error('Upload URL error:', error);
+        res.status(500).json({ error: error.message || 'Internal server error processing URL' });
     }
 });
 

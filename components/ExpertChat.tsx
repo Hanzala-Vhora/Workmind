@@ -41,6 +41,8 @@ export const ExpertChat: React.FC = () => {
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const [loading, setLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [urlInput, setUrlInput] = useState('');
+  const [isScrapingUrl, setIsScrapingUrl] = useState(false);
   const [showAnalyzer, setShowAnalyzer] = useState(false);
   const [showContextRepo, setShowContextRepo] = useState(false);
   const [showLowBalanceModal, setShowLowBalanceModal] = useState(false);
@@ -395,7 +397,40 @@ export const ExpertChat: React.FC = () => {
       setFetchedDocuments(prev => prev.filter(d => d.id !== doc.id));
     }
   };
+  const handleUrlSubmit = async () => {
+    if (!urlInput.trim()) return;
+    setIsScrapingUrl(true);
+    try {
+      let attachChatId = currentChatId;
+      if (!attachChatId) {
+        attachChatId = crypto.randomUUID();
+        setCurrentChatId(attachChatId);
+      }
 
+      const res = await fetch(`${API_URL}/api/upload/url`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: urlInput,
+          chatId: attachChatId,
+          userId: user?.id,
+          department: activeDepartment
+        })
+      });
+
+      if (!res.ok) throw new Error("Failed to process URL");
+      const data = await res.json();
+      
+      setFetchedDocuments(prev => [...prev.filter(existing => existing.name !== data.document.name), data.document]);
+      setUrlInput('');
+      await refreshChats();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to extract context from URL.");
+    } finally {
+      setIsScrapingUrl(false);
+    }
+  };
 
 
   return (
@@ -652,6 +687,29 @@ export const ExpertChat: React.FC = () => {
                       uploadStatus === 'error' ? 'Upload Failed' :
                         'Upload Document'}
                 </button>
+
+                <div className="mt-4 flex flex-col gap-2 border-t border-gray-200 pt-4">
+                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Add Website Context</p>
+                  <div className="flex gap-2">
+                    <input 
+                      type="url" 
+                      placeholder="https://example.com" 
+                      value={urlInput}
+                      onChange={(e) => setUrlInput(e.target.value)}
+                      className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+                      onKeyDown={(e) => {
+                         if (e.key === 'Enter') handleUrlSubmit();
+                      }}
+                    />
+                    <button 
+                      onClick={handleUrlSubmit}
+                      disabled={isScrapingUrl || !urlInput.trim()}
+                      className="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-all shadow-sm"
+                    >
+                      {isScrapingUrl ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           )}

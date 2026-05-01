@@ -42,7 +42,7 @@ export const createIntakeForm = async (req: Request, res: Response) => {
       data: {
         workspaceId: workspace.id,
         companyName,
-        contactEmail,
+        contactEmail: contactEmail || userEmail || `user-${userId}@placeholder.com`,
         contactPhone,
         department,
         status: 'draft',

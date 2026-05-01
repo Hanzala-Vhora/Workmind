@@ -89,7 +89,7 @@ Keep it highly relevant and structured. Avoid fluff.`;
                 const errText = await response.text();
                 throw new Error(`Claude API Error: ${errText}`);
             }
-            const data = await response.json();
+            const data = await response.json() as any;
             return data.content[0]?.text || 'No analysis generated.';
         } else if (modelProvider === 'openai') {
             const stream = await openai.chat.completions.create({
