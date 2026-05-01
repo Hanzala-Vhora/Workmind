@@ -130,7 +130,7 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-ui-card flex">
       {/* Sidebar */}
-      <aside className="w-64 bg-gradient-brand text-white hidden md:flex flex-col shadow-xl">
+      <aside className="w-64 bg-gradient-brand text-white hidden md:flex flex-col shadow-xl h-screen sticky top-0 overflow-hidden shrink-0">
         <div className="p-6 flex items-center gap-3 border-b border-white/10">
           <BrainLogo width={30} height={30} className="text-white" />
           <h1 className="text-xl font-bold tracking-tight">WORKMIND.AI</h1>
