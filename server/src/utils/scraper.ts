@@ -24,10 +24,10 @@ export async function scrapeWebsite(url: string): Promise<string> {
             if (!apifyToken) {
                 throw new Error("APIFY_API_TOKEN is missing in environment variables. Apify is required to scrape social media.");
             }
-            
+
             const client = new ApifyClient({ token: apifyToken });
             console.log(`Using Apify to scrape social media URL: ${url}`);
-            
+
             let actorId = 'apify/website-content-crawler';
             let inputArgs: any = { startUrls: [{ url }] };
 
@@ -39,11 +39,11 @@ export async function scrapeWebsite(url: string): Promise<string> {
                 actorId = 'bebity/linkedin-scraper';
                 inputArgs = { urls: [url] };
             }
-            
+
             const run = await client.actor(actorId).call(inputArgs);
 
             const { items } = await client.dataset(run.defaultDatasetId).listItems();
-            
+
             if (!items || items.length === 0) {
                 throw new Error("Apify returned no data for this profile.");
             }
@@ -68,7 +68,7 @@ export async function scrapeWebsite(url: string): Promise<string> {
 
         const title = $('title').text().trim();
         const metaDescription = $('meta[name="description"]').attr('content') || '';
-        
+
         let textContent = $('body').text();
         textContent = textContent.replace(/\s+/g, ' ').trim();
 
@@ -116,8 +116,8 @@ Keep it highly relevant and structured. Avoid fluff.`;
             if (settingsMap['DEFAULT_MODEL_PROVIDER']) modelProvider = settingsMap['DEFAULT_MODEL_PROVIDER'];
             else if (process.env.DEFAULT_MODEL_PROVIDER) modelProvider = process.env.DEFAULT_MODEL_PROVIDER;
 
-            if (settingsMap['DEFAULT_MODEL']) modelName = settingsMap['DEFAULT_MODEL'];
-            else if (process.env.DEFAULT_MODEL) modelName = process.env.DEFAULT_MODEL;
+            if (settingsMap['DEFAULT_MODEL']) modelName = settingsMap['DEFAULT_MODEL'].trim();
+            else if (process.env.DEFAULT_MODEL) modelName = process.env.DEFAULT_MODEL.trim();
         } catch (e) {
             console.warn('Could not fetch model provider from DB, falling back to defaults');
         }
@@ -136,7 +136,7 @@ Keep it highly relevant and structured. Avoid fluff.`;
                     'anthropic-version': '2023-06-01'
                 },
                 body: JSON.stringify({
-                    model: modelName,
+                    model: modelName || 'claude-sonnet-4-20250514',
                     max_tokens: 2000,
                     messages: [{ role: 'user', content: prompt }]
                 })

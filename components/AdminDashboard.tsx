@@ -15,6 +15,8 @@ export const AdminDashboard: React.FC = () => {
     const [permissionsModal, setPermissionsModal] = useState<{ show: boolean; userId: string; email: string; allowedModels: string[] }>({ show: false, userId: '', email: '', allowedModels: [] });
     const [systemSettings, setSystemSettings] = useState<{ defaultProvider: string; defaultModel: string }>({ defaultProvider: '', defaultModel: '' });
     const [currentPage, setCurrentPage] = useState(1);
+    const [usersPage, setUsersPage] = useState(1);
+    const usersPerPage = 10;
     const logsPerPage = 10;
     const [logsData, setLogsData] = useState<{ logs: any[]; total: number; totalPages: number }>({ logs: [], total: 0, totalPages: 0 });
     const [logsLoading, setLogsLoading] = useState(false);
@@ -139,6 +141,14 @@ export const AdminDashboard: React.FC = () => {
     }
 
     const filteredUsers = users.filter(u => u.email?.toLowerCase().includes(search.toLowerCase()) || u.id.includes(search));
+    
+    // Reset page to 1 when searching
+    useEffect(() => {
+        setUsersPage(1);
+    }, [search]);
+
+    const totalUserPages = Math.max(1, Math.ceil(filteredUsers.length / usersPerPage));
+    const paginatedUsers = filteredUsers.slice((usersPage - 1) * usersPerPage, usersPage * usersPerPage);
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -239,7 +249,7 @@ export const AdminDashboard: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
-                                {filteredUsers.map((u) => (
+                                {paginatedUsers.map((u) => (
                                     <tr key={u.id} className="hover:bg-gray-50/50 transition-colors">
                                         <td className="px-6 py-4">
                                             <p className="text-sm font-semibold text-gray-900">{u.email}</p>
@@ -283,6 +293,47 @@ export const AdminDashboard: React.FC = () => {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Users Pagination Controls */}
+                    {totalUserPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 py-4 border-t border-gray-100 bg-gray-50/30">
+                            <button
+                                onClick={() => setUsersPage(prev => Math.max(1, prev - 1))}
+                                disabled={usersPage === 1}
+                                className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl transition-all"
+                            >
+                                Previous
+                            </button>
+                            
+                            <div className="flex items-center gap-1">
+                                {[...Array(totalUserPages)].map((_, i) => {
+                                    const page = i + 1;
+                                    if (page === 1 || page === totalUserPages || (page >= usersPage - 1 && page <= usersPage + 1)) {
+                                        return (
+                                            <button
+                                                key={page}
+                                                onClick={() => setUsersPage(page)}
+                                                className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${usersPage === page ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-gray-400 hover:bg-gray-100'}`}
+                                            >
+                                                {page}
+                                            </button>
+                                        );
+                                    } else if (page === usersPage - 2 || page === usersPage + 2) {
+                                        return <span key={page} className="text-gray-300 px-1">...</span>;
+                                    }
+                                    return null;
+                                })}
+                            </div>
+
+                            <button
+                                onClick={() => setUsersPage(prev => Math.min(totalUserPages, prev + 1))}
+                                disabled={usersPage === totalUserPages}
+                                className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-xl transition-all"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Billing Model Info */}
