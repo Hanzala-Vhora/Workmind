@@ -40,4 +40,35 @@ router.get('/ai-config', async (req, res) => {
     }
 });
 
+/**
+ * POST /api/settings/ai-config
+ * Updates the global AI model and provider configuration in the database.
+ */
+router.post('/ai-config', async (req, res) => {
+    try {
+        const { modelProvider, model } = req.body;
+
+        if (modelProvider) {
+            await prisma.systemSetting.upsert({
+                where: { key: 'DEFAULT_MODEL_PROVIDER' },
+                update: { value: modelProvider },
+                create: { key: 'DEFAULT_MODEL_PROVIDER', value: modelProvider }
+            });
+        }
+
+        if (model) {
+            await prisma.systemSetting.upsert({
+                where: { key: 'DEFAULT_MODEL' },
+                update: { value: model },
+                create: { key: 'DEFAULT_MODEL', value: model }
+            });
+        }
+
+        res.json({ success: true, message: 'Settings updated successfully' });
+    } catch (error) {
+        console.error('Error updating settings:', error);
+        res.status(500).json({ error: 'Failed to update settings' });
+    }
+});
+
 export default router;

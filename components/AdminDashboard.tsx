@@ -73,6 +73,11 @@ export const AdminDashboard: React.FC = () => {
         fetchUsageLogs(currentPage);
     }, [currentPage, userProfile]);
 
+    // Reset users page to 1 when searching
+    useEffect(() => {
+        setUsersPage(1);
+    }, [search]);
+
     const handleAssignCredits = async () => {
         try {
             const res = await fetch(`${API_URL}/api/admin/assign-credits`, {
@@ -141,11 +146,6 @@ export const AdminDashboard: React.FC = () => {
     }
 
     const filteredUsers = users.filter(u => u.email?.toLowerCase().includes(search.toLowerCase()) || u.id.includes(search));
-    
-    // Reset page to 1 when searching
-    useEffect(() => {
-        setUsersPage(1);
-    }, [search]);
 
     const totalUserPages = Math.max(1, Math.ceil(filteredUsers.length / usersPerPage));
     const paginatedUsers = filteredUsers.slice((usersPage - 1) * usersPerPage, usersPage * usersPerPage);
@@ -163,16 +163,15 @@ export const AdminDashboard: React.FC = () => {
                     </h1>
                 </div>
                 <div className="flex items-center gap-3">
-                    <button onClick={handleUpdateGlobalSettings} className="text-xs px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-black transition-all">Save All Changes</button>
                     <span className="text-xs font-medium text-gray-500">Platform Cost: <span className="text-red-600 font-bold">${stats?.totalPlatformCostUSD?.toFixed(2) || '0.00'}</span></span>
                 </div>
             </header>
 
             <main className="flex-1 p-6 max-w-7xl mx-auto w-full space-y-6">
                 {/* Global Settings Section */}
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] items-end gap-6">
                     <div>
-                        <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><Plus className="w-4 h-4 text-indigo-500" /> Global Default Provider</h2>
+                        <h2 className="font-bold text-gray-900 mb-2 flex items-center gap-2"><Plus className="w-4 h-4 text-indigo-500" /> Global Default Provider</h2>
                         <select 
                             className="w-full bg-gray-50 border-transparent rounded-xl p-3 text-sm focus:ring-2 focus:ring-indigo-500"
                             value={systemSettings.defaultProvider}
@@ -184,7 +183,7 @@ export const AdminDashboard: React.FC = () => {
                         </select>
                     </div>
                     <div>
-                        <h2 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><Activity className="w-4 h-4 text-indigo-500" /> Default Model ID</h2>
+                        <h2 className="font-bold text-gray-900 mb-2 flex items-center gap-2"><Activity className="w-4 h-4 text-indigo-500" /> Default Model ID</h2>
                         <input 
                             type="text"
                             placeholder="e.g. gemini-2.0-flash-exp"
@@ -192,6 +191,11 @@ export const AdminDashboard: React.FC = () => {
                             value={systemSettings.defaultModel}
                             onChange={(e) => setSystemSettings({ ...systemSettings, defaultModel: e.target.value })}
                         />
+                    </div>
+                    <div>
+                        <button onClick={handleUpdateGlobalSettings} className="w-full md:w-auto h-[46px] px-6 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-all shadow-md">
+                            Save Settings
+                        </button>
                     </div>
                 </div>
 
