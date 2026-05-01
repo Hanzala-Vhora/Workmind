@@ -470,7 +470,8 @@ router.post('/', async (req, res) => {
                         must_avoid: '',
 
                         department_configs: {},
-                        selected_departments: [form.department as Department || department]
+                        selected_departments: [form.department as Department || department],
+                        shared_context: form.sharedContext || undefined
                     };
                     console.log(`[DEBUG] Fetched clientData from DB for company: ${clientData.business_name}`);
                 } else {
@@ -486,6 +487,9 @@ router.post('/', async (req, res) => {
         // Prepare system prompt
         console.log(`[DEBUG] Building prompt for Department: "${department}"`);
         let systemInstruction = buildSystemPrompt(clientData, department);
+        if (clientData.shared_context) {
+            systemInstruction += `\n\n--- SHARED BUSINESS CONTEXT ---\nThe following context was scraped and analyzed from the company's website and social media. It serves as the single source of truth for the company's offerings, tone, and target audience across all departments:\n${clientData.shared_context}\n-------------------------------\n`;
+        }
         console.log(`[DEBUG] Generated System Prompt Preamble: ${systemInstruction.substring(0, 300)}...`);
 
         // Context Docs
@@ -526,7 +530,6 @@ router.post('/', async (req, res) => {
             }
         }
 
-        // Call Gemini
         // Context Retrieval for History
         const previousMessages = await prisma.chatMessage.findMany({
             where: { chatId: session.id, id: { not: userMsg.id } },
@@ -534,6 +537,30 @@ router.post('/', async (req, res) => {
             take: 10
         });
         const prevMsgsAsc = previousMessages.reverse();
+
+        // Fetch recent cross-department context for shared memory
+        try {
+            const recentCrossChats = await prisma.chatMessage.findMany({
+                where: { 
+                    chat: { userId: session.userId, id: { not: session.id } }
+                },
+                include: { chat: { select: { department: true } } },
+                orderBy: { createdAt: 'desc' },
+                take: 15
+            });
+
+            if (recentCrossChats.length > 0) {
+                let crossContext = "\n\n--- RECENT ACTIVITY FROM OTHER DEPARTMENTS (SHARED MEMORY) ---\n(Use this context if the user refers to past conversations with other experts, e.g. 'read the GTM chat with marketing')\n";
+                [...recentCrossChats].reverse().forEach(msg => {
+                    const snippet = msg.content.length > 400 ? msg.content.substring(0, 400) + '...' : msg.content;
+                    crossContext += `[${msg.chat.department} Expert - ${msg.role.toUpperCase()}]: ${snippet}\n`;
+                });
+                crossContext += "----------------------------------------------\n";
+                systemInstruction += crossContext;
+            }
+        } catch (err) {
+            console.error("Failed to load cross-department context", err);
+        }
 
         let fullResponseText = "";
 

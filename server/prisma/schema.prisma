@@ -72,6 +72,7 @@ model IntakeForm {
   industry     String
   companySize  String
   currentState String?
+  sharedContext String? @db.Text
   mainGoals    String[]
   challenges   String[]
   resources    String?

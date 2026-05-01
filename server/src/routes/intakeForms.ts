@@ -5,6 +5,7 @@ import * as intakeFormController from '../controllers/intakeFormController.js';
 const router = Router();
 
 router.post('/', intakeFormController.createIntakeForm);
+router.post('/analyze', intakeFormController.analyzeWebsite);
 router.get('/', intakeFormController.getIntakeForms);
 router.get('/:id', intakeFormController.getIntakeFormById);
 router.put('/:id', intakeFormController.updateIntakeForm);

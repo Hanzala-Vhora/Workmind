@@ -23,6 +23,7 @@ export interface IntakeData {
     hq_location: string;
     founders_roles: string;
     primary_contact: string;
+    shared_context?: string;
 
     // B. Offer, Customer, and Promise
     main_offer: string;

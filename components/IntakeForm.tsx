@@ -46,10 +46,14 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
     stage: isAddMode ? (clientData?.stage || '') : '',
     revenue_model: isAddMode ? (clientData?.pricing_model || '') : '',
     help_needed: DEPARTMENTS,
-    goal: ''
+    goal: '',
+    website_url: '',
+    social_links: '',
+    shared_context: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const update = (field: string, value: any) => {
@@ -69,6 +73,24 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
       update(field, current.filter(v => v !== value));
     } else {
       update(field, [...current, value]);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    if (!formData.website_url) {
+      alert('Please enter a website URL to analyze.');
+      return;
+    }
+    setIsAnalyzing(true);
+    try {
+      const res = await apiClient.intakeForms.analyze(formData.website_url, formData.social_links);
+      update('shared_context', res.sharedContext);
+      alert('Website analyzed successfully! The context has been injected and will be shared across all AI agents.');
+    } catch (err: any) {
+      console.error(err);
+      alert('Failed to analyze website: ' + err.message);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -104,7 +126,8 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
         resources: formData.target_customer,
         timeline: 'Immediate',
         budget: formData.revenue_model,
-        department: formData.help_needed.join(', ') || 'All Departments'
+        department: formData.help_needed.join(', ') || 'All Departments',
+        sharedContext: formData.shared_context
       };
 
       await apiClient.intakeForms.create(intakeFormData);
@@ -170,6 +193,48 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
                 icon={<Building2 className="w-5 h-5" />}
                 error={errors.business_name}
               />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <FloatingInput
+                  label="Website URL"
+                  placeholder="e.g., https://apple.com"
+                  value={formData.website_url}
+                  onChange={v => update('website_url', v)}
+                  icon={<Globe className="w-5 h-5" />}
+                />
+                <FloatingInput
+                  label="Social Media Links"
+                  placeholder="e.g., linkedin.com/company/apple"
+                  value={formData.social_links}
+                  onChange={v => update('social_links', v)}
+                  icon={<Zap className="w-5 h-5" />}
+                />
+              </div>
+
+              {formData.website_url && (
+                <button
+                  type="button"
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing}
+                  className="w-full md:w-auto px-8 py-4 bg-indigo-600 text-white rounded-[1.5rem] font-bold text-sm hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-200"
+                >
+                  {isAnalyzing ? (
+                    <><Loader className="w-4 h-4 animate-spin" /> Analyzing & Extracting Context...</>
+                  ) : (
+                    <><Sparkles className="w-4 h-4" /> Analyze Website Context</>
+                  )}
+                </button>
+              )}
+
+              {formData.shared_context && (
+                 <div className="p-6 bg-indigo-50 border border-indigo-100 rounded-2xl">
+                    <div className="flex items-center gap-2 mb-2">
+                       <Check className="w-5 h-5 text-indigo-600" />
+                       <h3 className="font-bold text-indigo-900">Website Analyzed</h3>
+                    </div>
+                    <p className="text-sm text-indigo-700">The business context has been successfully extracted and will be shared with all AI experts.</p>
+                 </div>
+              )}
 
               {/* 2. What does your business do? */}
               <FloatingTextArea

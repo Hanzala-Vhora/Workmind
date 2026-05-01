@@ -72,6 +72,16 @@ export const apiClient = {
       if (!response.ok) throw new Error(`Failed to submit intake form: ${response.statusText}`);
       return response.json();
     },
+
+    analyze: async (websiteUrl: string, socialLinks?: string) => {
+      const response = await fetch(`${API_BASE_URL}/intake-forms/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ websiteUrl, socialLinks }),
+      });
+      if (!response.ok) throw new Error(`Failed to analyze website: ${response.statusText}`);
+      return response.json();
+    },
   },
 
   // Workspaces

@@ -1,12 +1,13 @@
 // server/src/controllers/intakeFormController.ts
 import type { Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import { scrapeWebsite, analyzeWebsiteContent } from '../utils/scraper.js';
 
 const prisma = new PrismaClient();
 
 export const createIntakeForm = async (req: Request, res: Response) => {
   try {
-    const { workspaceId, companyName, contactEmail, contactPhone, department, industry, companySize, currentState, mainGoals, challenges, resources, timeline, budget, userId, userEmail, userName } = req.body;
+    const { workspaceId, companyName, contactEmail, contactPhone, department, industry, companySize, currentState, sharedContext, mainGoals, challenges, resources, timeline, budget, userId, userEmail, userName } = req.body;
 
     if (!workspaceId || !companyName || !userId) {
       return res.status(400).json({ error: 'Missing required fields: workspaceId, companyName, and userId are required' });
@@ -48,6 +49,7 @@ export const createIntakeForm = async (req: Request, res: Response) => {
         industry,
         companySize,
         currentState,
+        sharedContext,
         mainGoals: mainGoals || [],
         challenges: challenges || [],
         resources,
@@ -174,5 +176,22 @@ export const submitIntakeForm = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Intake form not found' });
     }
     res.status(500).json({ error: error.message || 'Failed to submit intake form' });
+  }
+};
+
+export const analyzeWebsite = async (req: Request, res: Response) => {
+  try {
+    const { websiteUrl, socialLinks } = req.body;
+    if (!websiteUrl) {
+      return res.status(400).json({ error: 'websiteUrl is required' });
+    }
+
+    const rawContent = await scrapeWebsite(websiteUrl);
+    const sharedContext = await analyzeWebsiteContent(rawContent, socialLinks || '');
+
+    res.json({ sharedContext });
+  } catch (error: any) {
+    console.error('Analyze website error:', error);
+    res.status(500).json({ error: error.message || 'Failed to analyze website' });
   }
 };
