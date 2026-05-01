@@ -70,10 +70,16 @@ export const ExpertChat: React.FC = () => {
         const res = await fetch(`${API_URL}/api/chat/department/${activeDepartment}?userId=${user.id}`);
         if (res.ok) {
           const data = await res.json();
-          setChats(data.chats || []);
-          setCurrentChatId(null);
-          setMessages([]);
-          setFetchedDocuments([]);
+          const loadedChats = data.chats || [];
+          setChats(loadedChats);
+          
+          if (loadedChats.length > 0) {
+            setCurrentChatId(loadedChats[0].id);
+          } else {
+            setCurrentChatId(null);
+            setMessages([]);
+            setFetchedDocuments([]);
+          }
         }
       } catch (err) {
         console.error("Failed to load chats list", err);
