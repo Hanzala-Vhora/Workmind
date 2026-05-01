@@ -84,15 +84,22 @@ router.post('/update-user-permissions', isAdmin, async (req, res) => {
 // GET /api/admin/dashboard-stats
 router.get('/dashboard-stats', isAdmin, async (req, res) => {
     try {
-        const stats = await prisma.user.aggregate({
-            _sum: { totalCostUSD: true, credits: true },
-            _count: { id: true }
-        });
+        const [stats, logStats] = await Promise.all([
+            prisma.user.aggregate({
+                _sum: { totalCostUSD: true, credits: true },
+                _count: { id: true }
+            }),
+            prisma.usageLog.aggregate({
+                _sum: { inputTokens: true, outputTokens: true }
+            })
+        ]);
 
         res.json({
             totalUsers: stats._count.id,
             totalPlatformCostUSD: stats._sum.totalCostUSD || 0,
-            totalCreditsInCirculation: stats._sum.credits || 0
+            totalCreditsInCirculation: stats._sum.credits || 0,
+            totalInputTokens: logStats._sum.inputTokens || 0,
+            totalOutputTokens: logStats._sum.outputTokens || 0
         });
     } catch (error: any) {
         res.status(500).json({ error: error.message });

@@ -200,7 +200,7 @@ export const AdminDashboard: React.FC = () => {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                     <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
                         <div className="flex items-center justify-between mb-2 text-gray-400">
                             <Users className="w-5 h-5" />
@@ -222,6 +222,20 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                         <p className="text-sm font-medium text-gray-500">Total AI Messages</p>
                         <p className="text-2xl font-black text-gray-900">{logsData.total || 0}</p>
+                    </div>
+                    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                        <div className="flex items-center justify-between mb-2 text-gray-400">
+                            <Database className="w-5 h-5" />
+                        </div>
+                        <p className="text-sm font-medium text-gray-500">Total Input</p>
+                        <p className="text-2xl font-black text-gray-900">{stats?.totalInputTokens?.toLocaleString() || 0} <span className="text-[10px] font-medium text-gray-400 uppercase">tok</span></p>
+                    </div>
+                    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                        <div className="flex items-center justify-between mb-2 text-gray-400">
+                            <Cpu className="w-5 h-5" />
+                        </div>
+                        <p className="text-sm font-medium text-gray-500">Total Output</p>
+                        <p className="text-2xl font-black text-gray-900">{stats?.totalOutputTokens?.toLocaleString() || 0} <span className="text-[10px] font-medium text-gray-400 uppercase">tok</span></p>
                     </div>
                 </div>
 
