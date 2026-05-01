@@ -3,6 +3,7 @@ import * as cheerio from 'cheerio';
 import OpenAI from 'openai';
 import { GoogleGenAI } from '@google/genai';
 import { PrismaClient } from '@prisma/client';
+import { ApifyClient } from 'apify-client';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
@@ -14,6 +15,42 @@ export async function scrapeWebsite(url: string): Promise<string> {
         if (!url.startsWith('http')) {
             url = 'https://' + url;
         }
+
+        const isSocialMedia = url.includes('instagram.com') || url.includes('linkedin.com') || url.includes('twitter.com');
+
+        if (isSocialMedia) {
+            // Use Apify for Social Media scraping to bypass protections
+            const apifyToken = process.env.APIFY_API_TOKEN;
+            if (!apifyToken) {
+                throw new Error("APIFY_API_TOKEN is missing in environment variables. Apify is required to scrape social media.");
+            }
+            
+            const client = new ApifyClient({ token: apifyToken });
+            console.log(`Using Apify to scrape social media URL: ${url}`);
+            
+            // We use Apify's universal Web Scraper or a specific Instagram actor. 
+            // The popular 'apify/instagram-scraper' works great for Instagram.
+            // For universal fallback, 'apify/website-content-crawler' is amazing for social profiles.
+            const actorId = url.includes('instagram.com') ? 'apify/instagram-profile-scraper' : 'apify/website-content-crawler';
+            
+            const run = await client.actor(actorId).call({
+                usernames: url.includes('instagram.com') ? [url.split('instagram.com/')[1].replace('/', '')] : undefined,
+                startUrls: !url.includes('instagram.com') ? [{ url }] : undefined,
+                resultsLimit: 10,
+            });
+
+            const { items } = await client.dataset(run.defaultDatasetId).listItems();
+            
+            if (!items || items.length === 0) {
+                throw new Error("Apify returned no data for this profile.");
+            }
+
+            // Convert JSON payload into raw text for the LLM
+            const textContent = JSON.stringify(items, null, 2);
+            return `[SOCIAL MEDIA EXTRACT via APIFY]\n\nURL: ${url}\n\nContent:\n${textContent.slice(0, 20000)}`;
+        }
+
+        // Standard HTTP Scraper for normal websites
         const response = await axios.get(url, {
             timeout: 10000,
             headers: {
