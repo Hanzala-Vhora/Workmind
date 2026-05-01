@@ -103,13 +103,29 @@ Keep it highly relevant and structured. Avoid fluff.`;
 
     try {
         let modelProvider = 'claude';
+        let modelName = '';
         try {
-            const setting = await prisma.systemSetting.findUnique({ where: { key: 'DEFAULT_MODEL_PROVIDER' } });
-            if (setting) modelProvider = setting.value;
+            const settings = await prisma.systemSetting.findMany({
+                where: { key: { in: ['DEFAULT_MODEL_PROVIDER', 'DEFAULT_MODEL'] } }
+            });
+            const settingsMap = settings.reduce((acc, curr) => {
+                acc[curr.key] = curr.value;
+                return acc;
+            }, {} as Record<string, string>);
+
+            if (settingsMap['DEFAULT_MODEL_PROVIDER']) modelProvider = settingsMap['DEFAULT_MODEL_PROVIDER'];
             else if (process.env.DEFAULT_MODEL_PROVIDER) modelProvider = process.env.DEFAULT_MODEL_PROVIDER;
+
+            if (settingsMap['DEFAULT_MODEL']) modelName = settingsMap['DEFAULT_MODEL'];
+            else if (process.env.DEFAULT_MODEL) modelName = process.env.DEFAULT_MODEL;
         } catch (e) {
-            console.warn('Could not fetch model provider from DB, falling back to claude');
+            console.warn('Could not fetch model provider from DB, falling back to defaults');
         }
+
+        // Apply fallback models based on provider if not specified in DB
+        if (modelProvider === 'claude' && !modelName) modelName = 'claude-3-5-sonnet-20240620';
+        if (modelProvider === 'openai' && !modelName) modelName = 'gpt-4o-mini';
+        if (modelProvider === 'gemini' && !modelName) modelName = 'gemini-2.0-flash';
 
         if (modelProvider === 'claude') {
             const response = await fetch(CLAUDE_API_URL, {
@@ -120,7 +136,7 @@ Keep it highly relevant and structured. Avoid fluff.`;
                     'anthropic-version': '2023-06-01'
                 },
                 body: JSON.stringify({
-                    model: 'claude-3-5-sonnet-20241022',
+                    model: modelName,
                     max_tokens: 2000,
                     messages: [{ role: 'user', content: prompt }]
                 })
@@ -133,13 +149,13 @@ Keep it highly relevant and structured. Avoid fluff.`;
             return data.content[0]?.text || 'No analysis generated.';
         } else if (modelProvider === 'openai') {
             const stream = await openai.chat.completions.create({
-                model: 'gpt-4o-mini',
+                model: modelName,
                 messages: [{ role: 'user', content: prompt }],
             });
             return stream.choices[0]?.message?.content || 'No analysis generated.';
         } else {
             const chat = ai.chats.create({
-                model: 'gemini-2.0-flash',
+                model: modelName,
                 config: { temperature: 0.3 }
             });
             const result = await chat.sendMessage({ message: prompt });
