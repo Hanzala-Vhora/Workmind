@@ -82,7 +82,7 @@ async function streamClaudeResponse(params: {
         },
         body: JSON.stringify({
             model,
-            max_tokens: 6096,
+            max_tokens: 4096,
             system: systemInstruction,
             messages: anthropicMessages,
             stream: true
