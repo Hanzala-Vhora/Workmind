@@ -28,16 +28,19 @@ export async function scrapeWebsite(url: string): Promise<string> {
             const client = new ApifyClient({ token: apifyToken });
             console.log(`Using Apify to scrape social media URL: ${url}`);
             
-            // We use Apify's universal Web Scraper or a specific Instagram actor. 
-            // The popular 'apify/instagram-scraper' works great for Instagram.
-            // For universal fallback, 'apify/website-content-crawler' is amazing for social profiles.
-            const actorId = url.includes('instagram.com') ? 'apify/instagram-profile-scraper' : 'apify/website-content-crawler';
+            let actorId = 'apify/website-content-crawler';
+            let inputArgs: any = { startUrls: [{ url }] };
+
+            if (url.includes('instagram.com')) {
+                actorId = 'apify/instagram-profile-scraper';
+                const usernameMatches = url.match(/instagram\.com\/([^\/?#]+)/);
+                inputArgs = { usernames: [usernameMatches ? usernameMatches[1] : url] };
+            } else if (url.includes('linkedin.com')) {
+                actorId = 'bebity/linkedin-scraper';
+                inputArgs = { urls: [url] };
+            }
             
-            const run = await client.actor(actorId).call({
-                usernames: url.includes('instagram.com') ? [url.split('instagram.com/')[1].replace('/', '')] : undefined,
-                startUrls: !url.includes('instagram.com') ? [{ url }] : undefined,
-                resultsLimit: 10,
-            });
+            const run = await client.actor(actorId).call(inputArgs);
 
             const { items } = await client.dataset(run.defaultDatasetId).listItems();
             
@@ -99,13 +102,13 @@ Please generate a structured analysis including:
 Keep it highly relevant and structured. Avoid fluff.`;
 
     try {
-        let modelProvider = 'gemini';
+        let modelProvider = 'claude';
         try {
             const setting = await prisma.systemSetting.findUnique({ where: { key: 'DEFAULT_MODEL_PROVIDER' } });
             if (setting) modelProvider = setting.value;
             else if (process.env.DEFAULT_MODEL_PROVIDER) modelProvider = process.env.DEFAULT_MODEL_PROVIDER;
         } catch (e) {
-            console.warn('Could not fetch model provider from DB, falling back to gemini');
+            console.warn('Could not fetch model provider from DB, falling back to claude');
         }
 
         if (modelProvider === 'claude') {
@@ -136,7 +139,7 @@ Keep it highly relevant and structured. Avoid fluff.`;
             return stream.choices[0]?.message?.content || 'No analysis generated.';
         } else {
             const chat = ai.chats.create({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-2.0-flash',
                 config: { temperature: 0.3 }
             });
             const result = await chat.sendMessage({ message: prompt });
@@ -144,6 +147,6 @@ Keep it highly relevant and structured. Avoid fluff.`;
         }
     } catch (error: any) {
         console.error('Error analyzing website:', error);
-        return 'Failed to analyze website content.';
+        throw new Error(`AI Analysis failed: ${error.message}`);
     }
 }
