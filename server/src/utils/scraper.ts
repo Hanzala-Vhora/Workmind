@@ -137,6 +137,7 @@ Keep it highly relevant and structured. Avoid fluff.`;
                 },
                 body: JSON.stringify({
                     model: modelName || 'claude-sonnet-4-20250514',
+                    max_tokens: 6096,
                     messages: [{ role: 'user', content: prompt }]
                 })
             });
