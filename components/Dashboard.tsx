@@ -301,7 +301,7 @@ export const Dashboard: React.FC = () => {
                       </button>
                     </div>
                   </div>
-                )
+                );
               })}
 
               {/* Add New Card */}

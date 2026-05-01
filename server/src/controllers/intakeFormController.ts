@@ -38,27 +38,31 @@ export const createIntakeForm = async (req: Request, res: Response) => {
       },
     });
 
-    const intakeForm = await prisma.intakeForm.create({
-      data: {
-        workspaceId: workspace.id,
-        companyName,
-        contactEmail: contactEmail || userEmail || `user-${userId}@placeholder.com`,
-        contactPhone,
-        department,
-        status: 'draft',
-        industry,
-        companySize,
-        currentState,
-        sharedContext,
-        mainGoals: mainGoals || [],
-        challenges: challenges || [],
-        resources,
-        timeline,
-        budget,
-      },
-    });
+    const departmentsArray = department.includes(',') ? department.split(',').map((d: string) => d.trim()) : [department];
 
-    res.status(201).json(intakeForm);
+    const forms = await Promise.all(departmentsArray.map((dept: string) => 
+      prisma.intakeForm.create({
+        data: {
+          workspaceId: workspace.id,
+          companyName,
+          contactEmail: contactEmail || userEmail || `user-${userId}@placeholder.com`,
+          contactPhone,
+          department: dept,
+          status: 'draft',
+          industry,
+          companySize,
+          currentState,
+          sharedContext,
+          mainGoals: mainGoals || [],
+          challenges: challenges || [],
+          resources,
+          timeline,
+          budget,
+        },
+      })
+    ));
+
+    res.status(201).json(forms[0]);
   } catch (error: any) {
     console.error('Create intake form error:', error);
     res.status(500).json({ error: error.message || 'Failed to create intake form' });
