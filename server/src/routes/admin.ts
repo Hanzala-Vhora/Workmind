@@ -60,17 +60,25 @@ router.get('/users', isAdmin, async (req, res) => {
 // POST /api/admin/assign-credits
 router.post('/assign-credits', isAdmin, async (req, res) => {
     try {
-        const { userId, amount, email } = req.body;
+        const { userId, amount, email, mode } = req.body;
         
+        const amountNum = parseFloat(amount);
+        const updateObj: any = {};
+        if (mode === 'set') {
+            updateObj.credits = amountNum;
+        } else if (mode === 'reduce') {
+            updateObj.credits = { decrement: amountNum };
+        } else {
+            updateObj.credits = { increment: amountNum };
+        }
+
         const user = await prisma.user.upsert({
             where: { id: userId },
-            update: {
-                credits: { increment: parseFloat(amount) }
-            },
+            update: updateObj,
             create: {
                 id: userId,
                 email: email || 'unknown',
-                credits: parseFloat(amount),
+                credits: amountNum,
                 role: 'user'
             }
         });

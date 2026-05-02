@@ -12,6 +12,7 @@ export const AdminDashboard: React.FC = () => {
     const [search, setSearch] = useState('');
     const [assignModal, setAssignModal] = useState<{ show: boolean; userId: string; email: string }>({ show: false, userId: '', email: '' });
     const [creditAmount, setCreditAmount] = useState('100');
+    const [creditMode, setCreditMode] = useState<'add' | 'set' | 'reduce'>('add');
     const [permissionsModal, setPermissionsModal] = useState<{ show: boolean; userId: string; email: string; allowedModels: string[] }>({ show: false, userId: '', email: '', allowedModels: [] });
     const [systemSettings, setSystemSettings] = useState<{ defaultProvider: string; defaultModel: string }>({ defaultProvider: '', defaultModel: '' });
     const [currentPage, setCurrentPage] = useState(1);
@@ -86,7 +87,8 @@ export const AdminDashboard: React.FC = () => {
                 body: JSON.stringify({
                     userId: assignModal.userId,
                     email: assignModal.email,
-                    amount: creditAmount
+                    amount: creditAmount,
+                    mode: creditMode
                 })
             });
             if (res.ok) {
@@ -546,10 +548,22 @@ export const AdminDashboard: React.FC = () => {
             {assignModal.show && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl animate-fadeIn">
-                        <h3 className="text-xl font-black text-gray-900 mb-2">Assign Credits</h3>
-                        <p className="text-sm text-gray-500 mb-6 font-medium">Add credits to <span className="text-indigo-600 font-bold">{assignModal.email}</span></p>
+                        <h3 className="text-xl font-black text-gray-900 mb-2">Adjust User Credits</h3>
+                        <p className="text-sm text-gray-500 mb-6 font-medium">Update credits for <span className="text-indigo-600 font-bold">{assignModal.email}</span></p>
 
                         <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Action Type</label>
+                                <select 
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white rounded-xl py-2 px-3 text-sm font-bold transition-all outline-none"
+                                    value={creditMode}
+                                    onChange={(e: any) => setCreditMode(e.target.value)}
+                                >
+                                    <option value="add">Add credits (+)</option>
+                                    <option value="reduce">Reduce credits (-)</option>
+                                    <option value="set">Set direct amount (=)</option>
+                                </select>
+                            </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Credit Amount</label>
                                 <input
@@ -570,7 +584,7 @@ export const AdminDashboard: React.FC = () => {
                                     onClick={handleAssignCredits}
                                     className="flex-1 py-3 bg-indigo-600 text-white font-black rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all"
                                 >
-                                    Assign Now
+                                    Update Credits
                                 </button>
                             </div>
                         </div>

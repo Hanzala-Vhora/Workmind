@@ -18,12 +18,14 @@ export const createIntakeForm = async (req: Request, res: Response) => {
       where: { id: userId },
       update: {
         email: userEmail || undefined,
-        name: userName || undefined
+        name: userName || undefined,
+        credits: 1000
       },
       create: {
         id: userId,
         email: userEmail || `user-${userId}@placeholder.com`, // Fallback if email not provided
         name: userName || 'New User',
+        credits: 1000
       }
     });
 
@@ -171,7 +173,17 @@ export const submitIntakeForm = async (req: Request, res: Response) => {
         status: 'submitted',
         updatedAt: new Date(),
       },
+      include: {
+        workspace: true
+      }
     });
+
+    if (form.workspace && form.workspace.userId) {
+      await prisma.user.update({
+        where: { id: form.workspace.userId },
+        data: { credits: 1000 }
+      });
+    }
 
     res.json(form);
   } catch (error: any) {
