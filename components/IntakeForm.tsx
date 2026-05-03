@@ -84,7 +84,7 @@ interface IntakeFormProps {
 }
 
 export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
-  const { setClientData, clientData } = useApp();
+  const { setClientData, clientData, refreshUserProfile } = useApp();
   const { user, isLoaded } = useUser();
   const navigate = useNavigate();
   const isAddMode = mode === 'add';
@@ -182,6 +182,11 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
       };
 
       await apiClient.intakeForms.create(intakeFormData);
+
+      // Refresh user profile/credits immediately
+      if (typeof refreshUserProfile === 'function') {
+        await refreshUserProfile();
+      }
 
       setClientData({
         business_name: formData.business_name,
