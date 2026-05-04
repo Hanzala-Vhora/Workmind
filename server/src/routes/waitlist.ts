@@ -26,11 +26,11 @@ router.post('/', async (req, res) => {
     });
 
     // Send confirmation email via SMTP using nodemailer
-    const user = process.env.EMAIL_USER || 'hanzalavhora@gmail.com';
-    const pass = process.env.EMAIL_PASS || 'pgsj jlaw lghx rxet';
-    const host = process.env.EMAIL_HOST || 'smtp.gmail.com';
-    const port = parseInt(process.env.EMAIL_PORT || '587');
-    const secure = process.env.EMAIL_SECURE === 'true';
+    const user = (process.env.EMAIL_USER || 'hanzalavhora@gmail.com').trim();
+    const pass = (process.env.EMAIL_PASS || 'pgsj jlaw lghx rxet').trim();
+    const host = (process.env.EMAIL_HOST || 'smtp.gmail.com').trim();
+    const port = parseInt((process.env.EMAIL_PORT || '587').trim());
+    const secure = (process.env.EMAIL_SECURE || 'false').trim() === 'true';
 
     let transporter;
     if (host.includes('gmail.com')) {
@@ -40,9 +40,9 @@ router.post('/', async (req, res) => {
           user,
           pass,
         },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
+        connectionTimeout: 60000,
+        greetingTimeout: 60000,
+        socketTimeout: 60000,
         tls: {
           rejectUnauthorized: false
         }
@@ -56,9 +56,9 @@ router.post('/', async (req, res) => {
           user,
           pass,
         },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
+        connectionTimeout: 60000,
+        greetingTimeout: 60000,
+        socketTimeout: 60000,
         tls: {
           rejectUnauthorized: false
         }
