@@ -43,6 +43,7 @@ router.post('/', async (req, res) => {
         connectionTimeout: 60000,
         greetingTimeout: 60000,
         socketTimeout: 60000,
+        family: 4,
         tls: {
           rejectUnauthorized: false
         }
@@ -59,6 +60,7 @@ router.post('/', async (req, res) => {
         connectionTimeout: 60000,
         greetingTimeout: 60000,
         socketTimeout: 60000,
+        family: 4,
         tls: {
           rejectUnauthorized: false
         }
