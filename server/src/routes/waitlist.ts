@@ -32,15 +32,38 @@ router.post('/', async (req, res) => {
     const port = parseInt(process.env.EMAIL_PORT || '587');
     const secure = process.env.EMAIL_SECURE === 'true';
 
-    const transporter = nodemailer.createTransport({
-      host,
-      port,
-      secure,
-      auth: {
-        user,
-        pass,
-      },
-    });
+    let transporter;
+    if (host.includes('gmail.com')) {
+      transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user,
+          pass,
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+    } else {
+      transporter = nodemailer.createTransport({
+        host,
+        port,
+        secure,
+        auth: {
+          user,
+          pass,
+        },
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
+        tls: {
+          rejectUnauthorized: false
+        }
+      });
+    }
 
     const emailHtml = `
       <div style="font-family: sans-serif; line-height: 1.6; max-width: 600px; color: #1e293b;">
