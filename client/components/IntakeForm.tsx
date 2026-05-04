@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { useUser } from '@clerk/clerk-react';
 import { useApp } from '../context/AppContext';
 import { Department, IntakeData } from '../types';
 import { Loader2, Globe, Sparkles, Building2, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../services/apiClient';
 import { clsx } from 'clsx';
+import { useAuth } from '../context/AuthContext';
 
 const DEPARTMENTS: Department[] = ['Sales', 'Marketing', 'Finance', 'Operations', 'HR', 'IT', 'Social Media', 'Procurement'];
 
@@ -85,7 +85,7 @@ interface IntakeFormProps {
 
 export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
   const { setClientData, clientData, refreshUserProfile } = useApp();
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useAuth();
   const navigate = useNavigate();
   const isAddMode = mode === 'add';
 
@@ -166,8 +166,8 @@ export const IntakeForm: React.FC<IntakeFormProps> = ({ mode = 'initial' }) => {
       const intakeFormData = {
         workspaceId: 'ws-' + Math.random().toString(36).substr(2, 9),
         userId: user.id,
-        userEmail: user.primaryEmailAddress?.emailAddress,
-        userName: user.fullName || user.firstName,
+        userEmail: user.email,
+        userName: user.fullName,
         companyName: formData.business_name,
         industry: formData.industries.join(', '),
         companySize: formData.stage,

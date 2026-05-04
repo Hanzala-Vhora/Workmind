@@ -8,10 +8,11 @@ import { ThreadAnalyzer } from './ThreadAnalyzer';
 import { BrainLogo } from './BrainLogo';
 import { StoredDocument } from '../types';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react';
+import { useAuth } from '../context/AuthContext';
+import { authFetch } from '../lib/auth';
 
 export const ExpertChat: React.FC = () => {
-  const { user } = useUser();
+  const { user } = useAuth();
   const { clientData, activeDepartment, setActiveDepartment, conversations, addMessage, departmentDocuments, addDocument, removeDocument, setConversationMessages, userProfile, refreshUserProfile } = useApp();
   const navigate = useNavigate();
   const [input, setInput] = useState('');
@@ -67,7 +68,7 @@ export const ExpertChat: React.FC = () => {
     const fetchChats = async () => {
       try {
         setChatsLoading(true);
-        const res = await fetch(`${API_URL}/api/chat/department/${activeDepartment}?userId=${user.id}`);
+        const res = await authFetch(`${API_URL}/api/chat/department/${activeDepartment}?userId=${user.id}`);
         if (res.ok) {
           const data = await res.json();
           const loadedChats = data.chats || [];
@@ -100,7 +101,7 @@ export const ExpertChat: React.FC = () => {
     const fetchHistory = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_URL}/api/chat/session/${currentChatId}?userId=${user.id}`);
+        const res = await authFetch(`${API_URL}/api/chat/session/${currentChatId}?userId=${user.id}`);
         if (res.ok) {
           const data = await res.json();
           setMessages(data.history || []);
@@ -119,7 +120,7 @@ export const ExpertChat: React.FC = () => {
   useEffect(() => {
     const fetchAIConfig = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/settings/ai-config`);
+          const res = await authFetch(`${API_URL}/api/settings/ai-config`);
         if (res.ok) {
           const data = await res.json();
           // Find the model in our local MODELS list that matches the backend default
@@ -137,7 +138,7 @@ export const ExpertChat: React.FC = () => {
 
   const refreshChats = async () => {
     if (!activeDepartment || !user?.id) return;
-    const res = await fetch(`${API_URL}/api/chat/department/${activeDepartment}?userId=${user.id}`);
+    const res = await authFetch(`${API_URL}/api/chat/department/${activeDepartment}?userId=${user.id}`);
     if (res.ok) {
       const data = await res.json();
       setChats(data.chats || []);
@@ -149,7 +150,7 @@ export const ExpertChat: React.FC = () => {
     if (!confirm("Are you sure you want to delete this chat?")) return;
 
     try {
-      await fetch(`${API_URL}/api/chat/session/${chatId}?userId=${user.id}`, { method: 'DELETE' });
+      await authFetch(`${API_URL}/api/chat/session/${chatId}?userId=${user.id}`, { method: 'DELETE' });
       if (currentChatId === chatId) {
         setCurrentChatId(null);
         setMessages([]);
@@ -196,7 +197,7 @@ export const ExpertChat: React.FC = () => {
     setMessages(prev => [...prev, assistantPlaceholder]);
 
     try {
-      const res = await fetch(`${API_URL}/api/chat`, {
+      const res = await authFetch(`${API_URL}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -321,7 +322,7 @@ export const ExpertChat: React.FC = () => {
           formData.append('userId', user.id);
           formData.append('department', activeDepartment);
 
-          const res = await fetch(`${API_URL}/api/upload`, {
+          const res = await authFetch(`${API_URL}/api/upload`, {
             method: 'POST',
             body: formData
           });
@@ -390,7 +391,7 @@ export const ExpertChat: React.FC = () => {
       // But let's try currentChatId if available, or just remove from client state.
 
       if (currentChatId) {
-        await fetch(`${API_URL}/api/upload?chatId=${doc.chatId || currentChatId}&filename=${encodeURIComponent(doc.name)}&userId=${user?.id}`, {
+        await authFetch(`${API_URL}/api/upload?chatId=${doc.chatId || currentChatId}&filename=${encodeURIComponent(doc.name)}&userId=${user?.id}`, {
           method: 'DELETE'
         });
       }
@@ -413,7 +414,7 @@ export const ExpertChat: React.FC = () => {
         setCurrentChatId(attachChatId);
       }
 
-      const res = await fetch(`${API_URL}/api/upload/url`, {
+      const res = await authFetch(`${API_URL}/api/upload/url`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

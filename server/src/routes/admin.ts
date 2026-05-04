@@ -1,25 +1,14 @@
 import { Router } from 'express';
 import prisma from '../db.js';
+import { requireAdmin, type AuthRequest } from '../middleware/auth.js';
+import { createSupabaseUser } from '../utils/supabaseAuth.js';
+import { sendApprovalCredentialsEmail } from '../utils/mailer.js';
+import { randomBytes } from 'node:crypto';
 
 const router = Router();
 
-/**
- * Admin Middleware
- * Checks if the user has an admin role.
- * Expects 'x-user-role' header for simplicity in this implementation,
- * but should be verified via Clerk JWT in production.
- */
-const isAdmin = async (req: any, res: any, next: any) => {
-    const role = req.headers['x-user-role'];
-    if (role === 'admin') {
-        next();
-    } else {
-        res.status(403).json({ error: 'Unauthorized: Admin access required' });
-    }
-};
-
 // GET /api/admin/users
-router.get('/users', isAdmin, async (req, res) => {
+router.get('/users', requireAdmin, async (req, res) => {
     try {
         const users = await prisma.user.findMany({
             orderBy: { createdAt: 'desc' },
@@ -58,7 +47,7 @@ router.get('/users', isAdmin, async (req, res) => {
 });
 
 // POST /api/admin/assign-credits
-router.post('/assign-credits', isAdmin, async (req, res) => {
+router.post('/assign-credits', requireAdmin, async (req, res) => {
     try {
         const { userId, amount, email, mode } = req.body;
         
@@ -90,7 +79,7 @@ router.post('/assign-credits', isAdmin, async (req, res) => {
 });
 
 // POST /api/admin/update-user-permissions
-router.post('/update-user-permissions', isAdmin, async (req, res) => {
+router.post('/update-user-permissions', requireAdmin, async (req, res) => {
     try {
         const { userId, allowedModels } = req.body;
         
@@ -108,7 +97,7 @@ router.post('/update-user-permissions', isAdmin, async (req, res) => {
 });
 
 // GET /api/admin/dashboard-stats
-router.get('/dashboard-stats', isAdmin, async (req, res) => {
+router.get('/dashboard-stats', requireAdmin, async (req, res) => {
     try {
         const [stats, logStats] = await Promise.all([
             prisma.user.aggregate({
@@ -133,7 +122,7 @@ router.get('/dashboard-stats', isAdmin, async (req, res) => {
 });
 
 // GET /api/admin/usage-logs (Paginated)
-router.get('/usage-logs', isAdmin, async (req, res) => {
+router.get('/usage-logs', requireAdmin, async (req, res) => {
     try {
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 10;
@@ -161,6 +150,66 @@ router.get('/usage-logs', isAdmin, async (req, res) => {
         });
     } catch (error: any) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+router.get('/waitlist', requireAdmin, async (_req, res) => {
+    try {
+        const entries = await prisma.waitlist.findMany({
+            orderBy: { createdAt: 'desc' },
+        });
+
+        res.json(entries);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/waitlist/:id/approve', requireAdmin, async (req: AuthRequest, res) => {
+    try {
+        const entry = await prisma.waitlist.findUnique({
+            where: { id: req.params.id },
+        });
+
+        if (!entry) {
+            return res.status(404).json({ error: 'Waitlist entry not found.' });
+        }
+
+        const password = `WM-${randomBytes(6).toString('base64url')}`;
+        const supabaseUser = await createSupabaseUser({
+            email: entry.email,
+            password,
+            fullName: entry.fullName,
+        });
+
+        const user = await prisma.user.upsert({
+            where: { id: supabaseUser.id },
+            update: {
+                email: entry.email,
+                name: entry.fullName,
+            },
+            create: {
+                id: supabaseUser.id,
+                email: entry.email,
+                name: entry.fullName,
+                role: 'user',
+                credits: 1000,
+            },
+        });
+
+        await sendApprovalCredentialsEmail({
+            email: entry.email,
+            fullName: entry.fullName,
+            password,
+        });
+
+        await prisma.waitlist.delete({
+            where: { id: entry.id },
+        });
+        
+        res.json({ success: true, userId: user.id, email: user.email });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message || 'Failed to approve waitlist user.' });
     }
 });
 

@@ -1,8 +1,8 @@
 
 import React, { useEffect } from 'react';
-import { Routes, Route, useNavigate, useSearchParams } from 'react-router-dom';
-import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
+import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
+import { useAuth } from './context/AuthContext';
 import { LandingPage } from './components/LandingPage';
 import { IntakeForm } from './components/IntakeForm';
 import { Dashboard } from './components/Dashboard';
@@ -13,12 +13,19 @@ import { SignInPage } from './components/auth/SignInPage';
 import { SignUpPage } from './components/auth/SignUpPage';
 import { Department } from './types';
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => (
-  <>
-    <SignedIn>{children}</SignedIn>
-    <SignedOut><RedirectToSignIn /></SignedOut>
-  </>
-);
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  if (!isLoaded) {
+    return null;
+  }
+
+  if (!isSignedIn) {
+    return <Navigate to="/sign-in" replace />;
+  }
+
+  return <>{children}</>;
+};
 
 const AppRoutes: React.FC = () => {
   const { setActiveDepartment, setClientData, clientData } = useApp();

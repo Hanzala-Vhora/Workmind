@@ -1,11 +1,10 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import OpenAI from 'openai';
 import { GoogleGenAI } from '@google/genai';
 import { PrismaClient } from '@prisma/client';
 import { ApifyClient } from 'apify-client';
+import { createOpenAIChatCompletion } from './openai.js';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 const prisma = new PrismaClient();
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
@@ -148,11 +147,11 @@ Keep it highly relevant and structured. Avoid fluff.`;
             const data = await response.json() as any;
             return data.content[0]?.text || 'No analysis generated.';
         } else if (modelProvider === 'openai') {
-            const stream = await openai.chat.completions.create({
+            return await createOpenAIChatCompletion({
+                apiKey: process.env.OPENAI_API_KEY || '',
                 model: modelName,
                 messages: [{ role: 'user', content: prompt }],
             });
-            return stream.choices[0]?.message?.content || 'No analysis generated.';
         } else {
             const chat = ai.chats.create({
                 model: modelName,

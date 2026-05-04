@@ -1,17 +1,14 @@
 
 import { Router } from 'express';
 import { GoogleGenAI } from '@google/genai';
-import OpenAI from 'openai';
 import { buildSystemPrompt } from '../utils/prompts.js';
 import { IntakeData, Department, Message, StoredDocument } from '../types.js';
 import prisma from '../db.js';
 import { deductCredits } from '../utils/billing.js';
+import { streamOpenAIChatCompletion } from '../utils/openai.js';
 
 const router = Router();
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
 
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 
@@ -586,19 +583,15 @@ router.post('/', async (req, res) => {
             messages.push({ role: 'user', content: userMessage });
 
             try {
-                const stream = await openai.chat.completions.create({
+                fullResponseText = await streamOpenAIChatCompletion({
+                    apiKey: process.env.OPENAI_API_KEY || '',
                     model: model || 'gpt-4o',
                     messages: messages,
-                    stream: true,
-                });
-
-                for await (const chunk of stream) {
-                    const chunkText = chunk.choices[0]?.delta?.content || "";
+                }, (chunkText) => {
                     if (chunkText) {
-                        fullResponseText += chunkText;
                         res.write(`data: ${JSON.stringify({ text: chunkText })}\n\n`);
                     }
-                }
+                });
             } catch (err: any) {
                 console.error("OpenAI Error:", err);
                 res.write(`data: ${JSON.stringify({ text: "Error calling OpenAI: " + err.message })}\n\n`);

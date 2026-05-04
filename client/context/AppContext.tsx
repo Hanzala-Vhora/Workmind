@@ -1,7 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useUser } from '@clerk/clerk-react';
 import { IntakeData, Conversation, Department, StoredDocument, HubMessage } from '../types';
+import { useAuth } from './AuthContext';
+import { authFetch } from '../lib/auth';
 
 interface AppContextType {
   clientData: IntakeData | null;
@@ -39,7 +40,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeDepartment, setActiveDepartment] = useState<Department | null>(null);
   const [userProfile, setUserProfile] = useState<any | null>(null);
 
-  const { user } = useUser();
+  const { user } = useAuth();
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   // Persist to local storage (only as backup / cache)
@@ -68,14 +69,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const fetchContext = async () => {
       try {
         // 1. Check status
-        const statusRes = await fetch(`${API_URL}/api/users/${user.id}/onboarding-status`);
+        const statusRes = await authFetch(`${API_URL}/api/users/${user.id}/onboarding-status`);
         if (!statusRes.ok) return;
 
         const status = await statusRes.json();
 
         // 2. If form completed, fetch full data
         if (status.completed && status.formId) {
-          const formRes = await fetch(`${API_URL}/api/intake-forms/${status.formId}`);
+          const formRes = await authFetch(`${API_URL}/api/intake-forms/${status.formId}`);
           if (formRes.ok) {
             const formData = await formRes.json();
 
@@ -165,7 +166,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const refreshUserProfile = async () => {
     if (!user?.id) return;
     try {
-      const res = await fetch(`${API_URL}/api/users/${user.id}/profile`);
+      const res = await authFetch(`${API_URL}/api/users/${user.id}/profile`);
       if (res.ok) {
         const data = await res.json();
         setUserProfile(data);

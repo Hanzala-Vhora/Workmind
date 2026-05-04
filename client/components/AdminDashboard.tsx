@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Users, CreditCard, Activity, ArrowLeft, Search, Plus, TrendingUp, AlertCircle, Database, Zap, Cpu, Loader } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { authFetch, getAuthHeaders } from '../lib/auth';
 
 export const AdminDashboard: React.FC = () => {
     const { userProfile } = useApp();
@@ -21,6 +22,8 @@ export const AdminDashboard: React.FC = () => {
     const logsPerPage = 10;
     const [logsData, setLogsData] = useState<{ logs: any[]; total: number; totalPages: number }>({ logs: [], total: 0, totalPages: 0 });
     const [logsLoading, setLogsLoading] = useState(false);
+    const [waitlistEntries, setWaitlistEntries] = useState<any[]>([]);
+    const [approvingId, setApprovingId] = useState<string | null>(null);
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -28,19 +31,23 @@ export const AdminDashboard: React.FC = () => {
         if (userProfile?.role !== 'admin') return;
         setLoading(true);
         try {
-            const headers = { 'x-user-role': 'admin' };
             const [usersRes, statsRes] = await Promise.all([
-                fetch(`${API_URL}/api/admin/users`, { headers }),
-                fetch(`${API_URL}/api/admin/dashboard-stats`, { headers })
+                authFetch(`${API_URL}/api/admin/users`),
+                authFetch(`${API_URL}/api/admin/dashboard-stats`)
             ]);
 
             if (usersRes.ok) setUsers(await usersRes.json());
             if (statsRes.ok) setStats(await statsRes.json());
 
-            const settingsRes = await fetch(`${API_URL}/api/settings/ai-config`, { headers });
+            const settingsRes = await authFetch(`${API_URL}/api/settings/ai-config`);
             if (settingsRes.ok) {
                 const data = await settingsRes.json();
                 setSystemSettings({ defaultProvider: data.modelProvider, defaultModel: data.model });
+            }
+
+            const waitlistRes = await authFetch(`${API_URL}/api/admin/waitlist`);
+            if (waitlistRes.ok) {
+                setWaitlistEntries(await waitlistRes.json());
             }
         } catch (err) {
             console.error("Admin fetch error", err);
@@ -53,8 +60,7 @@ export const AdminDashboard: React.FC = () => {
         if (userProfile?.role !== 'admin') return;
         setLogsLoading(true);
         try {
-            const headers = { 'x-user-role': 'admin' };
-            const res = await fetch(`${API_URL}/api/admin/usage-logs?page=${page}&limit=${logsPerPage}`, { headers });
+            const res = await authFetch(`${API_URL}/api/admin/usage-logs?page=${page}&limit=${logsPerPage}`);
             if (res.ok) {
                 const data = await res.json();
                 setLogsData(data);
@@ -83,7 +89,7 @@ export const AdminDashboard: React.FC = () => {
         try {
             const res = await fetch(`${API_URL}/api/admin/assign-credits`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-user-role': 'admin' },
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     userId: assignModal.userId,
                     email: assignModal.email,
@@ -104,7 +110,7 @@ export const AdminDashboard: React.FC = () => {
         try {
             const res = await fetch(`${API_URL}/api/admin/update-user-permissions`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-user-role': 'admin' },
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     userId: permissionsModal.userId,
                     allowedModels: permissionsModal.allowedModels
@@ -121,10 +127,9 @@ export const AdminDashboard: React.FC = () => {
 
     const handleUpdateGlobalSettings = async () => {
         try {
-            const headers = { 'Content-Type': 'application/json', 'x-user-role': 'admin' };
             await fetch(`${API_URL}/api/settings/ai-config`, {
                 method: 'POST',
-                headers,
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({
                     modelProvider: systemSettings.defaultProvider,
                     model: systemSettings.defaultModel
@@ -133,6 +138,26 @@ export const AdminDashboard: React.FC = () => {
             alert("Global settings updated!");
         } catch (err) {
             console.error("Global settings update error", err);
+        }
+    };
+
+    const handleApproveWaitlist = async (waitlistId: string) => {
+        try {
+            setApprovingId(waitlistId);
+            const response = await authFetch(`${API_URL}/api/admin/waitlist/${waitlistId}/approve`, {
+                method: 'POST',
+            });
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Failed to approve user.');
+            }
+
+            setWaitlistEntries((prev) => prev.filter((entry) => entry.id !== waitlistId));
+        } catch (err: any) {
+            alert(err.message || 'Failed to approve user.');
+        } finally {
+            setApprovingId(null);
         }
     };
 
@@ -238,6 +263,32 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                         <p className="text-sm font-medium text-gray-500">Total Output</p>
                         <p className="text-2xl font-black text-gray-900">{stats?.totalOutputTokens?.toLocaleString() || 0} <span className="text-[10px] font-medium text-gray-400 uppercase">tok</span></p>
+                    </div>
+                </div>
+
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="p-4 border-b border-gray-100">
+                        <h2 className="font-bold text-gray-900">Pending Waitlist Approvals</h2>
+                    </div>
+                    <div className="divide-y divide-gray-100">
+                        {waitlistEntries.length === 0 ? (
+                            <div className="p-6 text-sm text-gray-500">No pending waitlist approvals.</div>
+                        ) : waitlistEntries.map((entry) => (
+                            <div key={entry.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+                                <div>
+                                    <p className="font-semibold text-gray-900">{entry.fullName}</p>
+                                    <p className="text-sm text-gray-600">{entry.email} • {entry.companyName}</p>
+                                    <p className="text-xs text-gray-500">{entry.designation} • {entry.phone}</p>
+                                </div>
+                                <button
+                                    onClick={() => handleApproveWaitlist(entry.id)}
+                                    disabled={approvingId === entry.id}
+                                    className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+                                >
+                                    {approvingId === entry.id ? 'Approving...' : 'Approve & email credentials'}
+                                </button>
+                            </div>
+                        ))}
                     </div>
                 </div>
 

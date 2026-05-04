@@ -1,5 +1,6 @@
 // services/apiClient.ts
 // Frontend API client for backend communication
+import { authFetch, getAuthHeaders } from '../lib/auth';
 
 const envUrl = import.meta.env.VITE_API_URL;
 console.log('Workmind Config:', {
@@ -19,7 +20,7 @@ export const apiClient = {
     create: async (data: any) => {
       const response = await fetch(`${API_BASE_URL}/intake-forms`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify(data),
       });
       if (!response.ok) throw new Error(`Failed to create intake form: ${response.statusText}`);
@@ -36,19 +37,19 @@ export const apiClient = {
         if (params.userId) parts.push(`userId=${params.userId}`);
         queryString = parts.join('&');
       }
-      const response = await fetch(`${API_BASE_URL}/intake-forms?${queryString}`);
+      const response = await authFetch(`${API_BASE_URL}/intake-forms?${queryString}`);
       if (!response.ok) throw new Error(`Failed to fetch intake forms: ${response.statusText}`);
       return response.json();
     },
 
     getById: async (id: string) => {
-      const response = await fetch(`${API_BASE_URL}/intake-forms/${id}`);
+      const response = await authFetch(`${API_BASE_URL}/intake-forms/${id}`);
       if (!response.ok) throw new Error(`Failed to fetch intake form: ${response.statusText}`);
       return response.json();
     },
 
     update: async (id: string, data: any) => {
-      const response = await fetch(`${API_BASE_URL}/intake-forms/${id}`, {
+      const response = await authFetch(`${API_BASE_URL}/intake-forms/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -58,7 +59,7 @@ export const apiClient = {
     },
 
     delete: async (id: string) => {
-      const response = await fetch(`${API_BASE_URL}/intake-forms/${id}`, {
+      const response = await authFetch(`${API_BASE_URL}/intake-forms/${id}`, {
         method: 'DELETE',
       });
       if (!response.ok) throw new Error(`Failed to delete intake form: ${response.statusText}`);
@@ -66,7 +67,7 @@ export const apiClient = {
     },
 
     submit: async (id: string) => {
-      const response = await fetch(`${API_BASE_URL}/intake-forms/${id}/submit`, {
+      const response = await authFetch(`${API_BASE_URL}/intake-forms/${id}/submit`, {
         method: 'POST',
       });
       if (!response.ok) throw new Error(`Failed to submit intake form: ${response.statusText}`);
@@ -74,7 +75,7 @@ export const apiClient = {
     },
 
     analyze: async (websiteUrl: string, socialLinks?: string) => {
-      const response = await fetch(`${API_BASE_URL}/intake-forms/analyze`, {
+      const response = await authFetch(`${API_BASE_URL}/intake-forms/analyze`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ websiteUrl, socialLinks }),
@@ -87,7 +88,7 @@ export const apiClient = {
   // Workspaces
   workspaces: {
     create: async (name: string, userId: string) => {
-      const response = await fetch(`${API_BASE_URL}/workspaces`, {
+      const response = await authFetch(`${API_BASE_URL}/workspaces`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, userId }),
@@ -97,13 +98,13 @@ export const apiClient = {
     },
 
     getAll: async (userId: string) => {
-      const response = await fetch(`${API_BASE_URL}/workspaces?userId=${userId}`);
+      const response = await authFetch(`${API_BASE_URL}/workspaces?userId=${userId}`);
       if (!response.ok) throw new Error(`Failed to fetch workspaces: ${response.statusText}`);
       return response.json();
     },
 
     getById: async (id: string) => {
-      const response = await fetch(`${API_BASE_URL}/workspaces/${id}`);
+      const response = await authFetch(`${API_BASE_URL}/workspaces/${id}`);
       if (!response.ok) throw new Error(`Failed to fetch workspace: ${response.statusText}`);
       return response.json();
     },
@@ -112,7 +113,7 @@ export const apiClient = {
   // Agents
   agents: {
     create: async (data: any) => {
-      const response = await fetch(`${API_BASE_URL}/agents`, {
+      const response = await authFetch(`${API_BASE_URL}/agents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -122,13 +123,13 @@ export const apiClient = {
     },
 
     getAll: async (workspaceId: string) => {
-      const response = await fetch(`${API_BASE_URL}/agents?workspaceId=${workspaceId}`);
+      const response = await authFetch(`${API_BASE_URL}/agents?workspaceId=${workspaceId}`);
       if (!response.ok) throw new Error(`Failed to fetch agents: ${response.statusText}`);
       return response.json();
     },
 
     getById: async (id: string) => {
-      const response = await fetch(`${API_BASE_URL}/agents/${id}`);
+      const response = await authFetch(`${API_BASE_URL}/agents/${id}`);
       if (!response.ok) throw new Error(`Failed to fetch agent: ${response.statusText}`);
       return response.json();
     },
@@ -137,7 +138,7 @@ export const apiClient = {
   // Threads
   threads: {
     create: async (data: any) => {
-      const response = await fetch(`${API_BASE_URL}/threads`, {
+      const response = await authFetch(`${API_BASE_URL}/threads`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
@@ -147,13 +148,13 @@ export const apiClient = {
     },
 
     getById: async (id: string) => {
-      const response = await fetch(`${API_BASE_URL}/threads/${id}`);
+      const response = await authFetch(`${API_BASE_URL}/threads/${id}`);
       if (!response.ok) throw new Error(`Failed to fetch thread: ${response.statusText}`);
       return response.json();
     },
 
     addMessage: async (threadId: string, role: string, content: string) => {
-      const response = await fetch(`${API_BASE_URL}/threads/${threadId}/messages`, {
+      const response = await authFetch(`${API_BASE_URL}/threads/${threadId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ role, content }),
@@ -166,7 +167,7 @@ export const apiClient = {
   // Users
   users: {
     checkOnboardingStatus: async (userId: string) => {
-      const response = await fetch(`${API_BASE_URL}/users/${userId}/onboarding-status`);
+      const response = await authFetch(`${API_BASE_URL}/users/${userId}/onboarding-status`);
       if (!response.ok) throw new Error(`Failed to check onboarding status: ${response.statusText}`);
       return response.json();
     }

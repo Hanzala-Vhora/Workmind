@@ -1,12 +1,21 @@
 import React from 'react';
 import { ArrowRight, CheckCircle2, FileText, Clock, BarChart3, Users, Globe, ShoppingCart, MessageSquare, Shield, Server, Lock, Zap, Workflow, Target, Play, Database, Brain, Rocket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useUser, UserButton } from '@clerk/clerk-react';
 import { BrainLogo } from './BrainLogo';
+import { useAuth } from '../context/AuthContext';
+
+const initialFormData = {
+  fullName: '',
+  designation: '',
+  companyName: '',
+  email: '',
+  phone: '',
+  budget: '',
+};
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isLoaded, isSignedIn } = useUser();
+  const { isSignedIn } = useAuth();
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -23,14 +32,7 @@ export const LandingPage: React.FC = () => {
     }
   };
 
-  const [formData, setFormData] = React.useState({
-    fullName: '',
-    designation: '',
-    companyName: '',
-    email: '',
-    phone: '',
-    budget: '',
-  });
+  const [formData, setFormData] = React.useState(initialFormData);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSubmitted, setIsSubmitted] = React.useState(false);
@@ -69,6 +71,8 @@ export const LandingPage: React.FC = () => {
       }
 
       setIsSubmitted(true);
+      setFormData(initialFormData);
+      setSubmitError(null);
       setToastMessage('Successfully joined the waitlist!');
       setShowToast(true);
       setTimeout(() => setShowToast(false), 5000);
@@ -98,33 +102,20 @@ export const LandingPage: React.FC = () => {
               <button onClick={() => scrollToSection('experts')} className="hover:text-neural-DEFAULT transition-colors">Experts</button>
               <button onClick={() => scrollToSection('pricing')} className="hover:text-neural-DEFAULT transition-colors">Pricing</button>
             </div>
-            {/* <div className="flex items-center gap-4">
-              {isSignedIn && isLoaded ? (
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => navigate('/dashboard')}
-                    className="text-sm font-bold text-neural-DEFAULT hover:text-neural-dark px-3 py-2 transition-colors border border-neural-DEFAULT/30 rounded-lg hover:bg-neural-DEFAULT/5"
-                  >
-                    Dashboard
-                  </button>
-                  <span className="text-sm font-semibold text-gray-700 hidden sm:inline">Hello, {user.firstName || user.fullName}</span>
-                  <UserButton />
-                </div>
-              ) : (
-                <button
-                  onClick={() => navigate('/sign-in')}
-                  className="text-sm font-bold text-gray-600 hover:text-neural-DEFAULT px-4 py-2 transition-colors"
-                >
-                  Login / Sign-Up
-                </button>
-              )}
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(isSignedIn ? '/dashboard' : '/sign-in')}
+                className="text-sm font-bold text-gray-600 hover:text-neural-DEFAULT px-4 py-2 transition-colors"
+              >
+                {isSignedIn ? 'Dashboard' : 'Login'}
+              </button>
               <button
                 onClick={handleStart}
                 className="bg-gradient-brand text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg hover:shadow-neural-DEFAULT/30 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0"
               >
                 Start Free Pilot
               </button>
-            </div> */}
+            </div>
           </div>
         </div>
       </nav>

@@ -5,7 +5,7 @@ import { Users, Globe, BarChart3, Server, ShoppingCart, MessageSquare, Briefcase
 import { Department, IntakeData } from '../types';
 import { BrainLogo } from './BrainLogo';
 import { useNavigate } from 'react-router-dom';
-import { useClerk, useUser } from '@clerk/clerk-react';
+import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/apiClient';
 import { INITIAL_DATA } from './IntakeForm';
 
@@ -23,8 +23,7 @@ const DEPT_ICONS: Record<Department, any> = {
 export const Dashboard: React.FC = () => {
   const { clientData, setClientData, setActiveDepartment, resetApp, userProfile } = useApp();
   const navigate = useNavigate();
-  const { signOut } = useClerk();
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded, signOut } = useAuth();
 
   const [intakeForms, setIntakeForms] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -203,7 +202,7 @@ export const Dashboard: React.FC = () => {
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-bold truncate">{user?.fullName || 'User'}</p>
-              <p className="text-[10px] text-white/60 truncate uppercase">{user?.primaryEmailAddress?.emailAddress}</p>
+              <p className="text-[10px] text-white/60 truncate uppercase">{user?.email}</p>
             </div>
           </div>
 

@@ -16,6 +16,7 @@ import chatRoutes from './routes/chat.js';
 import uploadRoutes from './routes/upload.js';
 import settingsRoutes from './routes/settings.js';
 import adminRoutes from './routes/admin.js';
+import authRoutes from './routes/auth.js';
 
 
 
@@ -47,6 +48,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/waitlist', waitlistRoutes);
 
 // Serve static frontend files in production
