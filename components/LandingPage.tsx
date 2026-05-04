@@ -98,7 +98,7 @@ export const LandingPage: React.FC = () => {
               <button onClick={() => scrollToSection('experts')} className="hover:text-neural-DEFAULT transition-colors">Experts</button>
               <button onClick={() => scrollToSection('pricing')} className="hover:text-neural-DEFAULT transition-colors">Pricing</button>
             </div>
-            <div className="flex items-center gap-4">
+            {/* <div className="flex items-center gap-4">
               {isSignedIn && isLoaded ? (
                 <div className="flex items-center gap-3">
                   <button
@@ -124,7 +124,7 @@ export const LandingPage: React.FC = () => {
               >
                 Start Free Pilot
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       </nav>
@@ -169,7 +169,7 @@ export const LandingPage: React.FC = () => {
 
               <h3 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight text-white">Reserve your spot</h3>
               <p className="text-slate-400 text-sm mb-8 leading-normal font-light">Tell us about you. Takes 30 seconds.</p>
-              
+
               {submitError && (
                 <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm flex gap-3 animate-fadeIn">
                   <span className="shrink-0">⚠️</span> {submitError}
@@ -413,7 +413,7 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 bg-gray-50">
+      {/* <section id="pricing" className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-sm font-bold text-neural-DEFAULT uppercase tracking-wider mb-2">Pricing</h2>
@@ -422,7 +422,6 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Starter */}
             <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col">
               <h4 className="text-xl font-bold text-gray-900 mb-2">Starter</h4>
               <p className="text-sm text-gray-500 mb-6">For solopreneurs and small teams.</p>
@@ -436,7 +435,6 @@ export const LandingPage: React.FC = () => {
               </ul>
             </div>
 
-            {/* Growth */}
             <div className="bg-neural-dark rounded-3xl p-8 border border-gray-900 shadow-2xl transform md:-translate-y-4 relative overflow-hidden flex flex-col">
               <div className="absolute top-0 right-0 bg-gradient-brand w-32 h-32 blur-3xl opacity-50"></div>
               <div className="inline-block bg-gradient-brand text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-4 self-start">Most Popular</div>
@@ -453,7 +451,6 @@ export const LandingPage: React.FC = () => {
               </ul>
             </div>
 
-            {/* Enterprise */}
             <div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col">
               <h4 className="text-xl font-bold text-gray-900 mb-2">Enterprise</h4>
               <p className="text-sm text-gray-500 mb-6">For large organizations.</p>
@@ -469,7 +466,7 @@ export const LandingPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Footer */}
       <footer className="bg-ui-bg border-t border-gray-200 py-12">
