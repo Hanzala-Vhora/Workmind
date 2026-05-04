@@ -4,8 +4,26 @@ import { requireAdmin, type AuthRequest } from '../middleware/auth.js';
 import { createSupabaseUser } from '../utils/supabaseAuth.js';
 import { sendApprovalCredentialsEmail } from '../utils/mailer.js';
 import { randomBytes } from 'node:crypto';
+import type { Prisma } from '@prisma/client';
 
 const router = Router();
+type AdminUserWithUsage = Prisma.UserGetPayload<{
+    select: {
+        id: true;
+        email: true;
+        credits: true;
+        totalCostUSD: true;
+        role: true;
+        allowedModels: true;
+        createdAt: true;
+        usageLogs: {
+            select: {
+                inputTokens: true;
+                outputTokens: true;
+            };
+        };
+    };
+}>;
 
 // GET /api/admin/users
 router.get('/users', requireAdmin, async (req, res) => {
@@ -29,9 +47,9 @@ router.get('/users', requireAdmin, async (req, res) => {
             }
         });
 
-        const enhancedUsers = users.map(user => {
-            const totalInputTokens = user.usageLogs.reduce((sum, log) => sum + (log.inputTokens || 0), 0);
-            const totalOutputTokens = user.usageLogs.reduce((sum, log) => sum + (log.outputTokens || 0), 0);
+        const enhancedUsers = users.map((user: AdminUserWithUsage) => {
+            const totalInputTokens = user.usageLogs.reduce((sum: number, log: { inputTokens: number }) => sum + (log.inputTokens || 0), 0);
+            const totalOutputTokens = user.usageLogs.reduce((sum: number, log: { outputTokens: number }) => sum + (log.outputTokens || 0), 0);
             const { usageLogs, ...userWithoutLogs } = user;
             return {
                 ...userWithoutLogs,

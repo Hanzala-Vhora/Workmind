@@ -4,6 +4,7 @@ import { GoogleGenAI } from '@google/genai';
 import { PrismaClient } from '@prisma/client';
 import { ApifyClient } from 'apify-client';
 import { createOpenAIChatCompletion } from './openai.js';
+import type { SystemSetting } from '@prisma/client';
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 const prisma = new PrismaClient();
@@ -107,7 +108,7 @@ Keep it highly relevant and structured. Avoid fluff.`;
             const settings = await prisma.systemSetting.findMany({
                 where: { key: { in: ['DEFAULT_MODEL_PROVIDER', 'DEFAULT_MODEL'] } }
             });
-            const settingsMap = settings.reduce((acc, curr) => {
+            const settingsMap = settings.reduce((acc: Record<string, string>, curr: SystemSetting) => {
                 acc[curr.key] = curr.value;
                 return acc;
             }, {} as Record<string, string>);

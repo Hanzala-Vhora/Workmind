@@ -6,6 +6,7 @@ import { IntakeData, Department, Message, StoredDocument } from '../types.js';
 import prisma from '../db.js';
 import { deductCredits } from '../utils/billing.js';
 import { streamOpenAIChatCompletion } from '../utils/openai.js';
+import type { ChatMessage, ChatSession, DocumentChunk, SystemSetting } from '@prisma/client';
 
 const router = Router();
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
@@ -149,7 +150,7 @@ router.get('/department/:department', async (req, res) => {
         });
 
         res.json({
-            chats: deptChats.map(c => ({
+            chats: deptChats.map((c: Pick<ChatSession, 'id' | 'title' | 'createdAt'>) => ({
                 id: c.id,
                 title: c.title,
                 createdAt: c.createdAt.getTime()
@@ -190,7 +191,7 @@ router.get('/session/:chatId', async (req, res) => {
         }
 
         // Map DB messages to API format
-        const history = chat.messages.map(m => ({
+        const history = chat.messages.map((m: ChatMessage) => ({
             id: m.id,
             role: m.role,
             content: m.content,
@@ -302,7 +303,7 @@ router.post('/', async (req, res) => {
                 const dbSettings = await prisma.systemSetting.findMany({
                     where: { key: { in: ['DEFAULT_MODEL_PROVIDER', 'DEFAULT_MODEL'] } }
                 });
-                const settingsMap = dbSettings.reduce((acc, curr) => {
+                const settingsMap = dbSettings.reduce((acc: Record<string, string>, curr: SystemSetting) => {
                     acc[curr.key] = curr.value;
                     return acc;
                 }, {} as Record<string, string>);
@@ -567,7 +568,7 @@ router.post('/', async (req, res) => {
             ];
 
             // Add History
-            prevMsgsAsc.forEach(msg => {
+            prevMsgsAsc.forEach((msg: ChatMessage) => {
                 messages.push({ role: msg.role === 'assistant' ? 'assistant' : 'user', content: msg.content });
             });
 
@@ -605,7 +606,7 @@ router.post('/', async (req, res) => {
                 fullResponseText = await streamClaudeResponse({
                     model: claudeModel,
                     systemInstruction,
-                    previousMessages: prevMsgsAsc.map(msg => ({
+                    previousMessages: prevMsgsAsc.map((msg: ChatMessage) => ({
                         role: msg.role,
                         content: msg.content
                     })),
@@ -649,7 +650,7 @@ router.post('/', async (req, res) => {
             });
 
             // Add History
-            const historyContext = prevMsgsAsc.map(h => `${h.role.toUpperCase()}: ${h.content}`).join("\n");
+            const historyContext = prevMsgsAsc.map((h: ChatMessage) => `${h.role.toUpperCase()}: ${h.content}`).join("\n");
             if (historyContext) {
                 messageParts.push({ text: `\nPREVIOUS CONVERSATION:\n${historyContext}\n` });
             }

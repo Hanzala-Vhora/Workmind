@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import prisma from '../db.js';
+import type { SystemSetting } from '@prisma/client';
 
 const router = Router();
 
@@ -17,7 +18,7 @@ router.get('/ai-config', async (req, res) => {
             }
         });
 
-        const settingsMap = settings.reduce((acc, curr) => {
+        const settingsMap = settings.reduce((acc: Record<string, string>, curr: SystemSetting) => {
             acc[curr.key] = curr.value;
             return acc;
         }, {} as Record<string, string>);
