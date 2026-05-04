@@ -47,7 +47,7 @@ router.post('/', async (req, res) => {
         tls: {
           rejectUnauthorized: false
         }
-      });
+      } as any);
     } else {
       transporter = nodemailer.createTransport({
         host,
@@ -64,7 +64,7 @@ router.post('/', async (req, res) => {
         tls: {
           rejectUnauthorized: false
         }
-      });
+      } as any);
     }
 
     const emailHtml = `
