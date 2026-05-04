@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ArrowRight, CheckCircle2, FileText, Clock, BarChart3, Users, Globe, ShoppingCart, MessageSquare, Shield, Server, Lock, Zap, Workflow, Target, Play, Database, Brain, Rocket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -7,7 +6,6 @@ import { BrainLogo } from './BrainLogo';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
-
   const { user, isLoaded, isSignedIn } = useUser();
 
   const scrollToSection = (id: string) => {
@@ -22,6 +20,57 @@ export const LandingPage: React.FC = () => {
       navigate('/dashboard');
     } else {
       navigate('/sign-up');
+    }
+  };
+
+  const [formData, setFormData] = React.useState({
+    fullName: '',
+    designation: '',
+    companyName: '',
+    email: '',
+    phone: '',
+    budget: '',
+  });
+
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isSubmitted, setIsSubmitted] = React.useState(false);
+  const [submitError, setSubmitError] = React.useState<string | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.fullName || !formData.designation || !formData.companyName || !formData.email || !formData.phone || !formData.budget) {
+      setSubmitError('Please fill out all fields.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${apiBase}/api/waitlist`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to submit the waitlist form.');
+      }
+
+      setIsSubmitted(true);
+    } catch (err: any) {
+      setSubmitError(err.message || 'Something went wrong. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -75,37 +124,185 @@ export const LandingPage: React.FC = () => {
       </nav>
 
       {/* Hero Section */}
-      <section className="relative pt-24 pb-32 overflow-hidden bg-white">
+      <section className="relative pt-12 md:pt-20 pb-24 overflow-hidden bg-white">
         {/* Abstract Background elements */}
         <div className="absolute top-0 right-0 w-[60%] h-[60%] bg-gradient-to-bl from-cyan-electric/10 to-transparent rounded-bl-full blur-3xl opacity-50 pointer-events-none"></div>
         <div className="absolute bottom-0 left-0 w-[40%] h-[40%] bg-gradient-to-tr from-midnight-DEFAULT/10 to-transparent rounded-tr-full blur-3xl opacity-50 pointer-events-none"></div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neural-DEFAULT/5 border border-neural-DEFAULT/20 text-neural-dark text-xs font-bold uppercase tracking-wider mb-8 animate-fadeIn">
-            <span className="w-2 h-2 rounded-full bg-neural-DEFAULT animate-pulse"></span>
-            Enterprise AI Operating System
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 grid md:grid-cols-2 gap-12 items-center">
+          {/* Left Column */}
+          <div className="text-left animate-fadeIn">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-neural-DEFAULT/5 border border-neural-DEFAULT/20 text-neural-dark text-xs font-bold uppercase tracking-wider mb-6 animate-fadeIn">
+              <span className="w-2 h-2 rounded-full bg-neural-DEFAULT animate-pulse"></span>
+              Enterprise AI Operating System
+            </div>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 text-ui-text leading-tight animate-fadeIn animation-delay-100">
+              Your Business Knowledge. <br />
+              <span className="text-transparent bg-clip-text bg-gradient-brand">Now Active Intelligence.</span>
+            </h1>
+            <p className="text-lg text-ui-slate max-w-xl mb-8 leading-relaxed font-light animate-fadeIn animation-delay-200">
+              Deploy specialized AI agents for Sales, Marketing, HR, and IT. <br className="hidden md:block" />
+              Trained on <strong>your documents</strong>. Aligned to <strong>your goals</strong>. Ready in minutes.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 animate-fadeIn animation-delay-300">
+              <button
+                onClick={() => scrollToSection('how-it-works')}
+                className="bg-white text-ui-text border-2 border-gray-200 px-8 py-3.5 rounded-xl font-bold text-base hover:border-neural-DEFAULT hover:text-neural-DEFAULT transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
+              >
+                <Play className="w-4 h-4 fill-current" /> How It Works
+              </button>
+            </div>
           </div>
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 text-ui-text leading-[1.1] animate-fadeIn animation-delay-100">
-            Your Business Knowledge. <br />
-            <span className="text-transparent bg-clip-text bg-gradient-brand">Now Active Intelligence.</span>
-          </h1>
-          <p className="text-xl text-ui-slate max-w-3xl mx-auto mb-10 leading-relaxed font-light animate-fadeIn animation-delay-200">
-            Deploy specialized AI agents for Sales, Marketing, HR, and IT. <br className="hidden md:block" />
-            Trained on <strong>your documents</strong>. Aligned to <strong>your goals</strong>. Ready in minutes.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-5 justify-center animate-fadeIn animation-delay-300">
-            <button
-              onClick={handleStart}
-              className="bg-gradient-brand text-white px-10 py-4 rounded-xl font-bold text-lg hover:shadow-2xl hover:shadow-neural-DEFAULT/30 transition-all duration-300 flex items-center justify-center gap-2 group transform hover:-translate-y-1"
-            >
-              Get Started Now <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button
-              onClick={() => scrollToSection('how-it-works')}
-              className="bg-white text-ui-text border-2 border-gray-200 px-10 py-4 rounded-xl font-bold text-lg hover:border-neural-DEFAULT hover:text-neural-DEFAULT transition-all duration-300 flex items-center justify-center gap-2 shadow-sm hover:shadow-md"
-            >
-              <Play className="w-5 h-5 fill-current" /> How It Works
-            </button>
+
+          {/* Right Column: Waitlist Form / Success Message */}
+          <div className="relative">
+            <div className="w-full bg-[#0F172A] p-8 md:p-10 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden text-white backdrop-blur-xl animate-fadeIn">
+              {/* Decorative glows */}
+              <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-blue-600/20 blur-[100px] pointer-events-none rounded-full"></div>
+              <div className="absolute bottom-[-50px] left-[-50px] w-64 h-64 bg-purple-600/20 blur-[100px] pointer-events-none rounded-full"></div>
+
+              {isSubmitted ? (
+                <div className="text-center py-10 px-4">
+                  <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+                  </div>
+                  <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-white">You're on the list!</h3>
+                  <div className="text-slate-300 text-sm leading-relaxed mb-6 space-y-4">
+                    <p>We received your sign-up for early access to the WorkMind agent cohort.</p>
+                    <p>Here's what happens next: we're reviewing sign-ups and sending access links to the first cohort by Friday. If you're selected, you'll get your link directly to this email.</p>
+                    <p>Either way, you'll hear from us.</p>
+                    <p>In the meantime, feel free to reply with any questions.</p>
+                  </div>
+                  <button
+                    onClick={() => setIsSubmitted(false)}
+                    className="mt-2 text-emerald-400 text-sm font-semibold hover:underline"
+                  >
+                    Register another spot
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight text-white">Reserve your spot</h3>
+                  <p className="text-slate-400 text-sm mb-8 leading-normal font-light">Tell us about you. Takes 30 seconds.</p>
+                  
+                  {submitError && (
+                    <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm flex gap-3 animate-fadeIn">
+                      <span className="shrink-0">⚠️</span> {submitError}
+                    </div>
+                  )}
+
+                  <form onSubmit={handleFormSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                      <label htmlFor="fullName" className="block text-sm font-bold text-slate-300">Full name</label>
+                      <input
+                        type="text"
+                        id="fullName"
+                        name="fullName"
+                        value={formData.fullName}
+                        onChange={handleInputChange}
+                        placeholder="Jane Doe"
+                        className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="designation" className="block text-sm font-bold text-slate-300">Designation</label>
+                        <input
+                          type="text"
+                          id="designation"
+                          name="designation"
+                          value={formData.designation}
+                          onChange={handleInputChange}
+                          placeholder="Head of Operations"
+                          className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="companyName" className="block text-sm font-bold text-slate-300">Company name</label>
+                        <input
+                          type="text"
+                          id="companyName"
+                          name="companyName"
+                          value={formData.companyName}
+                          onChange={handleInputChange}
+                          placeholder="Acme Inc."
+                          className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="email" className="block text-sm font-bold text-slate-300">Work email</label>
+                        <input
+                          type="email"
+                          id="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          placeholder="jane@acme.com"
+                          className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="phone" className="block text-sm font-bold text-slate-300">Phone number</label>
+                        <input
+                          type="tel"
+                          id="phone"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          placeholder="+1 555 123 4567"
+                          className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="budget" className="block text-sm font-bold text-slate-300">Monthly budget for a tool like this</label>
+                      <select
+                        id="budget"
+                        name="budget"
+                        value={formData.budget}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium cursor-pointer"
+                        required
+                      >
+                        <option value="">Select a range</option>
+                        <option value="< $1,000">&lt; $1,000</option>
+                        <option value="$1,000 - $5,000">$1,000 - $5,000</option>
+                        <option value="$5,000 - $20,000">$5,000 - $20,000</option>
+                        <option value="$20,000+">$20,000+</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-700 disabled:opacity-75 text-white font-bold text-lg py-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 shadow-lg shadow-indigo-500/20 cursor-pointer"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Joining the waitlist...
+                        </>
+                      ) : (
+                        'Join the waitlist'
+                      )}
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </section>

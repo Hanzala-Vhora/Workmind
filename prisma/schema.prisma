@@ -146,3 +146,16 @@ model RepositoryItem {
 
   @@index([workspaceId])
 }
+
+model Waitlist {
+  id           String   @id @default(cuid())
+  fullName     String
+  designation  String
+  companyName  String
+  email        String
+  phone        String
+  budget       String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+

@@ -19,6 +19,8 @@ import adminRoutes from './routes/admin.js';
 
 
 
+import waitlistRoutes from './routes/waitlist.js';
+
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
 
@@ -45,6 +47,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/waitlist', waitlistRoutes);
 
 // Serve static frontend files in production
 if (process.env.NODE_ENV === 'production') {
