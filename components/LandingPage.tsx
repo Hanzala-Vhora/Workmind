@@ -35,6 +35,8 @@ export const LandingPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const [submitError, setSubmitError] = React.useState<string | null>(null);
+  const [showToast, setShowToast] = React.useState(false);
+  const [toastMessage, setToastMessage] = React.useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -67,12 +69,16 @@ export const LandingPage: React.FC = () => {
       }
 
       setIsSubmitted(true);
+      setToastMessage('Successfully joined the waitlist!');
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 5000);
     } catch (err: any) {
       setSubmitError(err.message || 'Something went wrong. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <div className="min-h-screen flex flex-col bg-ui-bg font-sans">
@@ -161,147 +167,124 @@ export const LandingPage: React.FC = () => {
               <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-blue-600/20 blur-[100px] pointer-events-none rounded-full"></div>
               <div className="absolute bottom-[-50px] left-[-50px] w-64 h-64 bg-purple-600/20 blur-[100px] pointer-events-none rounded-full"></div>
 
-              {isSubmitted ? (
-                <div className="text-center py-10 px-4">
-                  <div className="w-20 h-20 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <CheckCircle2 className="w-10 h-10 text-emerald-400" />
-                  </div>
-                  <h3 className="text-2xl md:text-3xl font-extrabold mb-4 text-white">You're on the list!</h3>
-                  <div className="text-slate-300 text-sm leading-relaxed mb-6 space-y-4">
-                    <p>We received your sign-up for early access to the WorkMind agent cohort.</p>
-                    <p>Here's what happens next: we're reviewing sign-ups and sending access links to the first cohort by Friday. If you're selected, you'll get your link directly to this email.</p>
-                    <p>Either way, you'll hear from us.</p>
-                    <p>In the meantime, feel free to reply with any questions.</p>
-                  </div>
-                  <button
-                    onClick={() => setIsSubmitted(false)}
-                    className="mt-2 text-emerald-400 text-sm font-semibold hover:underline"
-                  >
-                    Register another spot
-                  </button>
+              <h3 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight text-white">Reserve your spot</h3>
+              <p className="text-slate-400 text-sm mb-8 leading-normal font-light">Tell us about you. Takes 30 seconds.</p>
+              
+              {submitError && (
+                <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm flex gap-3 animate-fadeIn">
+                  <span className="shrink-0">⚠️</span> {submitError}
                 </div>
-              ) : (
-                <>
-                  <h3 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight text-white">Reserve your spot</h3>
-                  <p className="text-slate-400 text-sm mb-8 leading-normal font-light">Tell us about you. Takes 30 seconds.</p>
-                  
-                  {submitError && (
-                    <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm flex gap-3 animate-fadeIn">
-                      <span className="shrink-0">⚠️</span> {submitError}
-                    </div>
-                  )}
-
-                  <form onSubmit={handleFormSubmit} className="space-y-5">
-                    <div className="space-y-2">
-                      <label htmlFor="fullName" className="block text-sm font-bold text-slate-300">Full name</label>
-                      <input
-                        type="text"
-                        id="fullName"
-                        name="fullName"
-                        value={formData.fullName}
-                        onChange={handleInputChange}
-                        placeholder="Jane Doe"
-                        className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
-                        required
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label htmlFor="designation" className="block text-sm font-bold text-slate-300">Designation</label>
-                        <input
-                          type="text"
-                          id="designation"
-                          name="designation"
-                          value={formData.designation}
-                          onChange={handleInputChange}
-                          placeholder="Head of Operations"
-                          className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label htmlFor="companyName" className="block text-sm font-bold text-slate-300">Company name</label>
-                        <input
-                          type="text"
-                          id="companyName"
-                          name="companyName"
-                          value={formData.companyName}
-                          onChange={handleInputChange}
-                          placeholder="Acme Inc."
-                          className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label htmlFor="email" className="block text-sm font-bold text-slate-300">Work email</label>
-                        <input
-                          type="email"
-                          id="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={handleInputChange}
-                          placeholder="jane@acme.com"
-                          className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label htmlFor="phone" className="block text-sm font-bold text-slate-300">Phone number</label>
-                        <input
-                          type="tel"
-                          id="phone"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          placeholder="+1 555 123 4567"
-                          className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label htmlFor="budget" className="block text-sm font-bold text-slate-300">Monthly budget for a tool like this</label>
-                      <select
-                        id="budget"
-                        name="budget"
-                        value={formData.budget}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium cursor-pointer"
-                        required
-                      >
-                        <option value="">Select a range</option>
-                        <option value="< $1,000">&lt; $1,000</option>
-                        <option value="$1,000 - $5,000">$1,000 - $5,000</option>
-                        <option value="$5,000 - $20,000">$5,000 - $20,000</option>
-                        <option value="$20,000+">$20,000+</option>
-                      </select>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-700 disabled:opacity-75 text-white font-bold text-lg py-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 shadow-lg shadow-indigo-500/20 cursor-pointer"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Joining the waitlist...
-                        </>
-                      ) : (
-                        'Join the waitlist'
-                      )}
-                    </button>
-                  </form>
-                </>
               )}
+
+              <form onSubmit={handleFormSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <label htmlFor="fullName" className="block text-sm font-bold text-slate-300">Full name</label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    name="fullName"
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    placeholder="Jane Doe"
+                    className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="designation" className="block text-sm font-bold text-slate-300">Designation</label>
+                    <input
+                      type="text"
+                      id="designation"
+                      name="designation"
+                      value={formData.designation}
+                      onChange={handleInputChange}
+                      placeholder="Head of Operations"
+                      className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="companyName" className="block text-sm font-bold text-slate-300">Company name</label>
+                    <input
+                      type="text"
+                      id="companyName"
+                      name="companyName"
+                      value={formData.companyName}
+                      onChange={handleInputChange}
+                      placeholder="Acme Inc."
+                      className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="block text-sm font-bold text-slate-300">Work email</label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      placeholder="jane@acme.com"
+                      className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="phone" className="block text-sm font-bold text-slate-300">Phone number</label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="+1 555 123 4567"
+                      className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="budget" className="block text-sm font-bold text-slate-300">Monthly budget for a tool like this</label>
+                  <select
+                    id="budget"
+                    name="budget"
+                    value={formData.budget}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 bg-slate-800/60 border border-slate-700/60 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all font-medium cursor-pointer"
+                    required
+                  >
+                    <option value="">Select a range</option>
+                    <option value="< $1,000">&lt; $1,000</option>
+                    <option value="$1,000 - $5,000">$1,000 - $5,000</option>
+                    <option value="$5,000 - $20,000">$5,000 - $20,000</option>
+                    <option value="$20,000+">$20,000+</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full mt-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-700 disabled:opacity-75 text-white font-bold text-lg py-4 rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 shadow-lg shadow-indigo-500/20 cursor-pointer"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Joining the waitlist...
+                    </>
+                  ) : (
+                    'Join the waitlist'
+                  )}
+                </button>
+              </form>
             </div>
           </div>
         </div>
@@ -505,6 +488,14 @@ export const LandingPage: React.FC = () => {
           </div>
         </div>
       </footer>
+
+      {/* Premium Toast Notification */}
+      {showToast && (
+        <div className="fixed bottom-6 right-6 z-[100] max-w-sm flex items-center gap-3 bg-slate-900 text-white font-medium text-sm px-5 py-3.5 rounded-xl border border-slate-800 shadow-2xl animate-fadeIn">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
     </div>
   );
 };
