@@ -29,8 +29,8 @@ router.post('/', async (req, res) => {
     const user = (process.env.EMAIL_USER || 'theworkmindai@gmail.com').trim();
     const pass = (process.env.EMAIL_PASS || 'brjx bekm pify vxfp').trim();
     const host = (process.env.EMAIL_HOST || 'smtp.gmail.com').trim();
-    const port = parseInt((process.env.EMAIL_PORT || '587').trim());
-    const secure = (process.env.EMAIL_SECURE || 'false').trim() === 'true';
+    const port = parseInt((process.env.EMAIL_PORT || '465').trim());
+    const secure = (process.env.EMAIL_SECURE || 'true').trim() === 'true';
 
     let transporter;
     if (host.includes('gmail.com')) {
