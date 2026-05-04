@@ -9,8 +9,8 @@ router.post('/', async (req, res) => {
   try {
     const { fullName, designation, companyName, email, phone, budget } = req.body;
 
-    if (!fullName || !designation || !companyName || !email || !phone || !budget) {
-      return res.status(400).json({ error: 'All fields are required.' });
+    if (!fullName || !companyName || !email || !phone) {
+      return res.status(400).json({ error: 'These fields are required.' });
     }
 
     // Save to the database
@@ -26,8 +26,8 @@ router.post('/', async (req, res) => {
     });
 
     // Send confirmation email via SMTP using nodemailer
-    const user = (process.env.EMAIL_USER || 'hanzalavhora@gmail.com').trim();
-    const pass = (process.env.EMAIL_PASS || 'pgsj jlaw lghx rxet').trim();
+    const user = (process.env.EMAIL_USER || 'theworkmindai@gmail.com').trim();
+    const pass = (process.env.EMAIL_PASS || 'brjx bekm pify vxfp').trim();
     const host = (process.env.EMAIL_HOST || 'smtp.gmail.com').trim();
     const port = parseInt((process.env.EMAIL_PORT || '587').trim());
     const secure = (process.env.EMAIL_SECURE || 'false').trim() === 'true';
