@@ -251,10 +251,13 @@ export const LandingPage: React.FC = () => {
                     required
                   >
                     <option value="">Select a range</option>
-                    <option value="< $1,000">&lt; $1,000</option>
-                    <option value="$1,000 - $5,000">$1,000 - $5,000</option>
-                    <option value="$5,000 - $20,000">$5,000 - $20,000</option>
-                    <option value="$20,000+">$20,000+</option>
+                    <option value="Less than $50 / month">Less than $50 / month</option>
+                    <option value="$50 - $200 / month">$50 - $200 / month</option>
+                    <option value="$200 - $500 / month">$200 - $500 / month</option>
+                    <option value="$500 - $1,000 / month">$500 - $1,000 / month</option>
+                    <option value="$1,000 - $2,500 / month">$1,000 - $2,500 / month</option>
+                    <option value="$2,500+ / month">$2,500+ / month</option>
+                    <option value="Not sure yet">Not sure yet</option>
                   </select>
                 </div>
 
@@ -343,7 +346,7 @@ export const LandingPage: React.FC = () => {
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { icon: Shield, title: "No Hallucination Guarantee", desc: "Experts are strictly bounded by your context repository. If the answer isn't in your data, they won't guess." },
+              // { icon: Shield, title: "No Hallucination Guarantee", desc: "Experts are strictly bounded by your context repository. If the answer isn't in your data, they won't guess." },
               { icon: Users, title: "Team Collaboration Hubs", desc: "Shared spaces where humans and AI agents collaborate. Tag @SalesExpert to draft a reply instantly." },
               { icon: Lock, title: "Enterprise Security", desc: "Your data is isolated. We use enterprise-grade encryption and never train public models on your proprietary IP." },
               { icon: Target, title: "Goal-Oriented Behavior", desc: "Agents aren't just chatbots. They are programmed with 90-day targets and specific KPIs." },
