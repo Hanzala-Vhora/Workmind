@@ -26,8 +26,23 @@ const app: Express = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://newsystem.d23z3kd7iudo6z.amplifyapp.com',
+];
+
 app.use(cors({
-  origin: true, // allow all origins dynamically
+  origin: function (origin, callback) {
+    // allow server-to-server / curl
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log('❌ Blocked by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 app.use(express.json({ limit: '500mb' }));
