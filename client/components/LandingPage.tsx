@@ -111,7 +111,7 @@ export const LandingPage: React.FC = () => {
               </button>
               <button
                 onClick={handleStart}
-                className="bg-gradient-brand text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg hover:shadow-neural-DEFAULT/30 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0"
+                className="whitespace-nowrap bg-gradient-brand text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg hover:shadow-neural-DEFAULT/30 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0"
               >
                 Start Free Pilot
               </button>
