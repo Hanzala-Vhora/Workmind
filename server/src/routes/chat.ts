@@ -284,6 +284,7 @@ router.post('/', async (req, res) => {
             res.setHeader('Content-Type', 'text/event-stream');
             res.setHeader('Cache-Control', 'no-cache');
             res.setHeader('Connection', 'keep-alive');
+            res.setHeader('X-Accel-Buffering', 'no');
             res.write(`data: ${JSON.stringify({ error: 'Insufficient credits. Please top up your wallet.' })}\n\n`);
             return res.end();
         }
@@ -293,6 +294,7 @@ router.post('/', async (req, res) => {
             res.setHeader('Content-Type', 'text/event-stream');
             res.setHeader('Cache-Control', 'no-cache');
             res.setHeader('Connection', 'keep-alive');
+            res.setHeader('X-Accel-Buffering', 'no');
             res.write(`data: ${JSON.stringify({ error: `Access Denied: You are not authorized to use ${modelProvider} models.` })}\n\n`);
             return res.end();
         }
@@ -362,6 +364,7 @@ router.post('/', async (req, res) => {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no');
 
         const providerApiKey = getProviderApiKey((modelProvider || 'gemini') as 'gemini' | 'openai' | 'claude');
 
