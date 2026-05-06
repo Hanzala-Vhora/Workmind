@@ -58,7 +58,7 @@ export async function sendWaitlistConfirmation(email: string) {
       <div style="font-family: sans-serif; line-height: 1.6; max-width: 600px; color: #1e293b;">
         <h2 style="color: #3b82f6;">You're on the list.</h2>
         <p>We received your sign-up for early access to the WorkMind agent cohort.</p>
-        <p>Here's what happens next: we're reviewing sign-ups and sending access links to the first cohort by Friday. If you're selected, you'll get your credentials directly to this email.</p>
+        <p>Here's what happens next: we're reviewing sign-ups and sending access links to the first cohort by Monday. If you're selected, you'll get your credentials directly to this email.</p>
         <p>Either way, you'll hear from us.</p>
         <p>In the meantime, feel free to reply with any questions.</p>
         <br />
