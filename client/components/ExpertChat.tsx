@@ -762,7 +762,8 @@ export const ExpertChat: React.FC = () => {
                 </div>
               </div>
             </div>
-          )}
+          </>
+        )}
 
           {/* Hidden File Input */}
           <input
@@ -1068,7 +1069,7 @@ export const ExpertChat: React.FC = () => {
           </div>
         </div>
       )}
-    </div >
+    </div>
   );
 };
 
