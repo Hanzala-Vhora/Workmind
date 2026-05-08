@@ -176,6 +176,26 @@ router.post('/export-docx', async (req, res) => {
     }
 });
 
+// GET /api/chat/stats/total
+// Get total conversation count for a user
+router.get('/stats/total', async (req, res) => {
+    try {
+        const { userId } = req.query;
+        if (!userId) {
+            return res.status(400).json({ error: 'User ID is required' });
+        }
+
+        const totalSessions = await prisma.chatSession.count({
+            where: { userId: String(userId) }
+        });
+
+        res.json({ totalConversations: totalSessions });
+    } catch (error) {
+        console.error('Error fetching total conversation count:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 // GET /api/chat/department/:department
 // Get all chats for a department
 router.get('/department/:department', async (req, res) => {

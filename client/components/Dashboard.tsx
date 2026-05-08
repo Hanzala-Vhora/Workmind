@@ -8,6 +8,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/apiClient';
 import { INITIAL_DATA } from './IntakeForm';
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
 
 const DEPT_ICONS: Record<Department, any> = {
   'Sales': Briefcase,
@@ -20,6 +22,8 @@ const DEPT_ICONS: Record<Department, any> = {
   'Procurement': ShoppingCart
 };
 
+const TOTAL_DEPARTMENTS = Object.keys(DEPT_ICONS).length;
+
 export const Dashboard: React.FC = () => {
   const { clientData, setClientData, setActiveDepartment, resetApp, userProfile } = useApp();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -27,7 +31,42 @@ export const Dashboard: React.FC = () => {
   const { user, isLoaded, signOut } = useAuth();
 
   const [intakeForms, setIntakeForms] = useState<any[]>([]);
+  const [totalConversations, setTotalConversations] = useState<number>(0);
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    if (intakeForms.length > 0 && !localStorage.getItem('dashboard_tour_completed')) {
+      const driverObj = driver({
+        showProgress: true,
+        steps: [
+          { 
+            element: '#step-add-expert', 
+            popover: { 
+              title: 'Create Your AI Workforce', 
+              description: 'Click here to add a new department expert. You can have up to 8 specialized agents.', 
+              side: "top", 
+              align: 'start' 
+            } 
+          },
+          {
+            element: '.md\\:flex nav',
+            popover: {
+              title: 'Your Department Hubs',
+              description: 'Once created, your experts will appear here. You can switch between them anytime.',
+              side: "right",
+              align: 'start'
+            }
+          }
+        ],
+        onDestroyStarted: () => {
+          localStorage.setItem('dashboard_tour_completed', 'true');
+          driverObj.destroy();
+        },
+      });
+
+      driverObj.drive();
+    }
+  }, [intakeForms]);
 
   // Fetch intake forms from backend
   const fetchIntakeForms = async () => {
@@ -37,6 +76,13 @@ export const Dashboard: React.FC = () => {
         const forms = await apiClient.intakeForms.getAll({ userId: user.id });
         setIntakeForms(forms);
         console.log('✅ Fetched intake forms:', forms);
+
+        // Fetch total conversations
+        const statsRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/chat/stats/total?userId=${user.id}`);
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setTotalConversations(statsData.totalConversations || 0);
+        }
       } else {
         const workspaceId = clientData?.business_name || 'workspace-default';
         const forms = await apiClient.intakeForms.getAll(workspaceId);
@@ -183,15 +229,17 @@ export const Dashboard: React.FC = () => {
             );
           })}
 
-          <button
-            onClick={() => { navigate('/add-expert'); setIsMobileMenuOpen(false); }}
-            className="w-full mt-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-sm font-bold text-white shadow-lg group"
-          >
-            <div className="bg-cyan-electric text-neural-dark rounded-full w-5 h-5 flex items-center justify-center">
-              <Plus className="w-3 h-3 font-bold" />
-            </div>
-            New Expert
-          </button>
+          {intakeForms.length < TOTAL_DEPARTMENTS && (
+            <button
+              onClick={() => { navigate('/add-expert'); setIsMobileMenuOpen(false); }}
+              className="w-full mt-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-sm font-bold text-white shadow-lg group"
+            >
+              <div className="bg-cyan-electric text-neural-dark rounded-full w-5 h-5 flex items-center justify-center">
+                <Plus className="w-3 h-3 font-bold" />
+              </div>
+              New Expert
+            </button>
+          )}
         </nav>
         <div className="p-4 border-t border-white/10 bg-black/10">
           <div className="flex items-center gap-3 px-2 py-2">
@@ -253,15 +301,17 @@ export const Dashboard: React.FC = () => {
             );
           })}
 
-          <button
-            onClick={() => navigate('/add-expert')}
-            className="w-full mt-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-sm font-bold text-white shadow-lg group"
-          >
-            <div className="bg-cyan-electric text-neural-dark rounded-full w-5 h-5 flex items-center justify-center">
-              <Plus className="w-3 h-3 font-bold" />
-            </div>
-            New Expert
-          </button>
+          {intakeForms.length < TOTAL_DEPARTMENTS && (
+            <button
+              onClick={() => navigate('/add-expert')}
+              className="w-full mt-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-sm font-bold text-white shadow-lg group"
+            >
+              <div className="bg-cyan-electric text-neural-dark rounded-full w-5 h-5 flex items-center justify-center">
+                <Plus className="w-3 h-3 font-bold" />
+              </div>
+              New Expert
+            </button>
+          )}
 
           {userProfile?.role === 'admin' && (
             <button
@@ -338,7 +388,7 @@ export const Dashboard: React.FC = () => {
               </div>
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                 <div className="text-gray-500 text-sm mb-1">Total Conversations</div>
-                <div className="text-3xl font-bold text-ui-text">--</div>
+                <div className="text-3xl font-bold text-ui-text">{totalConversations}</div>
               </div>
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                 <div className="text-gray-500 text-sm mb-1">System Status</div>
@@ -385,15 +435,17 @@ export const Dashboard: React.FC = () => {
               })}
 
               {/* Add New Card */}
-              <button onClick={() => navigate('/add-expert')} className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center p-6 gap-4 hover:border-neural-DEFAULT/50 hover:bg-neural-DEFAULT/5 transition-all group min-h-[250px]">
-                <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <Plus className="w-8 h-8 text-gray-400 group-hover:text-neural-DEFAULT" />
-                </div>
-                <div className="text-center">
-                  <h4 className="font-bold text-gray-500 group-hover:text-neural-DEFAULT">Add New Expert</h4>
-                  <p className="text-xs text-gray-400 mt-1">Configure another AI department</p>
-                </div>
-              </button>
+              {intakeForms.length < TOTAL_DEPARTMENTS && (
+                <button id="step-add-expert" onClick={() => navigate('/add-expert')} className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center p-6 gap-4 hover:border-neural-DEFAULT/50 hover:bg-neural-DEFAULT/5 transition-all group min-h-[250px]">
+                  <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Plus className="w-8 h-8 text-gray-400 group-hover:text-neural-DEFAULT" />
+                  </div>
+                  <div className="text-center">
+                    <h4 className="font-bold text-gray-500 group-hover:text-neural-DEFAULT">Add New Expert</h4>
+                    <p className="text-xs text-gray-400 mt-1">Configure another AI department</p>
+                  </div>
+                </button>
+              )}
             </div>
           </>
         )}
