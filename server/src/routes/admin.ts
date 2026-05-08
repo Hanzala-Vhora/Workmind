@@ -221,9 +221,7 @@ router.post('/waitlist/:id/approve', requireAdmin, async (req: AuthRequest, res)
             password,
         });
 
-        await prisma.waitlist.delete({
-            where: { id: entry.id },
-        });
+        await prisma.waitlist.update({ where: { id: entry.id }, data: { status: 'approved' } });
         
         res.json({ success: true, userId: user.id, email: user.email });
     } catch (error: any) {
@@ -232,3 +230,4 @@ router.post('/waitlist/:id/approve', requireAdmin, async (req: AuthRequest, res)
 });
 
 export default router;
+

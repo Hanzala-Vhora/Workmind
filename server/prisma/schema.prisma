@@ -237,6 +237,7 @@ model Waitlist {
   email        String
   phone        String
   budget       String
+  status       String   @default("pending")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

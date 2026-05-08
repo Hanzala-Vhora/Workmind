@@ -24,6 +24,7 @@ export const AdminDashboard: React.FC = () => {
     const [logsLoading, setLogsLoading] = useState(false);
     const [waitlistEntries, setWaitlistEntries] = useState<any[]>([]);
     const [approvingId, setApprovingId] = useState<string | null>(null);
+    const [waitlistTab, setWaitlistTab] = useState<'pending' | 'approved'>('pending');
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -153,13 +154,18 @@ export const AdminDashboard: React.FC = () => {
                 throw new Error(data.error || 'Failed to approve user.');
             }
 
-            setWaitlistEntries((prev) => prev.filter((entry) => entry.id !== waitlistId));
+            setWaitlistEntries((prev) => prev.map((entry) => 
+                entry.id === waitlistId ? { ...entry, status: 'approved', updatedAt: new Date().toISOString() } : entry
+            ));
         } catch (err: any) {
             alert(err.message || 'Failed to approve user.');
         } finally {
             setApprovingId(null);
         }
     };
+
+    const pendingWaitlist = waitlistEntries.filter(e => e.status === 'pending' || !e.status);
+    const approvedWaitlist = waitlistEntries.filter(e => e.status === 'approved');
 
     if (userProfile?.role !== 'admin') {
         return (
@@ -190,6 +196,12 @@ export const AdminDashboard: React.FC = () => {
                     </h1>
                 </div>
                 <div className="flex items-center gap-3">
+                    <button 
+                        onClick={() => { throw new Error('Sentry Test Error from Admin Panel!'); }}
+                        className="px-4 py-1.5 bg-red-100 text-red-600 font-bold rounded-lg text-xs hover:bg-red-200 transition-colors"
+                    >
+                        Test Sentry Error
+                    </button>
                     <span className="text-xs font-medium text-gray-500">Platform Cost: <span className="text-red-600 font-bold">${stats?.totalPlatformCostUSD?.toFixed(2) || '0.00'}</span></span>
                 </div>
             </header>
@@ -267,29 +279,94 @@ export const AdminDashboard: React.FC = () => {
                 </div>
 
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-                    <div className="p-4 border-b border-gray-100">
-                        <h2 className="font-bold text-gray-900">Pending Waitlist Approvals</h2>
+                    <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                        <h2 className="font-bold text-gray-900">Waitlist Management</h2>
+                        <div className="flex bg-gray-100 p-1 rounded-lg">
+                            <button 
+                                onClick={() => setWaitlistTab('pending')}
+                                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${waitlistTab === 'pending' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Pending ({pendingWaitlist.length})
+                            </button>
+                            <button 
+                                onClick={() => setWaitlistTab('approved')}
+                                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${waitlistTab === 'approved' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Approved ({approvedWaitlist.length})
+                            </button>
+                        </div>
                     </div>
-                    <div className="divide-y divide-gray-100">
-                        {waitlistEntries.length === 0 ? (
-                            <div className="p-6 text-sm text-gray-500">No pending waitlist approvals.</div>
-                        ) : waitlistEntries.map((entry) => (
-                            <div key={entry.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-                                <div>
-                                    <p className="font-semibold text-gray-900">{entry.fullName}</p>
-                                    <p className="text-sm text-gray-600">{entry.email} • {entry.companyName}</p>
-                                    <p className="text-xs text-gray-500">{entry.designation} • {entry.phone}</p>
+                    
+                    {waitlistTab === 'pending' && (
+                        <div className="divide-y divide-gray-100">
+                            {pendingWaitlist.length === 0 ? (
+                                <div className="p-6 text-sm text-gray-500">No pending waitlist approvals.</div>
+                            ) : pendingWaitlist.map((entry) => (
+                                <div key={entry.id} className="flex flex-col gap-4 p-5 md:flex-row md:items-start md:justify-between">
+                                    <div className="space-y-2">
+                                        <div>
+                                            <p className="font-bold text-lg text-gray-900">{entry.fullName}</p>
+                                            <p className="text-sm font-medium text-indigo-600">{entry.designation} @ {entry.companyName}</p>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 text-sm">
+                                            <p><span className="text-gray-400">Email:</span> <span className="font-medium text-gray-700">{entry.email}</span></p>
+                                            <p><span className="text-gray-400">Phone:</span> <span className="font-medium text-gray-700">{entry.phone}</span></p>
+                                            <p><span className="text-gray-400">Budget:</span> <span className="font-medium text-gray-700">{entry.budget}</span></p>
+                                            <p><span className="text-gray-400">Submitted:</span> <span className="font-medium text-gray-700">{new Date(entry.createdAt).toLocaleDateString()}</span></p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleApproveWaitlist(entry.id)}
+                                        disabled={approvingId === entry.id}
+                                        className="mt-2 md:mt-0 whitespace-nowrap rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-indigo-700 transition-colors disabled:cursor-not-allowed disabled:opacity-70"
+                                    >
+                                        {approvingId === entry.id ? 'Approving...' : 'Approve User'}
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={() => handleApproveWaitlist(entry.id)}
-                                    disabled={approvingId === entry.id}
-                                    className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
-                                >
-                                    {approvingId === entry.id ? 'Approving...' : 'Approve & email credentials'}
-                                </button>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {waitlistTab === 'approved' && (
+                        <div className="overflow-x-auto">
+                            {approvedWaitlist.length === 0 ? (
+                                <div className="p-6 text-sm text-gray-500">No approved waitlist entries yet.</div>
+                            ) : (
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                                        <tr>
+                                            <th className="px-6 py-3">Name & Role</th>
+                                            <th className="px-6 py-3">Contact Info</th>
+                                            <th className="px-6 py-3">Budget</th>
+                                            <th className="px-6 py-3 text-right">Approved On</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {approvedWaitlist.map((entry) => (
+                                            <tr key={entry.id} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <p className="text-sm font-bold text-gray-900">{entry.fullName}</p>
+                                                    <p className="text-xs text-gray-500">{entry.designation} at <span className="font-medium text-gray-700">{entry.companyName}</span></p>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <p className="text-sm font-medium text-gray-900">{entry.email}</p>
+                                                    <p className="text-xs text-gray-500">{entry.phone}</p>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="inline-flex px-2 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-md">
+                                                        {entry.budget}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <p className="text-sm text-gray-500">{new Date(entry.updatedAt).toLocaleDateString()}</p>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* User Management */}
