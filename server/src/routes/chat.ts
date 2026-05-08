@@ -1,5 +1,7 @@
 
 import { Router } from 'express';
+import { marked } from 'marked';
+import HTMLToDOCX from 'html-to-docx';
 import { GoogleGenAI } from '@google/genai';
 import { buildSystemPrompt } from '../utils/prompts.js';
 import { IntakeData, Department, Message, StoredDocument } from '../types.js';
@@ -128,6 +130,51 @@ async function streamClaudeResponse(params: {
 
 // Database now used instead of in-memory store
 
+
+// POST /api/chat/export-docx
+// Convert markdown to true DOCX file and send as stream
+router.post('/export-docx', async (req, res) => {
+    try {
+        const { markdown, department } = req.body;
+        if (!markdown) {
+            return res.status(400).json({ error: 'Markdown content is required' });
+        }
+
+        const html = await marked.parse(markdown);
+        const styledHtml = `
+        <!DOCTYPE html>
+        <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: 'Arial', sans-serif; line-height: 1.6; }
+                    h1, h2, h3 { color: #1f2937; margin-top: 24px; margin-bottom: 12px; }
+                    table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+                    th, td { border: 1px solid #e5e7eb; padding: 12px; text-align: left; }
+                    th { background-color: #f9fafb; font-weight: bold; }
+                    ul, ol { padding-left: 24px; margin-bottom: 16px; }
+                    li { margin-bottom: 8px; }
+                </style>
+            </head>
+            <body>${html}</body>
+        </html>`;
+
+        const fileBuffer = await HTMLToDOCX(styledHtml, null, {
+            table: { row: { cantSplit: true } },
+            footer: true,
+            pageNumber: true,
+        });
+
+        const filename = `${department || 'Workmind'}_Export_${new Date().toISOString().split('T')[0]}.docx`;
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(fileBuffer);
+    } catch (error) {
+        console.error('Error exporting DOCX:', error);
+        res.status(500).json({ error: 'Failed to generate Word document' });
+    }
+});
 
 // GET /api/chat/department/:department
 // Get all chats for a department

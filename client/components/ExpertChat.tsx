@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm'; // For tables
 import rehypeRaw from 'rehype-raw'; // For HTML tags like <br>
+import { marked } from 'marked';
 import { useApp } from '../context/AppContext';
-import { Send, ArrowLeft, AlertTriangle, Paperclip, FileText, Image as ImageIcon, Database, X, Zap, Loader2, CheckCircle, File, User, Sparkles, MessageSquare, Menu, Plus, Trash2, ChevronDown, Cpu } from 'lucide-react';
+import { Send, ArrowLeft, AlertTriangle, Paperclip, FileText, Image as ImageIcon, Database, X, Zap, Loader2, CheckCircle, File, User, Sparkles, MessageSquare, Menu, Plus, Trash2, ChevronDown, Cpu, Download } from 'lucide-react';
 import { ThreadAnalyzer } from './ThreadAnalyzer';
 import { BrainLogo } from './BrainLogo';
 import { StoredDocument } from '../types';
@@ -292,6 +293,32 @@ export const ExpertChat: React.FC = () => {
     setShowAnalyzer(false);
   };
 
+  const handleExportDocument = async (content: string) => {
+    try {
+      const res = await authFetch(`${API_URL}/api/chat/export-docx`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          markdown: content,
+          department: activeDepartment
+        })
+      });
+
+      if (!res.ok) throw new Error("Export failed on server");
+
+      const blob = await res.blob();
+      const element = document.createElement("a");
+      element.href = URL.createObjectURL(blob);
+      element.download = `${activeDepartment}_Export_${new Date().toISOString().split('T')[0]}.docx`;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+    } catch (err) {
+      console.error("Export failed", err);
+      alert("Failed to export document.");
+    }
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -425,15 +452,18 @@ export const ExpertChat: React.FC = () => {
         })
       });
 
-      if (!res.ok) throw new Error("Failed to process URL");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to process URL");
+      }
       const data = await res.json();
       
       setFetchedDocuments(prev => [...prev.filter(existing => existing.name !== data.document.name), data.document]);
       setUrlInput('');
       await refreshChats();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Failed to extract context from URL.");
+      alert(`Failed to extract context: ${err.message}`);
     } finally {
       setIsScrapingUrl(false);
     }
@@ -839,7 +869,16 @@ export const ExpertChat: React.FC = () => {
                               {msg.content}
                             </ReactMarkdown>
 
-
+                            <div className="mt-4 pt-3 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => handleExportDocument(msg.content)}
+                                title="Export as Word Document"
+                                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-gray-600 bg-white border border-gray-200 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 rounded-lg shadow-sm transition-all"
+                              >
+                                <Download className="w-4 h-4" />
+                                Export Word Doc
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <p className="whitespace-pre-wrap leading-7 text-[15px]">{msg.content}</p>
