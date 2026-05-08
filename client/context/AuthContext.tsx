@@ -1,4 +1,5 @@
 import React from 'react';
+import * as Sentry from '@sentry/react';
 import { AuthUser, clearAuthSession, getStoredAccessToken, getStoredUser, storeAuthSession } from '../lib/auth';
 
 type AuthContextValue = {
@@ -52,6 +53,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   React.useEffect(() => {
     void refreshSession();
   }, [refreshSession]);
+
+  React.useEffect(() => {
+    if (user) {
+      Sentry.setUser({ email: user.email, id: user.id });
+    } else {
+      Sentry.setUser(null);
+    }
+  }, [user]);
 
   const signIn = React.useCallback(async (email: string, password: string) => {
     const response = await fetch(`${API_URL}/api/auth/sign-in`, {

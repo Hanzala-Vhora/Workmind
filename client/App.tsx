@@ -1,6 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
+import * as Sentry from '@sentry/react';
 import { AppProvider, useApp } from './context/AppContext';
 import { useAuth } from './context/AuthContext';
 import { LandingPage } from './components/LandingPage';
@@ -12,6 +13,8 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { SignInPage } from './components/auth/SignInPage';
 import { SignUpPage } from './components/auth/SignUpPage';
 import { Department } from './types';
+
+const SentryRoutes = Sentry.withSentryReactRouterV6Routing(Routes);
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isLoaded, isSignedIn } = useAuth();
@@ -101,7 +104,7 @@ const AppRoutes: React.FC = () => {
   }, [searchParams, clientData, setClientData, setActiveDepartment, navigate]);
 
   return (
-    <Routes>
+    <SentryRoutes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
@@ -123,7 +126,7 @@ const AppRoutes: React.FC = () => {
         <ProtectedRoute><AdminDashboard /></ProtectedRoute>
       } />
       <Route path="*" element={<LandingPage />} />
-    </Routes>
+    </SentryRoutes>
   );
 };
 
