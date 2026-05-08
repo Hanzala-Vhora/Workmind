@@ -471,9 +471,17 @@ export const ExpertChat: React.FC = () => {
 
 
   return (
-    <div className="h-screen bg-white flex overflow-hidden">
+    <div className="h-screen bg-white flex overflow-hidden relative">
+      {/* Mobile Sidebar Backdrop */}
+      {showSidebar && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
+
       {/* Chats Sidebar */}
-      <div className={`${showSidebar ? 'w-64 translate-x-0' : 'w-0 -translate-x-full opacity-0'} flex-shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out overflow-hidden`}>
+      <div className={`${showSidebar ? 'translate-x-0' : '-translate-x-full'} fixed md:relative z-40 md:z-auto w-72 md:w-64 h-full flex-shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out`}>
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm">
             <ArrowLeft className="w-4 h-4" /> Back to Hub
@@ -575,7 +583,7 @@ export const ExpertChat: React.FC = () => {
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-medium text-gray-900 truncate">{clientData.business_name}</p>
-              <p className="text-xs text-gray-500 truncate">{userProfile?.role === 'admin' ? 'Admin Access' : 'Premium Plan'}</p>
+              <p className="text-xs text-gray-500 truncate hidden md:block">{userProfile?.role === 'admin' ? 'Admin Access' : 'Premium Plan'}</p>
             </div>
           </div>
         </div>
@@ -586,21 +594,16 @@ export const ExpertChat: React.FC = () => {
         {/* Header */}
         <header className="bg-white/80 backdrop-blur-md border-b border-gray-100 px-4 py-3 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
-            <button onClick={() => setShowSidebar(!showSidebar)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 md:hidden">
+            <button onClick={() => setShowSidebar(!showSidebar)} className="p-2 hover:bg-gray-100 rounded-lg text-gray-500">
               <Menu className="w-5 h-5" />
             </button>
-            {!showSidebar && (
-              <button onClick={() => setShowSidebar(true)} className="hidden md:block p-2 hover:bg-gray-100 rounded-lg text-gray-500 mr-2" title="Open Sidebar">
-                <Menu className="w-5 h-5" />
-              </button>
-            )}
             <button onClick={() => navigate('/dashboard')} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors md:hidden">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <BrainLogo width={24} height={24} />
-                {activeDepartment} Expert
+              <h2 className="text-base md:text-lg font-semibold text-gray-900 flex items-center gap-2 truncate max-w-[150px] md:max-w-none">
+                <BrainLogo width={20} height={20} />
+                <span className="truncate">{activeDepartment} Expert</span>
               </h2>
             </div>
           </div>
@@ -619,7 +622,13 @@ export const ExpertChat: React.FC = () => {
         <div className="flex-1 flex overflow-hidden relative">
           {/* Context Repository Sidebar */}
           {showContextRepo && (
-            <div className="w-[320px] bg-white border-r border-gray-200 flex flex-col z-10 shadow-xl transition-all">
+            <>
+              {/* Context Backdrop on Mobile */}
+              <div 
+                className="fixed inset-0 bg-black/50 z-30 md:hidden backdrop-blur-sm"
+                onClick={() => setShowContextRepo(false)}
+              />
+              <div className="fixed md:relative right-0 inset-y-0 w-full md:w-[320px] bg-white border-l md:border-r border-gray-200 flex flex-col z-40 md:z-10 shadow-xl transition-all">
               <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                 <div>
                   <h3 className="font-bold text-gray-800 flex items-center gap-2">
@@ -756,8 +765,8 @@ export const ExpertChat: React.FC = () => {
                     {/* Message Content */}
                     <div className={`flex-1 min-w-0 ${msg.role === 'user' ? 'flex justify-end' : ''}`}>
                       <div className={`relative ${msg.role === 'user'
-                        ? 'bg-[#f4f4f4] text-gray-900 rounded-3xl px-6 py-4 max-w-[85%]'
-                        : 'text-gray-800 px-5 pt-1' // Added padding for assistant
+                        ? 'bg-[#f4f4f4] text-gray-900 rounded-3xl px-4 md:px-6 py-3 md:py-4 max-w-[90%] md:max-w-[85%]'
+                        : 'text-gray-800 px-2 md:px-5 pt-1' // Added padding for assistant
                         }`}>
                         {msg.role === 'assistant' ? (
                           <div className="prose prose-neutral max-w-none 
@@ -972,7 +981,7 @@ export const ExpertChat: React.FC = () => {
 
           {/* Analyzer Side Panel */}
           {showAnalyzer && (
-            <div className="w-[400px] border-l border-gray-200 bg-white shadow-2xl z-20 flex flex-col">
+            <div className="fixed md:relative inset-0 md:inset-auto z-50 md:z-20 w-full md:w-[400px] border-l border-gray-200 bg-white shadow-2xl flex flex-col">
               <ThreadAnalyzer onClose={() => setShowAnalyzer(false)} onApply={handleApplyDraft} />
             </div>
           )}

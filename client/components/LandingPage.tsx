@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, CheckCircle2, FileText, Clock, BarChart3, Users, Globe, ShoppingCart, MessageSquare, Shield, Server, Lock, Zap, Workflow, Target, Play, Database, Brain, Rocket } from 'lucide-react';
+import { ArrowRight, CheckCircle2, FileText, Clock, BarChart3, Users, Globe, ShoppingCart, MessageSquare, Shield, Server, Lock, Zap, Workflow, Target, Play, Database, Brain, Rocket, Menu, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { BrainLogo } from './BrainLogo';
 import { useAuth } from '../context/AuthContext';
@@ -16,6 +16,7 @@ const initialFormData = {
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
   const { isSignedIn } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
 
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -105,19 +106,39 @@ export const LandingPage: React.FC = () => {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate(isSignedIn ? '/dashboard' : '/sign-in')}
-                className="text-sm font-bold text-gray-600 hover:text-neural-DEFAULT px-4 py-2 transition-colors"
+                className="hidden md:block text-sm font-bold text-gray-600 hover:text-neural-DEFAULT px-4 py-2 transition-colors"
               >
                 {isSignedIn ? 'Dashboard' : 'Login'}
               </button>
-              <button
-                onClick={handleStart}
-                className="whitespace-nowrap bg-gradient-brand text-white px-6 py-2.5 rounded-full font-semibold hover:shadow-lg hover:shadow-neural-DEFAULT/30 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0"
+              
+              {/* Hamburger Button */}
+              <button 
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="md:hidden p-2 text-gray-600 hover:text-neural-DEFAULT transition-colors"
               >
-                Start Free Pilot
+                <Menu className="w-6 h-6" />
               </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Menu Overlay */}
+        {isMenuOpen && (
+          <div className="md:hidden bg-white border-t border-gray-100 py-4 px-4 space-y-4 shadow-xl animate-fadeIn">
+            <button onClick={() => { scrollToSection('how-it-works'); setIsMenuOpen(false); }} className="block w-full text-left text-gray-600 font-medium py-2 hover:text-neural-DEFAULT">How it Works</button>
+            <button onClick={() => { scrollToSection('features'); setIsMenuOpen(false); }} className="block w-full text-left text-gray-600 font-medium py-2 hover:text-neural-DEFAULT">Features</button>
+            <button onClick={() => { scrollToSection('experts'); setIsMenuOpen(false); }} className="block w-full text-left text-gray-600 font-medium py-2 hover:text-neural-DEFAULT">Experts</button>
+            <button onClick={() => { scrollToSection('pricing'); setIsMenuOpen(false); }} className="block w-full text-left text-gray-600 font-medium py-2 hover:text-neural-DEFAULT">Pricing</button>
+            <div className="pt-4 border-t border-gray-100 flex flex-col gap-4">
+              <button
+                onClick={() => navigate(isSignedIn ? '/dashboard' : '/sign-in')}
+                className="w-full text-center py-3 text-gray-600 font-bold border border-gray-200 rounded-xl"
+              >
+                {isSignedIn ? 'Dashboard' : 'Login'}
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}

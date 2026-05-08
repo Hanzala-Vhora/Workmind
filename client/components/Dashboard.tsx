@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Users, Globe, BarChart3, Server, ShoppingCart, MessageSquare, Briefcase, Zap, LogOut, Layout, Workflow, Plus, Loader, RefreshCw } from 'lucide-react';
+import { Users, Globe, BarChart3, Server, ShoppingCart, MessageSquare, Briefcase, Zap, LogOut, Layout, Workflow, Plus, Loader, RefreshCw, Menu, X } from 'lucide-react';
 import { Department, IntakeData } from '../types';
 import { BrainLogo } from './BrainLogo';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +22,7 @@ const DEPT_ICONS: Record<Department, any> = {
 
 export const Dashboard: React.FC = () => {
   const { clientData, setClientData, setActiveDepartment, resetApp, userProfile } = useApp();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { user, isLoaded, signOut } = useAuth();
 
@@ -127,8 +128,88 @@ export const Dashboard: React.FC = () => {
   if (!clientData) return null;
 
   return (
-    <div className="min-h-screen bg-ui-card flex">
-      {/* Sidebar */}
+    <div className="min-h-screen bg-ui-card flex relative">
+      {/* Mobile Hamburger Button */}
+      <div className="md:hidden fixed top-4 left-4 z-50">
+        <button
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="p-2 bg-gradient-brand text-white rounded-lg shadow-lg"
+        >
+          {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 md:hidden backdrop-blur-sm"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Mobile Sidebar */}
+      <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-gradient-brand text-white transform transition-transform duration-300 ease-in-out md:hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-6 flex items-center gap-3 border-b border-white/10">
+          <BrainLogo width={30} height={30} className="text-white" />
+          <h1 className="text-xl font-bold tracking-tight">WORKMIND.AI</h1>
+        </div>
+        <nav className="flex-1 px-4 space-y-4 mt-6 overflow-y-auto">
+          <div className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2">Your Experts</div>
+          {intakeForms.map(form => {
+            const dept = (form.department as Department) || 'Sales';
+            const Icon = DEPT_ICONS[dept] || Briefcase;
+            const isActive = clientData.business_name === form.companyName && clientData.selected_departments.includes(dept);
+
+            return (
+              <div key={form.id} className={`mb-2 rounded-lg transition-all ${isActive ? 'bg-white/10' : ''}`}>
+                <div onClick={() => { handleSwitchAndNav(form, dept); setIsMobileMenuOpen(false); }} className="px-3 py-2 text-white/90 text-sm font-bold flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded-lg">
+                  <Icon className="w-4 h-4" />
+                  <div className="flex flex-col leading-tight overflow-hidden">
+                    <span>{dept}</span>
+                    <span className="text-[10px] text-white/50 font-normal truncate">{form.companyName}</span>
+                  </div>
+                </div>
+
+                <div className="pl-9 mt-1 space-y-1 pb-2">
+                  <button
+                    onClick={() => { handleSwitchAndNav(form, dept, 'chat'); setIsMobileMenuOpen(false); }}
+                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-left text-xs text-white/70 hover:text-white hover:bg-white/10 ${isActive ? 'text-white' : ''}`}
+                  >
+                    <Zap className="w-3 h-3 text-cyan-electric" />
+                    <span>Agent</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          <button
+            onClick={() => { navigate('/add-expert'); setIsMobileMenuOpen(false); }}
+            className="w-full mt-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-sm font-bold text-white shadow-lg group"
+          >
+            <div className="bg-cyan-electric text-neural-dark rounded-full w-5 h-5 flex items-center justify-center">
+              <Plus className="w-3 h-3 font-bold" />
+            </div>
+            New Expert
+          </button>
+        </nav>
+        <div className="p-4 border-t border-white/10 bg-black/10">
+          <div className="flex items-center gap-3 px-2 py-2">
+            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">
+              {clientData.primary_contact?.charAt(0) || 'U'}
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-sm font-bold truncate">{user?.fullName || 'User'}</p>
+              <p className="text-[10px] text-white/60 truncate uppercase">{user?.email}</p>
+            </div>
+          </div>
+          <button onClick={handleSignOut} className="mt-2 flex items-center gap-2 text-xs text-white/60 hover:text-white w-full px-2 py-1 rounded hover:bg-white/5 transition-colors">
+            <LogOut className="w-3 h-3" /> Sign Out
+          </button>
+        </div>
+      </aside>
+
+      {/* Desktop Sidebar */}
       <aside className="w-64 bg-gradient-brand text-white hidden md:flex flex-col shadow-xl h-screen sticky top-0 overflow-hidden shrink-0">
         <div className="p-6 flex items-center gap-3 border-b border-white/10">
           <BrainLogo width={30} height={30} className="text-white" />
@@ -230,13 +311,13 @@ export const Dashboard: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-8 overflow-y-auto">
-        <header className="flex justify-between items-center mb-8">
+      <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 mt-12 md:mt-0">
           <div>
-            <h2 className="text-3xl font-bold text-deepTech-DEFAULT">Enterprise Dashboard</h2>
-            <p className="text-ui-slate">Manage your AI workforce</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-deepTech-DEFAULT">Enterprise Dashboard</h2>
+            <p className="text-ui-slate text-sm md:text-base">Manage your AI workforce</p>
           </div>
-          <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm text-sm flex items-center gap-2">
+          <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm text-sm flex items-center gap-2 w-full md:w-auto justify-center md:justify-start">
             <RefreshCw onClick={fetchIntakeForms} className={`w-4 h-4 text-gray-400 cursor-pointer hover:text-neural-DEFAULT ${refreshing ? 'animate-spin' : ''}`} />
             <span className="text-gray-500">Status:</span> <span className="font-bold text-green-600">Online</span>
           </div>
@@ -292,12 +373,12 @@ export const Dashboard: React.FC = () => {
                     </p>
 
                     <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => handleSwitchAndNav(form, dept, 'chat')} className="bg-gray-50 text-ui-text font-semibold py-2 rounded-lg hover:bg-neural-DEFAULT hover:text-white transition-all flex items-center justify-center gap-2 text-sm border border-gray-100 hover:border-transparent">
+                      <button onClick={() => handleSwitchAndNav(form, dept, 'chat')} className="bg-gray-50 text-ui-text font-semibold py-2 rounded-lg hover:bg-neural-DEFAULT hover:text-black transition-all flex items-center justify-center gap-2 text-sm border border-gray-100 hover:border-transparent">
                         <Zap className="w-4 h-4" /> Agent
                       </button>
-                      <button onClick={() => handleSwitchAndNav(form, dept, 'hub')} className="bg-gray-50 text-ui-text font-semibold py-2 rounded-lg hover:bg-midnight-DEFAULT hover:text-white transition-all flex items-center justify-center gap-2 text-sm border border-gray-100 hover:border-transparent">
+                      {/* <button onClick={() => handleSwitchAndNav(form, dept, 'hub')} className="bg-gray-50 text-ui-text font-semibold py-2 rounded-lg hover:bg-midnight-DEFAULT hover:text-white transition-all flex items-center justify-center gap-2 text-sm border border-gray-100 hover:border-transparent">
                         <Users className="w-4 h-4" /> Hub
-                      </button>
+                      </button> */}
                     </div>
                   </div>
                 );
