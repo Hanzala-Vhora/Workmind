@@ -613,12 +613,6 @@ export const ExpertChat: React.FC = () => {
               <span className="hidden sm:inline">Context</span>
               {currentDocs.length > 0 && <span className={`text-xs px-1.5 rounded-full ${showContextRepo ? 'bg-white/20' : 'bg-gray-100 text-gray-600'}`}>{currentDocs.length}</span>}
             </button>
-            <button
-              onClick={() => setShowAnalyzer(!showAnalyzer)}
-              className={`text-sm font-medium px-4 py-2 rounded-full transition-all border ${showAnalyzer ? 'bg-indigo-600 text-white border-indigo-600' : 'text-indigo-600 bg-white hover:bg-indigo-50 border-indigo-200'}`}
-            >
-              {showAnalyzer ? 'Close' : 'Analyzer'}
-            </button>
           </div>
         </header>
 
