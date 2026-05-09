@@ -113,7 +113,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
         )}
 
         {step === 'intro' && (
-          <div className="p-8 md:p-12 text-center">
+          <div className="flex-1 overflow-y-auto p-8 md:p-12 text-center custom-scrollbar">
+
             <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-sm">
                 <Heart className="w-10 h-10 text-indigo-600 fill-indigo-600/10" />
             </div>
@@ -135,7 +136,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
         )}
 
         {step === 'form' && (
-          <div className="flex flex-col h-full">
+          <div className="flex flex-col flex-1 min-h-0">
+
             <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                 <div>
                     <h2 className="text-xl font-black text-gray-900">Help Us Improve TheWorkimnd</h2>
@@ -282,7 +284,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
         )}
 
         {step === 'success' && (
-          <div className="p-12 text-center animate-fadeIn">
+          <div className="flex-1 overflow-y-auto p-12 text-center animate-fadeIn custom-scrollbar">
+
             <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-inner">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
                     <Check className="w-8 h-8 text-green-600" />
