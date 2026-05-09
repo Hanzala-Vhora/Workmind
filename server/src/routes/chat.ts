@@ -209,7 +209,10 @@ router.get('/department/:department', async (req, res) => {
 
         const deptChats = await prisma.chatSession.findMany({
             where: {
-                department,
+                department: {
+                    equals: department,
+                    mode: 'insensitive'
+                },
                 userId: String(userId)
             },
             orderBy: { createdAt: 'desc' },

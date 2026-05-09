@@ -165,6 +165,11 @@ router.post('/', upload.single('file'), async (req, res) => {
         const userId = req.body.userId || req.query.userId;
         const department = req.body.department || req.query.department;
 
+        let effectiveChatId = String(chatId);
+        if (effectiveChatId === 'global-knowledge-base') {
+            effectiveChatId = `kb-universal-${userId}`;
+        }
+
         if (!chatId || !userId || !department) {
             return res.status(400).json({ error: 'Missing chatId, userId, or department' });
         }
@@ -174,14 +179,14 @@ router.post('/', upload.single('file'), async (req, res) => {
         }
 
         const existingSession = await prisma.chatSession.findUnique({
-            where: { id: String(chatId) },
+            where: { id: effectiveChatId },
             select: { id: true }
         });
 
         if (!existingSession) {
             await prisma.chatSession.create({
                 data: {
-                    id: String(chatId),
+                    id: effectiveChatId,
                     userId: String(userId),
                     department: String(department),
                     title: `New ${department} chat`
@@ -197,19 +202,19 @@ router.post('/', upload.single('file'), async (req, res) => {
         await prisma.$transaction([
             prisma.documentChunk.deleteMany({
                 where: {
-                    chatId: String(chatId),
+                    chatId: effectiveChatId,
                     source: file.originalname
                 }
             }),
             prisma.chatDocument.deleteMany({
                 where: {
-                    chatId: String(chatId),
+                    chatId: effectiveChatId,
                     name: file.originalname
                 }
             }),
             prisma.chatDocument.create({
                 data: {
-                    chatId: String(chatId),
+                    chatId: effectiveChatId,
                     name: file.originalname,
                     type: file.mimetype,
                     content: storedContent
@@ -219,7 +224,7 @@ router.post('/', upload.single('file'), async (req, res) => {
                 ? [
                     prisma.documentChunk.createMany({
                         data: chunks.map(chunk => ({
-                            chatId: String(chatId),
+                            chatId: effectiveChatId,
                             content: chunk,
                             source: file.originalname
                         }))
@@ -247,19 +252,24 @@ router.post('/url', async (req, res) => {
         const department = req.body.department || req.query.department;
         const { url } = req.body;
 
+        let effectiveChatId = String(chatId);
+        if (effectiveChatId === 'global-knowledge-base') {
+            effectiveChatId = `kb-universal-${userId}`;
+        }
+
         if (!url || !chatId || !userId || !department) {
             return res.status(400).json({ error: 'Missing url, chatId, userId, or department' });
         }
 
         const existingSession = await prisma.chatSession.findUnique({
-            where: { id: String(chatId) },
+            where: { id: effectiveChatId },
             select: { id: true }
         });
 
         if (!existingSession) {
             await prisma.chatSession.create({
                 data: {
-                    id: String(chatId),
+                    id: effectiveChatId,
                     userId: String(userId),
                     department: String(department),
                     title: `New ${department} chat`
@@ -278,19 +288,19 @@ router.post('/url', async (req, res) => {
         await prisma.$transaction([
             prisma.documentChunk.deleteMany({
                 where: {
-                    chatId: String(chatId),
+                    chatId: effectiveChatId,
                     source: filename
                 }
             }),
             prisma.chatDocument.deleteMany({
                 where: {
-                    chatId: String(chatId),
+                    chatId: effectiveChatId,
                     name: filename
                 }
             }),
             prisma.chatDocument.create({
                 data: {
-                    chatId: String(chatId),
+                    chatId: effectiveChatId,
                     name: filename,
                     type: 'text/html',
                     content: storedContent
@@ -300,7 +310,7 @@ router.post('/url', async (req, res) => {
                 ? [
                     prisma.documentChunk.createMany({
                         data: chunks.map(chunk => ({
-                            chatId: String(chatId),
+                            chatId: effectiveChatId,
                             content: chunk,
                             source: filename
                         }))
@@ -320,7 +330,7 @@ router.post('/url', async (req, res) => {
                type: 'text/html',
                content: storedContent,
                uploadedAt: Date.now(),
-               chatId: String(chatId)
+               chatId: effectiveChatId
             }
         });
 
@@ -332,15 +342,20 @@ router.post('/url', async (req, res) => {
 
 router.delete('/', async (req, res) => {
     try {
-        const { chatId, filename, userId } = req.query;
+        let { chatId, filename, userId } = req.query;
+
+        let effectiveChatId = String(chatId);
+        if (effectiveChatId === 'global-knowledge-base') {
+            effectiveChatId = `kb-universal-${userId}`;
+        }
 
         if (!chatId || !filename || !userId) {
             return res.status(400).json({ error: 'Missing chatId, filename, or userId' });
         }
 
         const session = await prisma.chatSession.findUnique({
-            where: { id: String(chatId) },
-            select: { id: true }
+            where: { id: effectiveChatId },
+            select: { userId: true }
         });
 
         if (!session) {
@@ -349,14 +364,14 @@ router.delete('/', async (req, res) => {
 
         const chunkDelete = prisma.documentChunk.deleteMany({
             where: {
-                chatId: String(chatId),
+                chatId: effectiveChatId,
                 source: String(filename)
             }
         });
 
         const docDelete = prisma.chatDocument.deleteMany({
             where: {
-                chatId: String(chatId),
+                chatId: effectiveChatId,
                 name: String(filename)
             }
         });

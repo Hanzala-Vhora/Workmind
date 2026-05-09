@@ -17,7 +17,10 @@ router.get('/department/:department', async (req, res) => {
         const documents = await prisma.chatDocument.findMany({
             where: {
                 chat: {
-                    department,
+                    department: {
+                        equals: department,
+                        mode: 'insensitive'
+                    },
                     userId: String(userId)
                 }
             },
