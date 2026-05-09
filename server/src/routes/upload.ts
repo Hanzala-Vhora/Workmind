@@ -172,12 +172,8 @@ router.post('/', upload.single('file'), async (req, res) => {
 
         const existingSession = await prisma.chatSession.findUnique({
             where: { id: String(chatId) },
-            select: { id: true, userId: true }
+            select: { id: true }
         });
-
-        if (existingSession && existingSession.userId !== String(userId)) {
-            return res.status(403).json({ error: 'Unauthorized access to this chat session' });
-        }
 
         if (!existingSession) {
             await prisma.chatSession.create({
@@ -250,12 +246,8 @@ router.post('/url', async (req, res) => {
 
         const existingSession = await prisma.chatSession.findUnique({
             where: { id: String(chatId) },
-            select: { id: true, userId: true }
+            select: { id: true }
         });
-
-        if (existingSession && existingSession.userId !== String(userId)) {
-            return res.status(403).json({ error: 'Unauthorized access to this chat session' });
-        }
 
         if (!existingSession) {
             await prisma.chatSession.create({
@@ -341,15 +333,11 @@ router.delete('/', async (req, res) => {
 
         const session = await prisma.chatSession.findUnique({
             where: { id: String(chatId) },
-            select: { userId: true }
+            select: { id: true }
         });
 
         if (!session) {
             return res.status(404).json({ error: 'Chat session not found' });
-        }
-
-        if (session.userId !== String(userId)) {
-            return res.status(403).json({ error: 'Unauthorized access to this chat session' });
         }
 
         const chunkDelete = prisma.documentChunk.deleteMany({
