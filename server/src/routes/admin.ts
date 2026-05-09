@@ -229,5 +229,16 @@ router.post('/waitlist/:id/approve', requireAdmin, async (req: AuthRequest, res)
     }
 });
 
+router.get('/feedback', requireAdmin, async (_req, res) => {
+    try {
+        const feedback = await prisma.feedback.findMany({
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json(feedback);
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default router;
 

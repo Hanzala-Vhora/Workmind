@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Users, CreditCard, Activity, ArrowLeft, Search, Plus, TrendingUp, AlertCircle, Database, Zap, Cpu, Loader } from 'lucide-react';
+import { Users, CreditCard, Activity, ArrowLeft, Search, Plus, TrendingUp, AlertCircle, Database, Zap, Cpu, Loader, Heart, MessageSquare, Star, RefreshCw } from 'lucide-react';
+
 import { useNavigate } from 'react-router-dom';
 import { authFetch, getAuthHeaders } from '../lib/auth';
 
@@ -25,6 +26,9 @@ export const AdminDashboard: React.FC = () => {
     const [waitlistEntries, setWaitlistEntries] = useState<any[]>([]);
     const [approvingId, setApprovingId] = useState<string | null>(null);
     const [waitlistTab, setWaitlistTab] = useState<'pending' | 'approved'>('pending');
+    const [feedbackList, setFeedbackList] = useState<any[]>([]);
+    const [feedbackLoading, setFeedbackLoading] = useState(false);
+
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -50,12 +54,29 @@ export const AdminDashboard: React.FC = () => {
             if (waitlistRes.ok) {
                 setWaitlistEntries(await waitlistRes.json());
             }
+
+            fetchFeedback();
         } catch (err) {
             console.error("Admin fetch error", err);
         } finally {
             setLoading(false);
         }
     };
+
+    const fetchFeedback = async () => {
+        setFeedbackLoading(true);
+        try {
+            const res = await authFetch(`${API_URL}/api/admin/feedback`);
+            if (res.ok) {
+                setFeedbackList(await res.json());
+            }
+        } catch (err) {
+            console.error("Feedback fetch error", err);
+        } finally {
+            setFeedbackLoading(false);
+        }
+    };
+
 
     const fetchUsageLogs = async (page: number) => {
         if (userProfile?.role !== 'admin') return;
@@ -368,6 +389,87 @@ export const AdminDashboard: React.FC = () => {
                         </div>
                     )}
                 </div>
+                
+                {/* User Feedback Management */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                        <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                            <Heart className="w-4 h-4 text-pink-500" /> User Feedback ({feedbackList.length})
+                        </h2>
+                        <button 
+                            onClick={fetchFeedback}
+                            className="p-2 hover:bg-gray-100 rounded-lg text-gray-400"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${feedbackLoading ? 'animate-spin' : ''}`} />
+                        </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        {feedbackList.length === 0 ? (
+                            <div className="p-12 text-center text-gray-500">
+                                <MessageSquare className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                                <p>No feedback received yet.</p>
+                            </div>
+                        ) : (
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                                    <tr>
+                                        <th className="px-6 py-3 whitespace-nowrap">User & Date</th>
+                                        <th className="px-6 py-3 text-center">Rating</th>
+                                        <th className="px-6 py-3">Most Valuable Features</th>
+                                        <th className="px-6 py-3">Improvements & Dream Features</th>
+                                        <th className="px-6 py-3">Usage</th>
+                                        <th className="px-6 py-3 text-right">Pricing</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {feedbackList.map((f) => (
+                                        <tr key={f.id} className="hover:bg-gray-50/50 transition-colors align-top">
+                                            <td className="px-6 py-4">
+                                                <p className="text-sm font-bold text-gray-900">{f.email}</p>
+                                                <p className="text-[10px] text-gray-400">{new Date(f.createdAt).toLocaleString()}</p>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <span className="text-sm font-black text-amber-500">{f.rating}</span>
+                                                    <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {f.valuableFeatures?.map((v: string) => (
+                                                        <span key={v} className="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded-full font-bold">{v}</span>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 max-w-xs">
+                                                <p className="text-xs text-gray-700 font-medium mb-2 line-clamp-3" title={f.improvements}>
+                                                    <span className="text-gray-400 uppercase text-[9px] font-black mr-1">Impr:</span> {f.improvements || 'None'}
+                                                </p>
+                                                <p className="text-xs text-indigo-600 font-bold line-clamp-3" title={f.mustHaveFeature}>
+                                                    <span className="text-indigo-300 uppercase text-[9px] font-black mr-1">Must:</span> {f.mustHaveFeature || 'None'}
+                                                </p>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col gap-1">
+                                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-tighter">Depts: {f.departments?.join(', ') || '-'}</span>
+                                                    <span className={`text-[10px] font-black ${f.continueUsing === 'Yes' ? 'text-green-500' : 'text-amber-500'}`}>Continue: {f.continueUsing}</span>
+                                                    {f.startTime && <span className="text-[9px] text-gray-400">Start: {f.startTime}</span>}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <span className="text-xs font-black text-gray-900 bg-gray-100 px-2 py-1 rounded-lg">
+                                                    {f.pricingRange || 'N/A'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+
 
                 {/* User Management */}
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
