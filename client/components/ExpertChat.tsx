@@ -515,7 +515,8 @@ export const ExpertChat: React.FC = () => {
       )}
 
       {/* Chats Sidebar */}
-      <div className={`${showSidebar ? 'translate-x-0' : '-translate-x-full'} fixed md:relative z-40 md:z-auto w-72 md:w-64 inset-y-0 left-0 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden transition-all duration-300 ease-in-out`}>
+      <div className={`${showSidebar ? 'w-72 md:w-64' : 'w-0 overflow-hidden'} fixed md:relative z-40 md:z-auto inset-y-0 left-0 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out`}>
+        <div className={`${showSidebar ? 'opacity-100' : 'opacity-0'} flex flex-col h-full transition-opacity duration-200`}>
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm">
             <ArrowLeft className="w-4 h-4" /> Back to Dashboard
@@ -667,7 +668,7 @@ export const ExpertChat: React.FC = () => {
               <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                 <div>
                   <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                    <Database className="w-4 h-4 text-midnight-DEFAULT" /> Knowledge Base
+                    <Database className="w-4 h-4 text-midnight" /> Knowledge Base
                   </h3>
                   <p className="text-[10px] text-gray-500 mt-1">AI uses these files as absolute truth.</p>
                 </div>
@@ -711,9 +712,9 @@ export const ExpertChat: React.FC = () => {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadStatus === 'uploading'}
-                  className={`w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-midnight-DEFAULT/20 disabled:opacity-70 disabled:cursor-wait ${uploadStatus === 'success' ? 'bg-green-600 hover:bg-green-700 text-white' :
+                  className={`w-full py-3 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-midnight/20 disabled:opacity-70 disabled:cursor-wait ${uploadStatus === 'success' ? 'bg-green-600 hover:bg-green-700 text-white' :
                     uploadStatus === 'error' ? 'bg-red-600 hover:bg-red-700 text-white' :
-                      'bg-midnight-DEFAULT hover:bg-neural-dark text-white'
+                      'bg-midnight hover:bg-gray-900 text-white'
                     }`}
                 >
                   {uploadStatus === 'uploading' && <Loader2 className="w-4 h-4 animate-spin" />}
