@@ -106,7 +106,19 @@ export const ExpertChat: React.FC = () => {
 
   const [chatsLoading, setChatsLoading] = useState(false);
 
-  // Fetch history from server
+  const fetchDepartmentDocuments = async () => {
+    if (!activeDepartment || !user?.id) return;
+    try {
+      const docsRes = await authFetch(`${API_URL}/api/documents/department/${activeDepartment}?userId=${user.id}`);
+      if (docsRes.ok) {
+        const docsData = await docsRes.json();
+        setFetchedDocuments(docsData.documents || []);
+      }
+    } catch (err) {
+      console.error("Failed to load department documents", err);
+    }
+  };
+
   // Fetch department chats on department change
   useEffect(() => {
     if (!activeDepartment || !user?.id) return;
@@ -125,16 +137,11 @@ export const ExpertChat: React.FC = () => {
           } else {
             setCurrentChatId(null);
             setMessages([]);
-            // setFetchedDocuments([]); // Don't clear, wait for department docs fetch
           }
         }
 
-        // Also fetch department-wide documents
-        const docsRes = await authFetch(`${API_URL}/api/documents/department/${activeDepartment}?userId=${user.id}`);
-        if (docsRes.ok) {
-          const docsData = await docsRes.json();
-          setFetchedDocuments(docsData.documents || []);
-        }
+        // Fetch department-wide documents
+        await fetchDepartmentDocuments();
 
       } catch (err) {
         console.error("Failed to load chats list", err);
@@ -159,7 +166,7 @@ export const ExpertChat: React.FC = () => {
         if (res.ok) {
           const data = await res.json();
           setMessages(data.history || []);
-          setFetchedDocuments(data.documents || []);
+          // Do not set fetchedDocuments here; they are now department-wide
         }
       } catch (err) {
         console.error("Failed to load history", err);
@@ -208,7 +215,6 @@ export const ExpertChat: React.FC = () => {
       if (currentChatId === chatId) {
         setCurrentChatId(null);
         setMessages([]);
-        setFetchedDocuments([]);
       }
       refreshChats();
     } catch (err) {
@@ -407,44 +413,12 @@ export const ExpertChat: React.FC = () => {
             body: formData
           });
 
-          if (!res.ok) {
-            console.error(`Upload failed for ${file.name}`);
-            continue;
-          }
-
-          // Add reference doc to context
-          const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
-
-          const newDoc: StoredDocument = {
-            id: Date.now().toString() + Math.random().toString(36).substr(2, 9), // Ensure unique ID
-            name: file.name,
-            type: file.type || (isPdf ? 'application/pdf' : 'text/plain'),
-            content: isPdf ? "[Uploaded to Server - Processed]" : "Image/Text File",
-            uploadedAt: Date.now(),
-            chatId: attachChatId,
-            pageCount: undefined
-          };
-
-          if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = (e) => {
-              newDoc.content = e.target?.result as string;
-              // addDocument(activeDepartment, newDoc); // No longer use context
-              setFetchedDocuments(prev => [...prev.filter(existing => existing.name !== newDoc.name), newDoc]);
-              setShowContextRepo(true);
-            };
-          } else {
-            // PDF / Text -> Rely on server chunks
-            // addDocument(activeDepartment, newDoc); // No longer use context
-            setFetchedDocuments(prev => [...prev.filter(existing => existing.name !== newDoc.name), newDoc]);
-            setShowContextRepo(true);
-          }
         } catch (err) {
           console.error(`Failed to upload ${file.name}`, err);
         }
       }
 
+      await fetchDepartmentDocuments();
       await refreshChats();
       setShowContextRepo(true);
       setUploadStatus('success');
@@ -477,11 +451,11 @@ export const ExpertChat: React.FC = () => {
       }
 
       removeDocument(activeDepartment, doc.id); // clean context just in case
-      setFetchedDocuments(prev => prev.filter(d => d.id !== doc.id));
+      await fetchDepartmentDocuments();
     } catch (err) {
       console.error("Failed to delete document", err);
       // Fallback: remove from UI anyway
-      setFetchedDocuments(prev => prev.filter(d => d.id !== doc.id));
+      await fetchDepartmentDocuments();
     }
   };
   const handleUrlSubmit = async () => {
@@ -511,7 +485,7 @@ export const ExpertChat: React.FC = () => {
       }
       const data = await res.json();
       
-      setFetchedDocuments(prev => [...prev.filter(existing => existing.name !== data.document.name), data.document]);
+      await fetchDepartmentDocuments();
       setUrlInput('');
       await refreshChats();
     } catch (err: any) {
@@ -537,7 +511,7 @@ export const ExpertChat: React.FC = () => {
       <div className={`${showSidebar ? 'translate-x-0' : '-translate-x-full'} fixed md:relative z-40 md:z-auto w-72 md:w-64 inset-y-0 left-0 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden transition-all duration-300 ease-in-out`}>
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm">
-            <ArrowLeft className="w-4 h-4" /> Back to Hub
+            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </button>
           <button onClick={() => setShowSidebar(false)} className="md:block hidden text-gray-400 hover:text-gray-600">
             <Menu className="w-4 h-4" />

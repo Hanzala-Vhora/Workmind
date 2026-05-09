@@ -289,13 +289,6 @@ export const Dashboard: React.FC = () => {
                     <Zap className="w-3 h-3 text-cyan-electric" />
                     <span>Agent</span>
                   </button>
-                  <button
-                    onClick={() => handleSwitchAndNav(form, dept, 'hub')}
-                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-left text-xs text-white/70 hover:text-white hover:bg-white/10 ${isActive ? 'text-white' : ''}`}
-                  >
-                    <Users className="w-3 h-3 text-cyan-bio" />
-                    <span>Hub</span>
-                  </button>
                 </div>
               </div>
             );

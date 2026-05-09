@@ -99,7 +99,7 @@ const AppRoutes: React.FC = () => {
       }
 
       setActiveDepartment(inviteDept);
-      navigate('/hub');
+      navigate('/chat');
     }
   }, [searchParams, clientData, setClientData, setActiveDepartment, navigate]);
 
