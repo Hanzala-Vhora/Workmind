@@ -56,6 +56,10 @@ export const ExpertChat: React.FC = () => {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [showScrapingGuide, setShowScrapingGuide] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [scrapedReviewText, setScrapedReviewText] = useState('');
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [pendingScrapeUrl, setPendingScrapeUrl] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<'general' | 'template' | 'sop'>('general');
 
 
 
@@ -438,11 +442,12 @@ export const ExpertChat: React.FC = () => {
         try {
           const formData = new FormData();
           formData.append('file', file);
-          formData.append('chatId', attachChatId);
-          formData.append('userId', user.id);
+          formData.append('chatId', effectiveChatId);
+          formData.append('userId', user?.id || '');
           formData.append('department', activeDepartment);
+          formData.append('category', selectedCategory);
 
-          const res = await authFetch(`${API_URL}/api/upload`, {
+          await authFetch(`${API_URL}/api/upload`, {
             method: 'POST',
             body: formData
           });
@@ -460,7 +465,6 @@ export const ExpertChat: React.FC = () => {
 
     } catch (err) {
       console.error("General upload error", err);
-      // alert("Failed to upload documents. Please try again.");
       setUploadStatus('error');
       setTimeout(() => setUploadStatus('idle'), 3000);
     } finally {
@@ -472,12 +476,6 @@ export const ExpertChat: React.FC = () => {
     if (!confirm(`Delete ${doc.name}?`)) return;
 
     try {
-      // If we have a chatId (which we usually do if we just uploaded), try to delete chunks
-      // We need chatID. If document doesn't store chatId, we might try currentChatId.
-      // However, our delete API takes chatId and filename.
-      // If the doc was uploaded in PREVIOUS session, we might strictly lose track of chatId unless stored in doc.
-      // But let's try currentChatId if available, or just remove from client state.
-
       if (currentChatId) {
         await authFetch(`${API_URL}/api/upload?chatId=${doc.chatId || currentChatId}&filename=${encodeURIComponent(doc.name)}&userId=${user?.id}`, {
           method: 'DELETE'
@@ -488,7 +486,6 @@ export const ExpertChat: React.FC = () => {
       await fetchDepartmentDocuments();
     } catch (err) {
       console.error("Failed to delete document", err);
-      // Fallback: remove from UI anyway
       await fetchDepartmentDocuments();
     }
   };
@@ -509,7 +506,9 @@ export const ExpertChat: React.FC = () => {
           url: urlInput,
           chatId: attachChatId,
           userId: user?.id,
-          department: activeDepartment
+          department: activeDepartment,
+          dryRun: true,
+          category: selectedCategory
         })
       });
 
@@ -519,12 +518,47 @@ export const ExpertChat: React.FC = () => {
       }
       const data = await res.json();
       
-      await fetchDepartmentDocuments();
-      setUrlInput('');
-      await refreshChats();
+      if (data.dryRun) {
+        setScrapedReviewText(data.scrapedText);
+        setPendingScrapeUrl(data.url);
+        setShowReviewModal(true);
+        setUrlInput('');
+      } else {
+        setUrlInput('');
+        await fetchDepartmentDocuments();
+      }
     } catch (err: any) {
       console.error(err);
       alert(`Failed to extract context: ${err.message}`);
+    } finally {
+      setIsScrapingUrl(false);
+    }
+  };
+
+  const handleSaveScrapedText = async () => {
+    setIsScrapingUrl(true);
+    try {
+      const res = await authFetch(`${API_URL}/api/upload/save-text`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatId: currentChatId,
+          userId: user?.id,
+          department: activeDepartment,
+          filename: pendingScrapeUrl,
+          content: scrapedReviewText,
+          category: selectedCategory
+        })
+      });
+
+      if (!res.ok) throw new Error("Failed to save reviewed text");
+      
+      setShowReviewModal(false);
+      setScrapedReviewText('');
+      await fetchDepartmentDocuments();
+    } catch (err) {
+      console.error(err);
+      alert("Error saving text");
     } finally {
       setIsScrapingUrl(false);
     }
@@ -718,13 +752,22 @@ export const ExpertChat: React.FC = () => {
                       ) : (
                         <File className="w-8 h-8 p-1.5 bg-gray-50 text-gray-600 rounded-lg shrink-0" />
                       )}
-                      <div className="overflow-hidden flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-800 truncate" title={doc.name}>{doc.name}</p>
-                        <p className="text-[10px] text-gray-500 flex items-center gap-1">
-                          {new Date(doc.uploadedAt).toLocaleDateString()}
-                          <CheckCircle className="w-3 h-3 text-green-500" />
+                      <div className="flex flex-col gap-0.5 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-xs font-bold text-gray-800 truncate">{doc.name}</p>
+                          {doc.category && doc.category !== 'general' && (
+                            <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter ${
+                              doc.category === 'template' ? 'bg-purple-100 text-purple-600 border border-purple-200' : 'bg-teal-100 text-teal-600 border border-teal-200'
+                            }`}>
+                              {doc.category}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[9px] text-gray-400">
+                          {new Date(doc.uploadedAt).toLocaleDateString()} • {doc.type.split('/')[1]?.toUpperCase() || 'FILE'}
                         </p>
                       </div>
+
                       <button
                         onClick={() => handleDeleteDocument(doc)}
                         className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
@@ -768,7 +811,21 @@ export const ExpertChat: React.FC = () => {
                     </button>
                   </div>
 
+                  <div className="flex gap-2 items-center mb-3">
+                    <select 
+                      value={selectedCategory} 
+                      onChange={(e) => setSelectedCategory(e.target.value as any)}
+                      className="text-[10px] bg-white border border-gray-200 rounded px-2 py-1 font-bold text-gray-600 focus:border-indigo-500 outline-none"
+                    >
+                      <option value="general">General Doc</option>
+                      <option value="template">Template</option>
+                      <option value="sop">SOP</option>
+                    </select>
+                    <div className="flex-1 h-[1px] bg-gray-100"></div>
+                  </div>
+
                   <div className="flex gap-2">
+
                     <input 
                       type="url" 
                       placeholder="https://example.com" 
@@ -1165,7 +1222,59 @@ export const ExpertChat: React.FC = () => {
         </div>
       )}
 
+      {/* Scraper Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <div>
+                <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-indigo-600" /> Review Scraped Knowledge
+                </h3>
+                <p className="text-xs text-gray-500 mt-1">Review, edit, or adjust findings before saving to context.</p>
+              </div>
+              <button onClick={() => setShowReviewModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100 flex gap-3 items-start">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 font-medium leading-relaxed">
+                  The AI has extracted the following text from <strong>{pendingScrapeUrl}</strong>. Please ensure no private data or irrelevant clutter is included.
+                </p>
+              </div>
+              
+              <textarea
+                value={scrapedReviewText}
+                onChange={(e) => setScrapedReviewText(e.target.value)}
+                className="w-full h-[300px] p-6 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-indigo-500 outline-none transition-all text-sm text-gray-700 leading-relaxed font-medium custom-scrollbar"
+                placeholder="Edit the scraped content here..."
+              />
+            </div>
+
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex gap-4">
+              <button 
+                onClick={() => setShowReviewModal(false)}
+                className="flex-1 py-4 bg-white border border-gray-200 text-gray-600 rounded-2xl font-bold text-sm hover:bg-gray-100 transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveScrapedText}
+                disabled={isScrapingUrl}
+                className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl font-bold text-sm shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+              >
+                {isScrapingUrl ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckCircle className="w-5 h-5" /> Confirm & Add to Context</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Feedback Modal */}
+
       <FeedbackModal 
         isOpen={showFeedbackModal} 
         onClose={() => setShowFeedbackModal(false)} 

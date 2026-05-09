@@ -164,6 +164,8 @@ router.post('/', upload.single('file'), async (req, res) => {
         const chatId = req.body.chatId || req.query.chatId;
         const userId = req.body.userId || req.query.userId;
         const department = req.body.department || req.query.department;
+        const category = req.body.category || req.query.category || 'general';
+
 
         let effectiveChatId = String(chatId);
         if (effectiveChatId === 'global-knowledge-base') {
@@ -217,7 +219,9 @@ router.post('/', upload.single('file'), async (req, res) => {
                     chatId: effectiveChatId,
                     name: file.originalname,
                     type: file.mimetype,
+                    category: String(category),
                     content: storedContent
+
                 }
             }),
             ...(chunks.length > 0
@@ -250,7 +254,8 @@ router.post('/url', async (req, res) => {
         const chatId = req.body.chatId || req.query.chatId;
         const userId = req.body.userId || req.query.userId;
         const department = req.body.department || req.query.department;
-        const { url } = req.body;
+        const { url, dryRun, category = 'general' } = req.body;
+
 
         let effectiveChatId = String(chatId);
         if (effectiveChatId === 'global-knowledge-base') {
@@ -282,8 +287,19 @@ router.post('/url', async (req, res) => {
 
         const filename = url;
         const cleanText = normalizeWhitespace(analysisText);
+
+        if (dryRun) {
+            return res.json({
+                success: true,
+                dryRun: true,
+                scrapedText: cleanText,
+                url: url
+            });
+        }
+
         const chunks = cleanText ? chunkText(cleanText) : [];
         const storedContent = cleanText.slice(0, 5000);
+
 
         await prisma.$transaction([
             prisma.documentChunk.deleteMany({
@@ -303,7 +319,9 @@ router.post('/url', async (req, res) => {
                     chatId: effectiveChatId,
                     name: filename,
                     type: 'text/html',
+                    category: String(category),
                     content: storedContent
+
                 }
             }),
             ...(chunks.length > 0
@@ -389,4 +407,81 @@ router.delete('/', async (req, res) => {
     }
 });
 
+});
+
+router.post('/save-text', async (req, res) => {
+    try {
+        const { chatId, userId, department, filename, content, category = 'general' } = req.body;
+
+        if (!content || !chatId || !userId || !department || !filename) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        let effectiveChatId = String(chatId);
+        if (effectiveChatId === 'global-knowledge-base') {
+            effectiveChatId = `kb-universal-${userId}`;
+        }
+
+        const existingSession = await prisma.chatSession.findUnique({
+            where: { id: effectiveChatId },
+            select: { id: true }
+        });
+
+        if (!existingSession) {
+            await prisma.chatSession.create({
+                data: {
+                    id: effectiveChatId,
+                    userId: String(userId),
+                    department: String(department),
+                    title: `New ${department} chat`
+                }
+            });
+        }
+
+        const cleanText = normalizeWhitespace(content);
+        const chunks = chunkText(cleanText);
+        const storedContent = cleanText.slice(0, 5000);
+
+        await prisma.$transaction([
+            prisma.documentChunk.deleteMany({
+                where: {
+                    chatId: effectiveChatId,
+                    source: filename
+                }
+            }),
+            prisma.chatDocument.deleteMany({
+                where: {
+                    chatId: effectiveChatId,
+                    name: filename
+                }
+            }),
+            prisma.chatDocument.create({
+                data: {
+                    chatId: effectiveChatId,
+                    name: filename,
+                    type: 'text/plain',
+                    category: String(category),
+                    content: storedContent
+                }
+            }),
+            prisma.documentChunk.createMany({
+                data: chunks.map(chunk => ({
+                    chatId: effectiveChatId,
+                    content: chunk,
+                    source: filename
+                }))
+            })
+        ]);
+
+        res.json({
+            success: true,
+            message: `Saved text as ${filename}`
+        });
+    } catch (error: any) {
+        console.error('Save text error:', error);
+        res.status(500).json({ error: error.message || 'Internal server error saving text' });
+    }
+});
+
 export default router;
+

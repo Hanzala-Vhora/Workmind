@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Book, Plus, StickyNote, FileText, Trash2, Loader2, Globe, Database, FilePlus, ChevronRight } from 'lucide-react';
+import { Book, Plus, StickyNote, FileText, Trash2, Loader2, Globe, Database, FilePlus, ChevronRight, AlertTriangle, Shield, CheckCircle, X } from 'lucide-react';
+
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/auth';
 import { StoredDocument } from '../types';
@@ -14,7 +15,12 @@ export const KnowledgeBase: React.FC = () => {
   const [urlInput, setUrlInput] = useState('');
   const [isScrapingUrl, setIsScrapingUrl] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [selectedCategory, setSelectedCategory] = useState<'general' | 'template' | 'sop'>('general');
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [scrapedReviewText, setScrapedReviewText] = useState('');
+  const [pendingScrapeUrl, setPendingScrapeUrl] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -51,6 +57,8 @@ export const KnowledgeBase: React.FC = () => {
       formData.append('department', 'Universal');
       formData.append('userId', user.id);
       formData.append('chatId', 'global-knowledge-base');
+      formData.append('category', selectedCategory);
+
 
       const res = await authFetch(`${API_URL}/api/upload`, {
         method: 'POST',
@@ -84,6 +92,8 @@ export const KnowledgeBase: React.FC = () => {
       formData.append('department', 'Universal');
       formData.append('userId', user.id);
       formData.append('chatId', 'global-knowledge-base');
+      formData.append('category', selectedCategory);
+
 
       const res = await authFetch(`${API_URL}/api/upload`, {
         method: 'POST',
@@ -114,14 +124,25 @@ export const KnowledgeBase: React.FC = () => {
           url: urlInput,
           chatId: 'global-knowledge-base',
           userId: user.id,
-          department: 'Universal'
+          department: 'Universal',
+          dryRun: true,
+          category: selectedCategory
         })
       });
 
       if (res.ok) {
-        setUrlInput('');
-        fetchGlobalDocuments();
+        const data = await res.json();
+        if (data.dryRun) {
+            setScrapedReviewText(data.scrapedText);
+            setPendingScrapeUrl(data.url);
+            setShowReviewModal(true);
+            setUrlInput('');
+        } else {
+            setUrlInput('');
+            fetchGlobalDocuments();
+        }
       } else {
+
         const errorData = await res.json();
         alert(`Failed to extract context: ${errorData.error || "Unknown error"}`);
       }
@@ -133,7 +154,38 @@ export const KnowledgeBase: React.FC = () => {
     }
   };
 
+  const handleSaveScrapedText = async () => {
+    if (!user?.id) return;
+    setIsScrapingUrl(true);
+    try {
+      const res = await authFetch(`${API_URL}/api/upload/save-text`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chatId: 'global-knowledge-base',
+          userId: user.id,
+          department: 'Universal',
+          filename: pendingScrapeUrl,
+          content: scrapedReviewText,
+          category: selectedCategory
+        })
+      });
+
+      if (!res.ok) throw new Error("Failed to save reviewed text");
+      
+      setShowReviewModal(false);
+      setScrapedReviewText('');
+      fetchGlobalDocuments();
+    } catch (err) {
+      console.error(err);
+      alert("Error saving text");
+    } finally {
+      setIsScrapingUrl(false);
+    }
+  };
+
   const handleDelete = async (docId: string, docName: string) => {
+
     if (!confirm(`Delete ${docName}?`)) return;
     try {
       await authFetch(`${API_URL}/api/upload?chatId=global-knowledge-base&filename=${encodeURIComponent(docName)}&userId=${user?.id}`, {
@@ -190,7 +242,20 @@ export const KnowledgeBase: React.FC = () => {
               <Globe className="w-4 h-4 text-cyan-electric" />
               Add Website Context
             </h4>
+            <div className="flex gap-2 items-center mb-3">
+                <select 
+                    value={selectedCategory} 
+                    onChange={(e) => setSelectedCategory(e.target.value as any)}
+                    className="text-[10px] bg-white border border-gray-200 rounded px-2 py-1 font-bold text-gray-600 focus:border-neural-DEFAULT outline-none"
+                >
+                    <option value="general">General Doc</option>
+                    <option value="template">Template</option>
+                    <option value="sop">SOP</option>
+                </select>
+                <div className="flex-1 h-[1px] bg-gray-100"></div>
+            </div>
             <div className="flex gap-2">
+
               <input 
                 type="url" 
                 placeholder="https://example.com" 
@@ -261,13 +326,23 @@ export const KnowledgeBase: React.FC = () => {
                         {doc.name.endsWith('.txt') ? <StickyNote className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-ui-text truncate" title={doc.name}>{doc.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-bold text-ui-text truncate" title={doc.name}>{doc.name}</p>
+                          {doc.category && doc.category !== 'general' && (
+                            <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter ${
+                              doc.category === 'template' ? 'bg-purple-100 text-purple-600 border border-purple-200' : 'bg-teal-100 text-teal-600 border border-teal-200'
+                            }`}>
+                              {doc.category}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1">
                           {new Date(doc.uploadedAt).toLocaleDateString()}
                           <span className="w-1 h-1 bg-gray-200 rounded-full"></span>
                           Global
                         </p>
                       </div>
+
                       <button 
                         onClick={() => handleDelete(doc.id, doc.name)}
                         className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
@@ -288,6 +363,58 @@ export const KnowledgeBase: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Scraper Review Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fadeIn">
+          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <div>
+                <h3 className="font-bold text-gray-900 flex items-center gap-2 text-sm md:text-base">
+                  <Shield className="w-5 h-5 text-indigo-600" /> Review Scraped Knowledge
+                </h3>
+                <p className="text-[10px] md:text-xs text-gray-500 mt-1">Review, edit, or adjust findings before saving to Global context.</p>
+              </div>
+              <button onClick={() => setShowReviewModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 md:p-6">
+              <div className="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100 flex gap-3 items-start">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-[10px] md:text-xs text-amber-800 font-medium leading-relaxed">
+                  The AI has extracted the following text from <strong>{pendingScrapeUrl}</strong>. Please ensure no private data or irrelevant clutter is included.
+                </p>
+              </div>
+              
+              <textarea
+                value={scrapedReviewText}
+                onChange={(e) => setScrapedReviewText(e.target.value)}
+                className="w-full h-[250px] md:h-[300px] p-4 md:p-6 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:border-neural-DEFAULT outline-none transition-all text-xs md:text-sm text-gray-700 leading-relaxed font-medium custom-scrollbar"
+                placeholder="Edit the scraped content here..."
+              />
+            </div>
+
+            <div className="p-4 md:p-6 bg-gray-50 border-t border-gray-100 flex gap-4">
+              <button 
+                onClick={() => setShowReviewModal(false)}
+                className="flex-1 py-3 md:py-4 bg-white border border-gray-200 text-gray-600 rounded-2xl font-bold text-xs md:text-sm hover:bg-gray-100 transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveScrapedText}
+                disabled={isScrapingUrl}
+                className="flex-[2] py-3 md:py-4 bg-indigo-600 text-white rounded-2xl font-bold text-xs md:text-sm shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+              >
+                {isScrapingUrl ? <Loader2 className="w-4 h-4 animate-spin" /> : <><CheckCircle className="w-4 h-4" /> Save to Global Context</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 };

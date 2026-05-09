@@ -190,6 +190,7 @@ model ChatDocument {
   chat      ChatSession @relation(fields: [chatId], references: [id], onDelete: Cascade)
   name      String
   type      String
+  category  String?     // "template", "sop", "general", etc.
   content   String?     @db.Text // Optional content/base64 for small files or reference
   createdAt DateTime    @default(now())
 
