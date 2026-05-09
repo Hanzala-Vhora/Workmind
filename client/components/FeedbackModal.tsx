@@ -83,12 +83,13 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
   ];
 
   const PRICING_RANGES = [
-    'Under $100/month',
-    '$100–$300/month',
-    '$300–$700/month',
-    '$700–$1500/month',
-    'Enterprise pricing'
+    'Under $100 per seat/month',
+    '$100–$300 per seat/month',
+    '$300–$700 per seat/month',
+    '$700–$1500 per seat/month',
+    'Enterprise custom pricing'
   ];
+
 
   const START_TIMES = [
     'Immediately',
@@ -241,7 +242,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
 
               {/* Q7: Pricing */}
               <section>
-                <label className="block text-sm font-black text-gray-900 mb-4 uppercase tracking-wider">7. What monthly pricing range would feel reasonable?</label>
+                <label className="block text-sm font-black text-gray-900 mb-4 uppercase tracking-wider">7. What monthly pricing range would feel reasonable per user license / seat for your organization?</label>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {PRICING_RANGES.map((opt) => (
                     <button
