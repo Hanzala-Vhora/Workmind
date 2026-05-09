@@ -7,7 +7,7 @@ import { scrapeWebsite, analyzeWebsiteContent } from '../utils/scraper.js';
 
 const router = Router();
 
-const MAX_FILE_SIZE = 25 * 1024 * 1024;
+const MAX_FILE_SIZE = 100 * 1024 * 1024;
 const SUPPORTED_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp']);
 const SUPPORTED_TEXT_TYPES = new Set([
     'application/pdf',

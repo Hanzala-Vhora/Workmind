@@ -71,6 +71,11 @@ export const KnowledgeBase: React.FC = () => {
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user?.id) return;
+    
+    if (file.size > 100 * 1024 * 1024) {
+      alert(`File ${file.name} is too large. Max limit is 100MB.`);
+      return;
+    }
 
     setUploadStatus('uploading');
     try {

@@ -402,9 +402,9 @@ export const ExpertChat: React.FC = () => {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
 
-        // Limit size to 500MB per file
-        if (file.size > 500 * 1024 * 1024) {
-          alert(`File ${file.name} is too large. Max limit is 500MB.`);
+        // Limit size to 100MB per file (Cloudflare Limit)
+        if (file.size > 100 * 1024 * 1024) {
+          alert(`File ${file.name} is too large. Max limit is 100MB.`);
           continue;
         }
 
