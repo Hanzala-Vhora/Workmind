@@ -161,7 +161,10 @@ router.post('/', upload.single('file'), async (req, res) => {
 
         const file = req.file;
 
-        const { chatId, userId, department } = req.body;
+        const chatId = req.body.chatId || req.query.chatId;
+        const userId = req.body.userId || req.query.userId;
+        const department = req.body.department || req.query.department;
+
         if (!chatId || !userId || !department) {
             return res.status(400).json({ error: 'Missing chatId, userId, or department' });
         }
@@ -239,7 +242,11 @@ router.post('/', upload.single('file'), async (req, res) => {
 
 router.post('/url', async (req, res) => {
     try {
-        const { url, chatId, userId, department } = req.body;
+        const chatId = req.body.chatId || req.query.chatId;
+        const userId = req.body.userId || req.query.userId;
+        const department = req.body.department || req.query.department;
+        const { url } = req.body;
+
         if (!url || !chatId || !userId || !department) {
             return res.status(400).json({ error: 'Missing url, chatId, userId, or department' });
         }
