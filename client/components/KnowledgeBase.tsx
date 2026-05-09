@@ -384,7 +384,7 @@ export const KnowledgeBase: React.FC = () => {
               <div className="mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100 flex gap-3 items-start">
                 <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <p className="text-[10px] md:text-xs text-amber-800 font-medium leading-relaxed">
-                  The AI has extracted the following text from <strong>{pendingScrapeUrl}</strong>. Please ensure no private data or irrelevant clutter is included.
+                  The AI has extracted the following text from <strong>{pendingScrapeUrl}</strong>
                 </p>
               </div>
               
