@@ -571,7 +571,15 @@ router.post('/', async (req, res) => {
 
         // Fetch PDF chunks from DB
         const dbChunks = await prisma.documentChunk.findMany({
-            where: { chatId: currentChatId }
+            where: {
+                chat: {
+                    userId: String(userId),
+                    OR: [
+                        { department: { equals: department, mode: 'insensitive' } },
+                        { department: { equals: 'Universal', mode: 'insensitive' } }
+                    ]
+                }
+            }
         });
 
         if (dbChunks.length > 0) {

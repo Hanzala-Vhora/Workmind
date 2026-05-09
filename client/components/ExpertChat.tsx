@@ -442,7 +442,7 @@ export const ExpertChat: React.FC = () => {
         try {
           const formData = new FormData();
           formData.append('file', file);
-          formData.append('chatId', effectiveChatId);
+          formData.append('chatId', attachChatId);
           formData.append('userId', user?.id || '');
           formData.append('department', activeDepartment);
           formData.append('category', selectedCategory);
