@@ -13,7 +13,7 @@ import "driver.js/dist/driver.css";
 import { KnowledgeBase } from './KnowledgeBase';
 import { FeedbackModal } from './FeedbackModal';
 import HowItWorksPanel from './HowItWorksPanel';
-import { BookOpen, HelpCircle, LayoutGrid } from 'lucide-react';
+import { LayoutGrid, BookOpen, HelpCircle, Search, Clock, TrendingUp, Users as UsersIcon, Home } from 'lucide-react';
 
 
 
@@ -224,7 +224,16 @@ export const Dashboard: React.FC = () => {
           <h1 className="text-xl font-bold tracking-tight uppercase">THEWORKIMND.AI</h1>
         </div>
         <nav className="flex-1 px-4 space-y-4 mt-6 overflow-y-auto">
-          <div className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2">Knowledge Hub</div>
+          <div className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2">Navigation</div>
+
+          <button
+            onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold ${currentView === 'dashboard' ? 'bg-white/10 text-white shadow-lg' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
+          >
+            <Home className="w-5 h-5" />
+            <span>Home</span>
+          </button>
+
 
           <button
             onClick={() => { setCurrentView('kb'); setIsMobileMenuOpen(false); }}
@@ -270,7 +279,16 @@ export const Dashboard: React.FC = () => {
           <h1 className="text-xl font-bold tracking-tight uppercase">THEWORKIMND.AI</h1>
         </div>
         <nav className="flex-1 px-4 space-y-4 mt-6 overflow-y-auto">
-          <div className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2">Knowledge Hub</div>
+          <div className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2">Navigation</div>
+
+          <button
+            onClick={() => setCurrentView('dashboard')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold ${currentView === 'dashboard' ? 'bg-white/20 text-white shadow-lg' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+          >
+            <Home className="w-5 h-5" />
+            <span>Home</span>
+          </button>
+
 
           <button
             onClick={() => setCurrentView('kb')}
@@ -343,6 +361,7 @@ export const Dashboard: React.FC = () => {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 mt-12 md:mt-0">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold text-deepTech-DEFAULT">Enterprise Dashboard</h2>
+
             <p className="text-ui-slate text-sm md:text-base">Manage your AI workforce</p>
           </div>
           <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm text-sm flex items-center gap-2 w-full md:w-auto justify-center md:justify-start">

@@ -179,7 +179,12 @@ export const LandingPage: React.FC = () => {
               <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-blue-600/20 blur-[100px] pointer-events-none rounded-full"></div>
               <div className="absolute bottom-[-50px] left-[-50px] w-64 h-64 bg-purple-600/20 blur-[100px] pointer-events-none rounded-full"></div>
 
+              <div className="mb-8 p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-100 text-sm leading-relaxed font-bold text-center">
+                Note: After completing the signup process, if you are selected for our cohort, you will receive your username and password via email to access the system.
+              </div>
+
               <h3 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight text-white">Reserve your spot</h3>
+
               <p className="text-slate-400 text-sm mb-8 leading-normal font-light">Tell us about you. Takes 30 seconds.</p>
 
               {submitError && (
@@ -299,9 +304,7 @@ export const LandingPage: React.FC = () => {
                     'Join the waitlist'
                   )}
                 </button>
-                <p className="mt-4 text-[10px] text-slate-400 text-center leading-relaxed font-medium">
-                  Note: After completing the signup process, if you are selected for our cohort, you will receive your username and password via email to access the system.
-                </p>
+
 
               </form>
             </div>

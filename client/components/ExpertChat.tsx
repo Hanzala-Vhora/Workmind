@@ -4,7 +4,8 @@ import remarkGfm from 'remark-gfm'; // For tables
 import rehypeRaw from 'rehype-raw'; // For HTML tags like <br>
 import { marked } from 'marked';
 import { useApp } from '../context/AppContext';
-import { Send, ArrowLeft, AlertTriangle, Paperclip, FileText, Image as ImageIcon, Database, X, Zap, Loader2, CheckCircle, File, User, Sparkles, MessageSquare, Menu, Plus, Trash2, ChevronDown, Cpu, Download } from 'lucide-react';
+import { Send, ArrowLeft, AlertTriangle, Paperclip, FileText, Image as ImageIcon, Database, X, Zap, Loader2, CheckCircle, File, User, Sparkles, MessageSquare, Menu, Plus, Trash2, ChevronDown, Cpu, Download, HelpCircle, Info } from 'lucide-react';
+
 import { ThreadAnalyzer } from './ThreadAnalyzer';
 import { BrainLogo } from './BrainLogo';
 import { StoredDocument } from '../types';
@@ -53,6 +54,9 @@ export const ExpertChat: React.FC = () => {
   const [showContextRepo, setShowContextRepo] = useState(false);
   const [showLowBalanceModal, setShowLowBalanceModal] = useState(false);
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [showScrapingGuide, setShowScrapingGuide] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+
 
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -74,7 +78,15 @@ export const ExpertChat: React.FC = () => {
 
   useEffect(() => {
     scrollToBottom();
+    
+    // First time disclaimer logic
+    const hasSeenDisclaimer = localStorage.getItem('agent_chat_disclaimer_seen');
+    if (!hasSeenDisclaimer) {
+      setShowDisclaimer(true);
+      localStorage.setItem('agent_chat_disclaimer_seen', 'true');
+    }
   }, [conversations, activeDepartment, messages]);
+
 
   useEffect(() => {
     if (messages.length > 0 && !localStorage.getItem('chat_tour_completed')) {
@@ -745,7 +757,17 @@ export const ExpertChat: React.FC = () => {
                 </button>
 
                 <div className="mt-4 flex flex-col gap-2 border-t border-gray-200 pt-4">
-                  <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Add Website Context</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Add Website Context</p>
+                    <button 
+                      onClick={() => setShowScrapingGuide(true)}
+                      className="text-gray-400 hover:text-indigo-600 transition-colors"
+                      title="How to add links"
+                    >
+                      <HelpCircle className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
                   <div className="flex gap-2">
                     <input 
                       type="url" 
@@ -1075,6 +1097,74 @@ export const ExpertChat: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Scraping Guide Modal */}
+      {showScrapingGuide && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-indigo-600" /> Adding Context Links
+              </h3>
+              <button onClick={() => setShowScrapingGuide(false)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold text-xs">1</div>
+                <div>
+                  <p className="text-sm font-bold text-gray-800">Copy the URL</p>
+                  <p className="text-xs text-gray-500">Copy the link of the website, Instagram profile, or LinkedIn page you want the AI to learn from.</p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold text-xs">2</div>
+                <div>
+                  <p className="text-sm font-bold text-gray-800">Paste & Add</p>
+                  <p className="text-xs text-gray-500">Paste it in the box and click the "+" button. The AI will scrape and structure the knowledge automatically.</p>
+                </div>
+              </div>
+              <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
+                <p className="text-xs font-bold text-amber-800 flex items-center gap-2 mb-1">
+                  <AlertTriangle className="w-3 h-3" /> Pro Tip: Social Media
+                </p>
+                <p className="text-[11px] text-amber-700 leading-relaxed">
+                  For Instagram and LinkedIn, ensure the profiles are <strong>public</strong>. Private profiles cannot be scraped.
+                </p>
+              </div>
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-100">
+              <button onClick={() => setShowScrapingGuide(false)} className="w-full py-3 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-100">Got it</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* First Time Disclaimer */}
+      {showDisclaimer && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden animate-slideUp">
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Info className="w-8 h-8 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 mb-3">Welcome to your Expert Workspace</h3>
+              <div className="space-y-3 text-sm text-gray-600 leading-relaxed">
+                <p>To train your AI expert, use the <strong>Knowledge Base</strong> panel on the right.</p>
+                <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 text-xs font-medium text-amber-800">
+                  ⚠️ Do NOT paste website or social media links directly into the chat. Use the dedicated "Add Website Context" section.
+                </div>
+                <p className="text-xs text-gray-400">This ensures the AI properly structures and remembers the data.</p>
+              </div>
+              <button 
+                onClick={() => setShowDisclaimer(false)}
+                className="w-full mt-8 py-4 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all"
+              >
+                I Understand
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Feedback Modal */}
       <FeedbackModal 
         isOpen={showFeedbackModal} 
