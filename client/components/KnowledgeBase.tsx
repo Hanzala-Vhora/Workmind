@@ -207,18 +207,18 @@ export const KnowledgeBase: React.FC = () => {
             <p className="text-[10px] text-gray-400 mt-2 italic">Scrapes text for AI knowledge</p>
           </div>
 
-          <div className="bg-gradient-to-br from-indigo-600 to-cyan-600 p-6 rounded-2xl text-white shadow-xl">
-            <h4 className="text-sm font-bold mb-2 flex items-center gap-2">
-              <Book className="w-4 h-4" />
+          <div className="bg-indigo-900 p-6 rounded-2xl text-white shadow-xl border border-indigo-800">
+            <h4 className="text-sm font-bold mb-3 flex items-center gap-2 text-indigo-100">
+              <Book className="w-4 h-4 text-cyan-400" />
               Why Global?
             </h4>
-            <p className="text-xs text-indigo-50 leading-relaxed">
+            <p className="text-xs text-indigo-100/80 leading-relaxed mb-4">
               Documents uploaded here are used as "absolute truth" by every expert. 
-              Upload your company mission, tone of voice, or general guidelines to ensure consistency.
+              Upload your company mission, tone of voice, or general guidelines to ensure consistency across all departments.
             </p>
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="mt-4 w-full bg-white/10 hover:bg-white/20 border border-white/20 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2"
+              className="w-full bg-white text-indigo-900 hover:bg-indigo-50 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
             >
               {uploadStatus === 'uploading' ? <Loader2 className="w-3 h-3 animate-spin" /> : <FilePlus className="w-3 h-3" />}
               {uploadStatus === 'success' ? 'Uploaded!' : 'Upload Documents'}
