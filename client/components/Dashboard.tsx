@@ -431,7 +431,6 @@ export const Dashboard: React.FC = () => {
             {currentView === 'how-it-works' && <HowItWorksPanel />}
           </div>
         )}
-}
       </main>
       <FeedbackModal 
         isOpen={showFeedbackModal} 
