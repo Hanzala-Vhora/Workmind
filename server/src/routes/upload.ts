@@ -407,8 +407,6 @@ router.delete('/', async (req, res) => {
     }
 });
 
-});
-
 router.post('/save-text', async (req, res) => {
     try {
         const { chatId, userId, department, filename, content, category = 'general' } = req.body;
