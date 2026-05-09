@@ -1,5 +1,5 @@
-const ACCESS_TOKEN_KEY = 'workmind_access_token';
-const USER_KEY = 'workmind_auth_user';
+const ACCESS_TOKEN_KEY = 'TheWorkimnd_access_token';
+const USER_KEY = 'TheWorkimnd_auth_user';
 
 export type AuthUser = {
   id: string;

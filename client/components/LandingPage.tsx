@@ -95,7 +95,7 @@ export const LandingPage: React.FC = () => {
               <div className="group-hover:scale-110 transition-transform duration-300">
                 <BrainLogo />
               </div>
-              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-brand tracking-tight">WORKMIND.AI</span>
+              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-brand tracking-tight uppercase">THEWORKIMND.AI</span>
             </div>
             <div className="hidden md:flex space-x-8 text-gray-600 font-medium">
               <button onClick={() => scrollToSection('how-it-works')} className="hover:text-neural-DEFAULT transition-colors">How it Works</button>
@@ -110,9 +110,9 @@ export const LandingPage: React.FC = () => {
               >
                 {isSignedIn ? 'Dashboard' : 'Login'}
               </button>
-              
+
               {/* Hamburger Button */}
-              <button 
+              <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                 className="md:hidden p-2 text-gray-600 hover:text-neural-DEFAULT transition-colors"
               >
@@ -299,6 +299,10 @@ export const LandingPage: React.FC = () => {
                     'Join the waitlist'
                   )}
                 </button>
+                <p className="mt-4 text-[10px] text-slate-400 text-center leading-relaxed font-medium">
+                  Note: After completing the signup process, if you are selected for our cohort, you will receive your username and password via email to access the system.
+                </p>
+
               </form>
             </div>
           </div>
@@ -363,7 +367,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-sm font-bold text-neural-DEFAULT uppercase tracking-wider mb-2">Platform Capabilities</h2>
-            <h3 className="text-3xl font-bold text-ui-text">Why Workmind is Different</h3>
+            <h3 className="text-3xl font-bold text-ui-text">Why TheWorkimnd is Different</h3>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
@@ -372,7 +376,9 @@ export const LandingPage: React.FC = () => {
               { icon: Lock, title: "Enterprise Security", desc: "Your data is isolated. We use enterprise-grade encryption and never train public models on your proprietary IP." },
               { icon: Target, title: "Goal-Oriented Behavior", desc: "Agents aren't just chatbots. They are programmed with 90-day targets and specific KPIs." },
               { icon: FileText, title: "Document Analysis", desc: "Upload PDFs, contracts, and images directly. Agents can read, summarize, and extract data instantly." },
-              { icon: Workflow, title: "Approval Workflows", desc: "Set boundaries. If an agent drafts a discount >15%, it automatically escalates to a human manager." }
+              { icon: Workflow, title: "Approval Workflows", desc: "Set boundaries. If an agent drafts a discount >15%, it automatically escalates to a human manager." },
+              { icon: Zap, title: "More Than a Chat Interface", desc: "TheWorkimnd is designed for operational coordination, not just conversational assistance." }
+
             ].map((item, i) => (
               <div key={i} className="p-8 bg-ui-card rounded-2xl border border-gray-100 hover:border-neural-DEFAULT/30 hover:shadow-lg transition-all duration-300 group">
                 <div className="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center mb-6 text-neural-DEFAULT group-hover:bg-gradient-brand group-hover:text-white transition-colors">
@@ -488,10 +494,10 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all">
             <BrainLogo />
-            <span className="font-bold text-ui-text">WORKMIND.AI</span>
+            <span className="font-bold text-ui-text">TheWorkimnd.AI</span>
           </div>
           <div className="text-sm text-ui-slate">
-            © {new Date().getFullYear()} Workmind.ai. All rights reserved.
+            © {new Date().getFullYear()} TheWorkimnd.ai. All rights reserved.
           </div>
           <div className="flex gap-4">
             <div className="text-ui-slate text-xs flex items-center gap-2">

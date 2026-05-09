@@ -36,7 +36,7 @@ export const SignInPage: React.FC = () => {
               <div className="bg-indigo-600 p-2 rounded-xl group-hover:scale-110 transition-transform shadow-lg shadow-indigo-200">
                 <BrainLogo width={32} height={32} />
               </div>
-              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-brand tracking-tight">WORKMIND.AI</span>
+              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-brand tracking-tight">TheWorkimnd.AI</span>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mt-6 tracking-tight">Welcome back</h1>
             <p className="text-gray-500 mt-2 text-lg">Access your AI department experts.</p>

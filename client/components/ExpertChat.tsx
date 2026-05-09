@@ -9,6 +9,8 @@ import { ThreadAnalyzer } from './ThreadAnalyzer';
 import { BrainLogo } from './BrainLogo';
 import { StoredDocument } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { FeedbackModal } from './FeedbackModal';
+
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/auth';
 import { driver } from "driver.js";
@@ -50,12 +52,25 @@ export const ExpertChat: React.FC = () => {
   const [showAnalyzer, setShowAnalyzer] = useState(false);
   const [showContextRepo, setShowContextRepo] = useState(false);
   const [showLowBalanceModal, setShowLowBalanceModal] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  useEffect(() => {
+    if (userProfile && userProfile.credits <= 0) {
+      setShowFeedbackModal(true);
+    } else {
+      setShowFeedbackModal(false);
+    }
+  }, [userProfile]);
+
+
 
   useEffect(() => {
     scrollToBottom();
@@ -1010,7 +1025,7 @@ export const ExpertChat: React.FC = () => {
 
                 <div className="text-center mt-3">
                   <p className="text-[11px] text-gray-400">
-                    Workmind can make mistakes. Verify critical information.
+                    TheWorkimnd can make mistakes. Verify critical information.
                   </p>
                 </div>
               </div>
@@ -1060,9 +1075,15 @@ export const ExpertChat: React.FC = () => {
           </div>
         </div>
       )}
+      {/* Feedback Modal */}
+      <FeedbackModal 
+        isOpen={showFeedbackModal} 
+        onClose={() => setShowFeedbackModal(false)} 
+      />
     </div>
   );
 };
+
 
 const Shield = ({ className }: { className?: string }) => (
   <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -46,19 +46,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Persist to local storage (only as backup / cache)
   useEffect(() => {
     // We try to load from local storage immediately to avoid flash or if API fails
-    const savedData = localStorage.getItem('workmind_client_data');
+    const savedData = localStorage.getItem('TheWorkimnd_client_data');
     if (savedData && !clientData) setClientDataState(JSON.parse(savedData));
 
-    const savedConvos = localStorage.getItem('workmind_conversations');
+    const savedConvos = localStorage.getItem('TheWorkimnd_conversations');
     if (savedConvos) setConversations(JSON.parse(savedConvos));
 
-    const savedDocs = localStorage.getItem('workmind_documents');
+    const savedDocs = localStorage.getItem('TheWorkimnd_documents');
     if (savedDocs) setDepartmentDocuments(JSON.parse(savedDocs));
 
-    const savedHubs = localStorage.getItem('workmind_hubs');
+    const savedHubs = localStorage.getItem('TheWorkimnd_hubs');
     if (savedHubs) setDepartmentHubs(JSON.parse(savedHubs));
 
-    const savedDept = localStorage.getItem('workmind_active_department');
+    const savedDept = localStorage.getItem('TheWorkimnd_active_department');
     if (savedDept) setActiveDepartment(savedDept as Department);
   }, []);
 
@@ -147,7 +147,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             };
 
             setClientDataState(mappedData);
-            localStorage.setItem('workmind_client_data', JSON.stringify(mappedData));
+            localStorage.setItem('TheWorkimnd_client_data', JSON.stringify(mappedData));
 
             // Restore active dept if missing
             if (!activeDepartment && mappedData.selected_departments?.length > 0) {
@@ -183,13 +183,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Persist active department changes
   useEffect(() => {
     if (activeDepartment) {
-      localStorage.setItem('workmind_active_department', activeDepartment);
+      localStorage.setItem('TheWorkimnd_active_department', activeDepartment);
     }
   }, [activeDepartment]);
 
   const setClientData = (data: IntakeData) => {
     setClientDataState(data);
-    localStorage.setItem('workmind_client_data', JSON.stringify(data));
+    localStorage.setItem('TheWorkimnd_client_data', JSON.stringify(data));
   };
 
   const addMessage = (dept: Department, role: 'user' | 'assistant', content: string, escalation?: any) => {
@@ -210,7 +210,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           lastUpdated: Date.now()
         }
       };
-      localStorage.setItem('workmind_conversations', JSON.stringify(updated));
+      localStorage.setItem('TheWorkimnd_conversations', JSON.stringify(updated));
       return updated;
     });
   };
@@ -226,7 +226,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           lastUpdated: Date.now()
         }
       };
-      localStorage.setItem('workmind_conversations', JSON.stringify(updated));
+      localStorage.setItem('TheWorkimnd_conversations', JSON.stringify(updated));
       return updated;
     });
   };
@@ -238,7 +238,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...prev,
         [dept]: [...currentDocs, doc]
       };
-      localStorage.setItem('workmind_documents', JSON.stringify(updated));
+      localStorage.setItem('TheWorkimnd_documents', JSON.stringify(updated));
       return updated;
     });
   };
@@ -250,7 +250,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...prev,
         [dept]: currentDocs.filter(d => d.id !== docId)
       };
-      localStorage.setItem('workmind_documents', JSON.stringify(updated));
+      localStorage.setItem('TheWorkimnd_documents', JSON.stringify(updated));
       return updated;
     });
   };
@@ -262,16 +262,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ...prev,
         [dept]: [...currentMsgs, msg]
       };
-      localStorage.setItem('workmind_hubs', JSON.stringify(updated));
+      localStorage.setItem('TheWorkimnd_hubs', JSON.stringify(updated));
       return updated;
     });
   };
 
   const resetApp = () => {
-    localStorage.removeItem('workmind_client_data');
-    localStorage.removeItem('workmind_conversations');
-    localStorage.removeItem('workmind_documents');
-    localStorage.removeItem('workmind_hubs');
+    localStorage.removeItem('TheWorkimnd_client_data');
+    localStorage.removeItem('TheWorkimnd_conversations');
+    localStorage.removeItem('TheWorkimnd_documents');
+    localStorage.removeItem('TheWorkimnd_hubs');
     setClientDataState(null);
     setConversations({});
     setDepartmentDocuments({});

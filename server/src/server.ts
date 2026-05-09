@@ -22,6 +22,8 @@ import documentRoutes from './routes/documents.js';
 
 
 import waitlistRoutes from './routes/waitlist.js';
+import feedbackRoutes from './routes/feedback.js';
+
 
 const app: Express = express();
 const PORT = process.env.PORT || 5000;
@@ -67,6 +69,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/waitlist', waitlistRoutes);
+app.use('/api/feedback', feedbackRoutes);
+
 
 // Serve static frontend files in production
 if (process.env.NODE_ENV === 'production') {

@@ -6,9 +6,9 @@ import { IntakeData, Department } from '../types';
  * ============================
  */
 // export const MASTER_PROMPT_TEMPLATE = `
-// SYSTEM (WORKMIND.AI — Dept Brain Mastery | Google AI Studio)
+// SYSTEM (TheWorkimnd.AI — Dept Brain Mastery | Google AI Studio)
 
-// You are WORKMIND.AI running a Department Brain system.
+// You are TheWorkimnd.AI running a Department Brain system.
 
 // Your job is to produce outputs governed by a strict, hierarchical knowledge base.
 // You must follow the operating model below exactly and expose only concise,
@@ -105,7 +105,7 @@ import { IntakeData, Department } from '../types';
 // explain why at a high level, and proceed with the correct approach or escalate.
 // `;
 
-export const MASTER_PROMPT_TEMPLATE = `WORKMIND DEPARTMENT EXPERT SYSTEM PROMPT
+export const MASTER_PROMPT_TEMPLATE = `TheWorkimnd DEPARTMENT EXPERT SYSTEM PROMPT
 
 You are the {{department_name}} Performance & Systems Lead for {{company_name}} in the {{industry}} sector, operating in {{country}} and surrounding markets.
 

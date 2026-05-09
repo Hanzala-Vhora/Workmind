@@ -15,7 +15,7 @@ export const SignUpPage: React.FC = () => {
               <div className="bg-gradient-to-br from-cyan-500 to-blue-600 p-2 rounded-xl group-hover:scale-110 transition-transform shadow-lg shadow-cyan-200">
                 <BrainLogo width={32} height={32} />
               </div>
-              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-brand tracking-tight">WORKMIND.AI</span>
+              <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-brand tracking-tight">TheWorkimnd.AI</span>
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mt-6 tracking-tight">Access is invite-only</h1>
             <p className="text-gray-500 mt-2 text-lg">Join the waitlist first. Admin approval creates your login credentials.</p>
@@ -24,7 +24,7 @@ export const SignUpPage: React.FC = () => {
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6 text-left">
             <h2 className="text-lg font-semibold text-gray-900">How access works</h2>
             <p className="mt-2 text-sm text-gray-600">
-              Submit the waitlist form, let an admin review your request, and WorkMind will email your login password after approval.
+              Submit the waitlist form, let an admin review your request, and TheWorkimnd will email your login password after approval.
             </p>
             <div className="mt-6 flex gap-3">
               <button

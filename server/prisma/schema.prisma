@@ -242,3 +242,20 @@ model Waitlist {
   updatedAt    DateTime @updatedAt
 }
 
+
+model Feedback {
+  id               String   @id @default(cuid())
+  userId           String
+  email            String
+  rating           Int
+  valuableFeatures String[]
+  improvements     String   @db.Text
+  departments      String[]
+  continueUsing    String
+  startTime        String?
+  pricingRange     String?
+  mustHaveFeature  String   @db.Text
+  createdAt        DateTime @default(now())
+
+  @@index([userId])
+}

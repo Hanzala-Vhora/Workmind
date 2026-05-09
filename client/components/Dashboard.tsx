@@ -11,6 +11,11 @@ import { INITIAL_DATA } from './IntakeForm';
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 import { KnowledgeBase } from './KnowledgeBase';
+import { FeedbackModal } from './FeedbackModal';
+import HowItWorksPanel from './HowItWorksPanel';
+import { BookOpen, HelpCircle, LayoutGrid } from 'lucide-react';
+
+
 
 const DEPT_ICONS: Record<Department, any> = {
   'Sales': Briefcase,
@@ -34,6 +39,11 @@ export const Dashboard: React.FC = () => {
   const [intakeForms, setIntakeForms] = useState<any[]>([]);
   const [totalConversations, setTotalConversations] = useState<number>(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [currentView, setCurrentView] = useState<'dashboard' | 'kb' | 'how-it-works'>('dashboard');
+
+
+
 
   useEffect(() => {
     if (intakeForms.length > 0 && !localStorage.getItem('dashboard_tour_completed')) {
@@ -139,6 +149,16 @@ export const Dashboard: React.FC = () => {
     }
   }, [clientData, navigate, isLoaded, user, setClientData]);
 
+  useEffect(() => {
+    if (userProfile && userProfile.credits <= 0) {
+      setShowFeedbackModal(true);
+    } else {
+      setShowFeedbackModal(false);
+    }
+  }, [userProfile]);
+
+
+
   const handleSwitchAndNav = (form: any, dept: Department, view?: 'chat' | 'hub') => {
     // 1. Switch Client Data
     const restoredData: IntakeData = {
@@ -196,52 +216,34 @@ export const Dashboard: React.FC = () => {
 
       {/* Mobile Sidebar */}
       <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-gradient-brand text-white transform transition-transform duration-300 ease-in-out md:hidden flex flex-col overflow-hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="p-6 flex items-center gap-3 border-b border-white/10">
+        <div 
+          onClick={() => { setCurrentView('dashboard'); setIsMobileMenuOpen(false); }}
+          className="p-6 flex items-center gap-3 border-b border-white/10 cursor-pointer"
+        >
           <BrainLogo width={30} height={30} className="text-white" />
-          <h1 className="text-xl font-bold tracking-tight">WORKMIND.AI</h1>
+          <h1 className="text-xl font-bold tracking-tight uppercase">THEWORKIMND.AI</h1>
         </div>
         <nav className="flex-1 px-4 space-y-4 mt-6 overflow-y-auto">
-          <div className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2">Your Experts</div>
-          {intakeForms.map(form => {
-            const dept = (form.department as Department) || 'Sales';
-            const Icon = DEPT_ICONS[dept] || Briefcase;
-            const isActive = clientData.business_name === form.companyName && clientData.selected_departments.includes(dept);
+          <div className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2">Knowledge Hub</div>
 
-            return (
-              <div key={form.id} className={`mb-2 rounded-lg transition-all ${isActive ? 'bg-white/10' : ''}`}>
-                <div onClick={() => { handleSwitchAndNav(form, dept); setIsMobileMenuOpen(false); }} className="px-3 py-2 text-white/90 text-sm font-bold flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded-lg">
-                  <Icon className="w-4 h-4" />
-                  <div className="flex flex-col leading-tight overflow-hidden">
-                    <span>{dept}</span>
-                    <span className="text-[10px] text-white/50 font-normal truncate">{form.companyName}</span>
-                  </div>
-                </div>
+          <button
+            onClick={() => { setCurrentView('kb'); setIsMobileMenuOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold ${currentView === 'kb' ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
+          >
+            <BookOpen className="w-5 h-5" />
+            <span>Knowledge Base</span>
+          </button>
 
-                <div className="pl-9 mt-1 space-y-1 pb-2">
-                  <button
-                    onClick={() => { handleSwitchAndNav(form, dept, 'chat'); setIsMobileMenuOpen(false); }}
-                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-left text-xs text-white/70 hover:text-white hover:bg-white/10 ${isActive ? 'text-white' : ''}`}
-                  >
-                    <Zap className="w-3 h-3 text-cyan-electric" />
-                    <span>Agent</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-
-          {intakeForms.length < TOTAL_DEPARTMENTS && (
-            <button
-              onClick={() => { navigate('/add-expert'); setIsMobileMenuOpen(false); }}
-              className="w-full mt-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-sm font-bold text-white shadow-lg group"
-            >
-              <div className="bg-cyan-electric text-neural-dark rounded-full w-5 h-5 flex items-center justify-center">
-                <Plus className="w-3 h-3 font-bold" />
-              </div>
-              New Expert
-            </button>
-          )}
+          <button
+            onClick={() => { setCurrentView('how-it-works'); setIsMobileMenuOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold ${currentView === 'how-it-works' ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white hover:bg-white/5'}`}
+          >
+            <HelpCircle className="w-5 h-5" />
+            <span>How it Works</span>
+          </button>
         </nav>
+
+
         <div className="p-4 border-t border-white/10 bg-black/10">
           <div className="flex items-center gap-3 px-2 py-2">
             <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-sm">
@@ -260,64 +262,46 @@ export const Dashboard: React.FC = () => {
 
       {/* Desktop Sidebar */}
       <aside className="w-64 bg-gradient-brand text-white hidden md:flex flex-col shadow-xl h-screen sticky top-0 overflow-hidden shrink-0">
-        <div className="p-6 flex items-center gap-3 border-b border-white/10">
+        <div 
+          onClick={() => setCurrentView('dashboard')}
+          className="p-6 flex items-center gap-3 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-colors"
+        >
           <BrainLogo width={30} height={30} className="text-white" />
-          <h1 className="text-xl font-bold tracking-tight">WORKMIND.AI</h1>
+          <h1 className="text-xl font-bold tracking-tight uppercase">THEWORKIMND.AI</h1>
         </div>
         <nav className="flex-1 px-4 space-y-4 mt-6 overflow-y-auto">
-          <div className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2">Your Experts</div>
-          {intakeForms.map(form => {
-            const dept = (form.department as Department) || 'Sales';
-            const Icon = DEPT_ICONS[dept] || Briefcase;
-            const isActive = clientData.business_name === form.companyName && clientData.selected_departments.includes(dept);
+          <div className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2">Knowledge Hub</div>
 
-            return (
-              <div key={form.id} className={`mb-2 rounded-lg transition-all ${isActive ? 'bg-white/10' : ''}`}>
-                <div onClick={() => handleSwitchAndNav(form, dept)} className="px-3 py-2 text-white/90 text-sm font-bold flex items-center gap-2 cursor-pointer hover:bg-white/5 rounded-lg">
-                  <Icon className="w-4 h-4" />
-                  <div className="flex flex-col leading-tight overflow-hidden">
-                    <span>{dept}</span>
-                    <span className="text-[10px] text-white/50 font-normal truncate">{form.companyName}</span>
-                  </div>
+          <button
+            onClick={() => setCurrentView('kb')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold ${currentView === 'kb' ? 'bg-white/20 text-white shadow-lg' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+          >
+            <BookOpen className="w-5 h-5" />
+            <span>Knowledge Base</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('how-it-works')}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold ${currentView === 'how-it-works' ? 'bg-white/20 text-white shadow-lg' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+          >
+            <HelpCircle className="w-5 h-5" />
+            <span>How it Works</span>
+          </button>
+
+          <div className="pt-4 border-t border-white/10">
+            {userProfile?.role === 'admin' && (
+              <button
+                onClick={() => navigate('/admin')}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/20 transition-all text-sm font-bold text-white shadow-lg group"
+              >
+                <div className="bg-white text-indigo-600 rounded-full w-5 h-5 flex items-center justify-center">
+                  <Layout className="w-3 h-3 font-bold" />
                 </div>
+                Admin Panel
+              </button>
+            )}
+          </div>
 
-                {/* Actions (Only show if active or hovered - simplified to always show for access) */}
-                <div className="pl-9 mt-1 space-y-1 pb-2">
-                  <button
-                    onClick={() => handleSwitchAndNav(form, dept, 'chat')}
-                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all text-left text-xs text-white/70 hover:text-white hover:bg-white/10 ${isActive ? 'text-white' : ''}`}
-                  >
-                    <Zap className="w-3 h-3 text-cyan-electric" />
-                    <span>Agent</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-
-          {intakeForms.length < TOTAL_DEPARTMENTS && (
-            <button
-              onClick={() => navigate('/add-expert')}
-              className="w-full mt-4 flex items-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-all text-sm font-bold text-white shadow-lg group"
-            >
-              <div className="bg-cyan-electric text-neural-dark rounded-full w-5 h-5 flex items-center justify-center">
-                <Plus className="w-3 h-3 font-bold" />
-              </div>
-              New Expert
-            </button>
-          )}
-
-          {userProfile?.role === 'admin' && (
-            <button
-              onClick={() => navigate('/admin')}
-              className="w-full mt-2 flex items-center gap-2 px-4 py-3 rounded-xl bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/20 transition-all text-sm font-bold text-white shadow-lg group"
-            >
-              <div className="bg-white text-indigo-600 rounded-full w-5 h-5 flex items-center justify-center">
-                <Layout className="w-3 h-3 font-bold" />
-              </div>
-              Admin Panel
-            </button>
-          )}
 
         </nav>
         <div className="p-4 border-t border-white/10 bg-black/10">
@@ -373,79 +357,87 @@ export const Dashboard: React.FC = () => {
             <p className="text-sm font-medium">Loading Workspace...</p>
           </div>
         ) : (
-          <>
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <div className="text-gray-500 text-sm mb-1">Active Experts</div>
-                <div className="text-3xl font-bold text-ui-text">{intakeForms.length}</div>
-              </div>
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <div className="text-gray-500 text-sm mb-1">Total Conversations</div>
-                <div className="text-3xl font-bold text-ui-text">{totalConversations}</div>
-              </div>
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <div className="text-gray-500 text-sm mb-1">System Status</div>
-                <div className="text-3xl font-bold text-green-500 flex items-center gap-2">Online <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span></div>
-              </div>
-            </div>
+          <div className="animate-fadeIn">
+            {currentView === 'dashboard' && (
+              <>
+                {/* Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                  <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="text-gray-500 text-sm mb-1">Active Experts</div>
+                    <div className="text-3xl font-bold text-ui-text">{intakeForms.length}</div>
+                  </div>
+                  <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="text-gray-500 text-sm mb-1">Total Conversations</div>
+                    <div className="text-3xl font-bold text-ui-text">{totalConversations}</div>
+                  </div>
+                  <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+                    <div className="text-gray-500 text-sm mb-1">System Status</div>
+                    <div className="text-3xl font-bold text-green-500 flex items-center gap-2">Online <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span></div>
+                  </div>
+                </div>
 
-            <h3 className="text-xl font-bold text-deepTech-DEFAULT mb-6">Your Expert Workspaces</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {intakeForms.map(form => {
-                const dept = (form.department as Department) || 'Sales';
-                const Icon = DEPT_ICONS[dept] || Briefcase;
-                const isActive = clientData.business_name === form.companyName && clientData.selected_departments.includes(dept);
+                <h3 className="text-xl font-bold text-deepTech-DEFAULT mb-6">Your Expert Workspaces</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {intakeForms.map(form => {
+                    const dept = (form.department as Department) || 'Sales';
+                    const Icon = DEPT_ICONS[dept] || Briefcase;
+                    const isActive = clientData.business_name === form.companyName && clientData.selected_departments.includes(dept);
 
-                return (
-                  <div key={form.id} className={`bg-white p-6 rounded-2xl border transition-all group hover:-translate-y-1 ${isActive ? 'border-neural-DEFAULT ring-1 ring-neural-DEFAULT shadow-md' : 'border-gray-100 shadow-sm hover:shadow-md'}`}>
-                    <div className="flex justify-between items-start mb-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${isActive ? 'bg-gradient-brand text-white' : 'bg-cyan-bio/10 text-neural-DEFAULT group-hover:bg-gradient-brand group-hover:text-white'}`}>
-                        <Icon className="w-6 h-6" />
+                    return (
+                      <div key={form.id} className={`bg-white p-6 rounded-2xl border transition-all group hover:-translate-y-1 ${isActive ? 'border-neural-DEFAULT ring-1 ring-neural-DEFAULT shadow-md' : 'border-gray-100 shadow-sm hover:shadow-md'}`}>
+                        <div className="flex justify-between items-start mb-4">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${isActive ? 'bg-gradient-brand text-white' : 'bg-cyan-bio/10 text-neural-DEFAULT group-hover:bg-gradient-brand group-hover:text-white'}`}>
+                            <Icon className="w-6 h-6" />
+                          </div>
+                          {isActive && <span className="bg-cyan-50 text-neural-dark text-xs px-2 py-1 rounded-full font-medium border border-cyan-100">Active Session</span>}
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium border ml-auto ${isActive ? 'hidden' : ''} ${form.status === 'submitted' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
+                            {form.status === 'submitted' ? 'Ready' : form.status}
+                          </span>
+                        </div>
+
+                        <h4 className="text-lg font-bold text-ui-text mb-0.5">{dept} Expert</h4>
+                        <p className="text-sm font-semibold text-gray-500 mb-2">{form.companyName}</p>
+
+                        <p className="text-ui-slate text-sm mb-6 line-clamp-2 h-10">
+                          {form.mainGoals?.[0] || 'AI Assistant ready to help.'}
+                        </p>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <button onClick={() => handleSwitchAndNav(form, dept, 'chat')} className="bg-gray-50 text-ui-text font-semibold py-2 rounded-lg hover:bg-neural-DEFAULT hover:text-black transition-all flex items-center justify-center gap-2 text-sm border border-gray-100 hover:border-transparent">
+                            <Zap className="w-4 h-4" /> Agent
+                          </button>
+                        </div>
                       </div>
-                      {isActive && <span className="bg-cyan-50 text-neural-dark text-xs px-2 py-1 rounded-full font-medium border border-cyan-100">Active Session</span>}
-                      <span className={`text-xs px-2 py-1 rounded-full font-medium border ml-auto ${isActive ? 'hidden' : ''} ${form.status === 'submitted' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
-                        {form.status === 'submitted' ? 'Ready' : form.status}
-                      </span>
-                    </div>
+                    );
+                  })}
 
-                    <h4 className="text-lg font-bold text-ui-text mb-0.5">{dept} Expert</h4>
-                    <p className="text-sm font-semibold text-gray-500 mb-2">{form.companyName}</p>
+                  {/* Add New Card */}
+                  {intakeForms.length < TOTAL_DEPARTMENTS && (
+                    <button id="step-add-expert" onClick={() => navigate('/add-expert')} className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center p-6 gap-4 hover:border-neural-DEFAULT/50 hover:bg-neural-DEFAULT/5 transition-all group min-h-[250px]">
+                      <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Plus className="w-8 h-8 text-gray-400 group-hover:text-neural-DEFAULT" />
+                      </div>
+                      <div className="text-center">
+                        <h4 className="font-bold text-gray-500 group-hover:text-neural-DEFAULT">Add New Expert</h4>
+                        <p className="text-xs text-gray-400 mt-1">Configure another AI department</p>
+                      </div>
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
 
-                    <p className="text-ui-slate text-sm mb-6 line-clamp-2 h-10">
-                      {form.mainGoals?.[0] || 'AI Assistant ready to help.'}
-                    </p>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <button onClick={() => handleSwitchAndNav(form, dept, 'chat')} className="bg-gray-50 text-ui-text font-semibold py-2 rounded-lg hover:bg-neural-DEFAULT hover:text-black transition-all flex items-center justify-center gap-2 text-sm border border-gray-100 hover:border-transparent">
-                        <Zap className="w-4 h-4" /> Agent
-                      </button>
-                      {/* <button onClick={() => handleSwitchAndNav(form, dept, 'hub')} className="bg-gray-50 text-ui-text font-semibold py-2 rounded-lg hover:bg-midnight-DEFAULT hover:text-white transition-all flex items-center justify-center gap-2 text-sm border border-gray-100 hover:border-transparent">
-                        <Users className="w-4 h-4" /> Hub
-                      </button> */}
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Add New Card */}
-              {intakeForms.length < TOTAL_DEPARTMENTS && (
-                <button id="step-add-expert" onClick={() => navigate('/add-expert')} className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex flex-col items-center justify-center p-6 gap-4 hover:border-neural-DEFAULT/50 hover:bg-neural-DEFAULT/5 transition-all group min-h-[250px]">
-                  <div className="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Plus className="w-8 h-8 text-gray-400 group-hover:text-neural-DEFAULT" />
-                  </div>
-                  <div className="text-center">
-                    <h4 className="font-bold text-gray-500 group-hover:text-neural-DEFAULT">Add New Expert</h4>
-                    <p className="text-xs text-gray-400 mt-1">Configure another AI department</p>
-                  </div>
-                </button>
-              )}
-            </div>
-
-            <KnowledgeBase />
-          </>
+            {currentView === 'kb' && <KnowledgeBase />}
+            {currentView === 'how-it-works' && <HowItWorksPanel />}
+          </div>
         )}
+}
       </main>
+      <FeedbackModal 
+        isOpen={showFeedbackModal} 
+        onClose={() => setShowFeedbackModal(false)} 
+      />
     </div>
   );
 };
+

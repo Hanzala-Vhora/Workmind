@@ -165,7 +165,7 @@ router.post('/export-docx', async (req, res) => {
             pageNumber: true,
         });
 
-        const filename = `${department || 'Workmind'}_Export_${new Date().toISOString().split('T')[0]}.docx`;
+        const filename = `${department || 'TheWorkimnd'}_Export_${new Date().toISOString().split('T')[0]}.docx`;
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
         res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);

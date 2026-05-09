@@ -3,7 +3,7 @@
 import { authFetch, getAuthHeaders } from '../lib/auth';
 
 const envUrl = import.meta.env.VITE_API_URL;
-console.log('Workmind Config:', {
+console.log('TheWorkimnd Config:', {
   VITE_API_URL: envUrl,
   MODE: import.meta.env.MODE
 });

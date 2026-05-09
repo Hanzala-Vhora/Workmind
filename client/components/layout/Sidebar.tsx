@@ -20,7 +20,7 @@ export function Sidebar() {
     <div className="w-64 h-screen bg-brand-navy text-white flex flex-col fixed left-0 top-0 border-r border-brand-deepBlue/50">
       <div className="p-6 flex items-center gap-3 border-b border-brand-deepBlue/50">
         <div className="w-8 h-8 bg-brand-teal rounded-lg flex items-center justify-center font-bold">W</div>
-        <span className="font-bold text-lg tracking-wide">WORKMIND<span className="text-brand-lightTeal">.AI</span></span>
+        <span className="font-bold text-lg tracking-wide">TheWorkimnd<span className="text-brand-lightTeal">.AI</span></span>
       </div>
 
       <nav className="flex-1 p-4 space-y-2">
