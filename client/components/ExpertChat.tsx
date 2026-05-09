@@ -125,9 +125,17 @@ export const ExpertChat: React.FC = () => {
           } else {
             setCurrentChatId(null);
             setMessages([]);
-            setFetchedDocuments([]);
+            // setFetchedDocuments([]); // Don't clear, wait for department docs fetch
           }
         }
+
+        // Also fetch department-wide documents
+        const docsRes = await authFetch(`${API_URL}/api/documents/department/${activeDepartment}?userId=${user.id}`);
+        if (docsRes.ok) {
+          const docsData = await docsRes.json();
+          setFetchedDocuments(docsData.documents || []);
+        }
+
       } catch (err) {
         console.error("Failed to load chats list", err);
       } finally {
@@ -526,7 +534,7 @@ export const ExpertChat: React.FC = () => {
       )}
 
       {/* Chats Sidebar */}
-      <div className={`${showSidebar ? 'translate-x-0' : '-translate-x-full'} fixed md:relative z-40 md:z-auto w-72 md:w-64 h-full flex-shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out`}>
+      <div className={`${showSidebar ? 'translate-x-0' : '-translate-x-full'} fixed md:relative z-40 md:z-auto w-72 md:w-64 inset-y-0 left-0 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col overflow-hidden transition-all duration-300 ease-in-out`}>
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm">
             <ArrowLeft className="w-4 h-4" /> Back to Hub
@@ -557,7 +565,7 @@ export const ExpertChat: React.FC = () => {
 
           {/* New Chat Button */}
           <button
-            onClick={() => { setCurrentChatId(null); setMessages([]); setFetchedDocuments([]); }}
+            onClick={() => { setCurrentChatId(null); setMessages([]); }}
             className="w-full mb-4 flex items-center justify-center gap-2 bg-indigo-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm"
           >
             <Plus className="w-4 h-4" /> New Chat

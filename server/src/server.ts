@@ -17,6 +17,7 @@ import uploadRoutes from './routes/upload.js';
 import settingsRoutes from './routes/settings.js';
 import adminRoutes from './routes/admin.js';
 import authRoutes from './routes/auth.js';
+import documentRoutes from './routes/documents.js';
 
 
 
@@ -64,6 +65,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/documents', documentRoutes);
 app.use('/api/waitlist', waitlistRoutes);
 
 // Serve static frontend files in production

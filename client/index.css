@@ -108,4 +108,34 @@
 .driver-popover-progress-text {
   color: #94a3b8 !important;
   font-size: 12px !important;
-}
+
+/* Custom Scrollbar Styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* For elements with light backgrounds */
+.bg-white ::-webkit-scrollbar-thumb,
+.bg-gray-50 ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.bg-white ::-webkit-scrollbar-thumb:hover,
+.bg-gray-50 ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+

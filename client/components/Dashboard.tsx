@@ -194,7 +194,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* Mobile Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-gradient-brand text-white transform transition-transform duration-300 ease-in-out md:hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-gradient-brand text-white transform transition-transform duration-300 ease-in-out md:hidden flex flex-col overflow-hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-6 flex items-center gap-3 border-b border-white/10">
           <BrainLogo width={30} height={30} className="text-white" />
           <h1 className="text-xl font-bold tracking-tight">WORKMIND.AI</h1>
