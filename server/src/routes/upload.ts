@@ -43,6 +43,8 @@ function isSupportedFile(file: Express.Multer.File): boolean {
 }
 
 function normalizeWhitespace(text: string): string {
+    if (!text) return '';
+    // Single pass optimization for common whitespace issues
     return text
         .replace(/\r\n/g, '\n')
         .replace(/\n{3,}/g, '\n\n')
@@ -51,76 +53,92 @@ function normalizeWhitespace(text: string): string {
 }
 
 function chunkText(text: string, chunkSize: number = 2200, overlap: number = 250): string[] {
-    const normalized = normalizeWhitespace(text);
-    if (!normalized) return [];
+    if (!text) return [];
 
-    const paragraphs = normalized.split(/\n{2,}/).filter(Boolean);
     const chunks: string[] = [];
-    let currentChunk = '';
+    let start = 0;
+    const textLength = text.length;
 
-    for (const paragraph of paragraphs) {
-        const candidate = currentChunk ? `${currentChunk}\n\n${paragraph}` : paragraph;
-
-        if (candidate.length <= chunkSize) {
-            currentChunk = candidate;
-            continue;
-        }
-
-        if (currentChunk) {
-            chunks.push(currentChunk);
-        }
-
-        if (paragraph.length <= chunkSize) {
-            currentChunk = paragraph;
-            continue;
-        }
-
-        let start = 0;
-        while (start < paragraph.length) {
-            const end = Math.min(start + chunkSize, paragraph.length);
-            const slice = paragraph.slice(start, end).trim();
-            if (slice) {
-                chunks.push(slice);
+    // Use a simpler sliding window for large texts to avoid expensive array splits
+    while (start < textLength) {
+        let end = start + chunkSize;
+        
+        // Try to find a natural break (newline or space) near the end of the chunk
+        if (end < textLength) {
+            const nextNewline = text.lastIndexOf('\n', end);
+            if (nextNewline > start + (chunkSize * 0.8)) {
+                end = nextNewline;
+            } else {
+                const nextSpace = text.lastIndexOf(' ', end);
+                if (nextSpace > start + (chunkSize * 0.8)) {
+                    end = nextSpace;
+                }
             }
-            start += Math.max(chunkSize - overlap, 1);
         }
-        currentChunk = '';
+
+        const chunk = text.slice(start, end).trim();
+        if (chunk) {
+            chunks.push(chunk);
+        }
+
+        // Move start forward, keeping the overlap
+        start = end - overlap;
+        if (start < 0) start = 0;
+        
+        // Safety break to prevent infinite loops and limit total chunks
+        if (chunks.length >= 300) break; 
+        if (start >= textLength - overlap) break;
     }
 
-    if (currentChunk) {
-        chunks.push(currentChunk);
-    }
-
-    return chunks.slice(0, 200);
+    return chunks;
 }
 
+// Simple queue to prevent concurrent heavy processing
+let processingQueue = Promise.resolve();
+
 async function extractDocumentText(file: Express.Multer.File): Promise<string> {
-    const extension = getExtension(file.originalname);
+    // Wrap the heavy work in the queue
+    return new Promise((resolve, reject) => {
+        processingQueue = processingQueue.then(async () => {
+            try {
+                const extension = getExtension(file.originalname);
 
-    if (file.mimetype === 'application/pdf' || extension === 'pdf') {
-        const parser = new PDFParse({ data: file.buffer });
-        const data = await parser.getText();
-        return data.text || '';
-    }
+                if (file.mimetype === 'application/pdf' || extension === 'pdf') {
+                    const parser = new PDFParse({ data: file.buffer });
+                    const data = await parser.getText();
+                    resolve(data.text || '');
+                    return;
+                }
 
-    if (
-        file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-        extension === 'docx'
-    ) {
-        const result = await mammoth.extractRawText({ buffer: file.buffer });
-        return result.value || '';
-    }
+                if (
+                    file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+                    extension === 'docx'
+                ) {
+                    const result = await mammoth.extractRawText({ buffer: file.buffer });
+                    resolve(result.value || '');
+                    return;
+                }
 
-    if (
-        file.mimetype.startsWith('text/') ||
-        file.mimetype === 'application/json' ||
-        file.mimetype === 'text/csv' ||
-        ['txt', 'md', 'json', 'csv'].includes(extension)
-    ) {
-        return file.buffer.toString('utf-8');
-    }
+                if (
+                    file.mimetype.startsWith('text/') ||
+                    file.mimetype === 'application/json' ||
+                    file.mimetype === 'text/csv' ||
+                    ['txt', 'md', 'json', 'csv'].includes(extension)
+                ) {
+                    resolve(file.buffer.toString('utf-8'));
+                    return;
+                }
 
-    return '';
+                resolve('');
+            } catch (err) {
+                reject(err);
+            }
+        }).catch((err) => {
+            console.error("Queue error:", err);
+            // Don't block the next item if one fails
+            return; 
+        });
+    });
 }
 
 function getStoredContent(file: Express.Multer.File, cleanText: string): string {

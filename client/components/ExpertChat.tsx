@@ -623,6 +623,7 @@ export const ExpertChat: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full bg-gray-50 min-w-0 transition-all">
