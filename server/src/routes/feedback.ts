@@ -1,8 +1,9 @@
 import { Router } from 'express';
-import { submitFeedback } from '../controllers/feedbackController.js';
+import { submitFeedback, checkFeedbackStatus } from '../controllers/feedbackController.js';
 
 const router = Router();
 
 router.post('/submit', submitFeedback);
+router.get('/check/:userId', checkFeedbackStatus);
 
 export default router;

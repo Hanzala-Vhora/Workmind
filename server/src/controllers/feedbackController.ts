@@ -41,3 +41,24 @@ export const submitFeedback = async (req: Request, res: Response) => {
     res.status(500).json({ error: error.message || 'Failed to submit feedback' });
   }
 };
+
+export const checkFeedbackStatus = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+
+    const feedback = await prisma.feedback.findFirst({
+      where: { userId }
+    });
+
+    res.json({ 
+      hasSubmitted: !!feedback 
+    });
+  } catch (error: any) {
+    console.error('Check feedback error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};

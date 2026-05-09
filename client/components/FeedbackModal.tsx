@@ -11,6 +11,9 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
   const { user } = useAuth();
   const [step, setStep] = useState<'intro' | 'form' | 'success'>('intro');
   const [loading, setLoading] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+
+
   const [formData, setFormData] = useState({
     rating: 0,
     valuableFeatures: [] as string[],
@@ -22,7 +25,33 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
     mustHaveFeature: ''
   });
 
+  React.useEffect(() => {
+    if (isOpen && user?.id) {
+        checkStatus();
+    }
+  }, [isOpen, user?.id]);
+
+  const checkStatus = async () => {
+    setIsCheckingStatus(true);
+    try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/feedback/check/${user?.id}`);
+        if (res.ok) {
+            const data = await res.json();
+            if (data.hasSubmitted) {
+                setStep('success');
+            } else {
+                setStep('intro');
+            }
+        }
+    } catch (err) {
+        console.error("Failed to check feedback status", err);
+    } finally {
+        setIsCheckingStatus(false);
+    }
+  };
+
   if (!isOpen) return null;
+
 
   const handleRating = (r: number) => setFormData({ ...formData, rating: r });
   
@@ -54,8 +83,12 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
       });
 
       if (response.ok) {
+        if (typeof window !== 'undefined' && user?.id) {
+          localStorage.setItem(`feedback_submitted_${user.id}`, 'true');
+        }
         setStep('success');
       } else {
+
         throw new Error('Failed to submit feedback');
       }
     } catch (error) {
@@ -102,6 +135,13 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
       <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden relative border border-gray-100 flex flex-col max-h-[90vh]">
         
+        {isCheckingStatus ? (
+            <div className="p-20 flex flex-col items-center justify-center gap-4">
+                <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
+                <p className="text-gray-400 font-bold text-sm uppercase tracking-widest">Securing Session...</p>
+            </div>
+        ) : (
+            <>
         {/* Progress Bar (if in form) */}
         {step === 'form' && (
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gray-100">
@@ -300,6 +340,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
                 <p className="text-xs text-amber-700 mt-1">Please contact your account administrator to refill your balance and continue using the platform.</p>
             </div>
           </div>
+        )}
+        </>
         )}
       </div>
     </div>
