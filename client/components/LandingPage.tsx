@@ -174,14 +174,14 @@ export const LandingPage: React.FC = () => {
 
           {/* Right Column: Waitlist Form / Success Message */}
           <div className="relative">
+            <div className="mb-6 p-5 rounded-2xl bg-white border border-indigo-100 text-indigo-600 text-sm leading-relaxed font-bold text-center shadow-sm">
+                Note: After completing the signup process, if you are selected for our cohort, you will receive your username and password via email to access the system.
+            </div>
+
             <div className="w-full bg-[#0F172A] p-8 md:p-10 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden text-white backdrop-blur-xl animate-fadeIn">
               {/* Decorative glows */}
               <div className="absolute top-[-50px] right-[-50px] w-64 h-64 bg-blue-600/20 blur-[100px] pointer-events-none rounded-full"></div>
               <div className="absolute bottom-[-50px] left-[-50px] w-64 h-64 bg-purple-600/20 blur-[100px] pointer-events-none rounded-full"></div>
-
-              <div className="mb-8 p-5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-100 text-sm leading-relaxed font-bold text-center">
-                Note: After completing the signup process, if you are selected for our cohort, you will receive your username and password via email to access the system.
-              </div>
 
               <h3 className="text-2xl md:text-3xl font-bold mb-2 tracking-tight text-white">Reserve your spot</h3>
 
