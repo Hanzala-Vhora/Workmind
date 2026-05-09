@@ -10,6 +10,7 @@ import { apiClient } from '../services/apiClient';
 import { INITIAL_DATA } from './IntakeForm';
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
+import { KnowledgeBase } from './KnowledgeBase';
 
 const DEPT_ICONS: Record<Department, any> = {
   'Sales': Briefcase,
@@ -440,6 +441,8 @@ export const Dashboard: React.FC = () => {
                 </button>
               )}
             </div>
+
+            <KnowledgeBase />
           </>
         )}
       </main>

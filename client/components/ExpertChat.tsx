@@ -109,11 +109,18 @@ export const ExpertChat: React.FC = () => {
   const fetchDepartmentDocuments = async () => {
     if (!activeDepartment || !user?.id) return;
     try {
-      const docsRes = await authFetch(`${API_URL}/api/documents/department/${activeDepartment}?userId=${user.id}`);
-      if (docsRes.ok) {
-        const docsData = await docsRes.json();
-        setFetchedDocuments(docsData.documents || []);
-      }
+      // Fetch department specific docs
+      const deptRes = await authFetch(`${API_URL}/api/documents/department/${activeDepartment}?userId=${user.id}`);
+      const deptData = await deptRes.json();
+      const deptDocs = deptData.documents || [];
+
+      // Fetch universal docs
+      const univRes = await authFetch(`${API_URL}/api/documents/department/Universal?userId=${user.id}`);
+      const univData = await univRes.json();
+      const univDocs = univData.documents || [];
+
+      // Merge and set
+      setFetchedDocuments([...deptDocs, ...univDocs]);
     } catch (err) {
       console.error("Failed to load department documents", err);
     }
