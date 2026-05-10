@@ -112,7 +112,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
   ];
 
   const DEPARTMENTS = [
-    'HR', 'Finance', 'Marketing', 'Operations', 'Procurement', 'Leadership / Management', 'Customer Support', 'Sales', 'Other'
+    'HR', 'Finance', 'Marketing', 'Operations', 'IT', 'Procurement', 'Leadership / Management', 'Customer Support', 'Sales', 'Other'
   ];
 
   const PRICING_RANGES = [
