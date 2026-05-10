@@ -994,7 +994,7 @@ export const ExpertChat: React.FC = () => {
                         )}
 
                         {/* Escalation/Warning Block */}
-                        {msg.escalation?.required && (
+                        {/* {msg.escalation?.required && (
                           <div className="mt-4 p-4 bg-amber-50 border border-amber-100 rounded-xl flex items-start gap-3">
                             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
                             <div>
@@ -1005,7 +1005,7 @@ export const ExpertChat: React.FC = () => {
                               </p>
                             </div>
                           </div>
-                        )}
+                        )} */}
                       </div>
                     </div>
                   </div>
