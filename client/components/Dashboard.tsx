@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Users, Globe, BarChart3, Server, ShoppingCart, MessageSquare, Briefcase, Zap, LogOut, Layout, Workflow, Plus, Loader, RefreshCw, Menu, X } from 'lucide-react';
+import { Users, Globe, BarChart3, Server, ShoppingCart, MessageSquare, Briefcase, Zap, LogOut, Layout, Workflow, Plus, Loader, RefreshCw, Menu, X, Heart } from 'lucide-react';
 import { Department, IntakeData } from '../types';
 import { BrainLogo } from './BrainLogo';
 import { useNavigate } from 'react-router-dom';
@@ -119,8 +119,6 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     if (userProfile && userProfile.credits <= 0) {
       setShowFeedbackModal(true);
-    } else {
-      setShowFeedbackModal(false);
     }
   }, [userProfile]);
 
@@ -217,6 +215,14 @@ export const Dashboard: React.FC = () => {
             <HelpCircle className="w-5 h-5" />
             <span>How it Works</span>
           </button>
+
+          <button
+            onClick={() => { setShowFeedbackModal(true); setIsMobileMenuOpen(false); }}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold text-white/70 hover:text-white hover:bg-white/5`}
+          >
+            <Heart className="w-5 h-5 text-pink-400" />
+            <span>Give Feedback</span>
+          </button>
         </nav>
 
 
@@ -271,6 +277,14 @@ export const Dashboard: React.FC = () => {
           >
             <HelpCircle className="w-5 h-5" />
             <span>How it Works</span>
+          </button>
+
+          <button
+            onClick={() => setShowFeedbackModal(true)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-bold text-white/70 hover:text-white hover:bg-white/10`}
+          >
+            <Heart className="w-5 h-5 text-pink-400" />
+            <span>Give Feedback</span>
           </button>
 
           <div className="pt-4 border-t border-white/10">

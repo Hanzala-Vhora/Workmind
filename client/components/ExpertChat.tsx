@@ -4,7 +4,7 @@ import remarkGfm from 'remark-gfm'; // For tables
 import rehypeRaw from 'rehype-raw'; // For HTML tags like <br>
 import { marked } from 'marked';
 import { useApp } from '../context/AppContext';
-import { Send, ArrowLeft, AlertTriangle, Paperclip, FileText, Image as ImageIcon, Database, X, Zap, Loader2, CheckCircle, File, User, Sparkles, MessageSquare, Menu, Plus, Trash2, ChevronDown, Cpu, Download, HelpCircle, Info } from 'lucide-react';
+import { Send, ArrowLeft, AlertTriangle, Paperclip, FileText, Image as ImageIcon, Database, X, Zap, Loader2, CheckCircle, File, User, Sparkles, MessageSquare, Menu, Plus, Trash2, ChevronDown, Cpu, Download, HelpCircle, Info, Heart, Globe } from 'lucide-react';
 
 import { ThreadAnalyzer } from './ThreadAnalyzer';
 import { BrainLogo } from './BrainLogo';
@@ -72,8 +72,6 @@ export const ExpertChat: React.FC = () => {
   useEffect(() => {
     if (userProfile && userProfile.credits <= 0) {
       setShowFeedbackModal(true);
-    } else {
-      setShowFeedbackModal(false);
     }
   }, [userProfile]);
 
@@ -640,6 +638,14 @@ export const ExpertChat: React.FC = () => {
               <p className="text-xs text-gray-500 truncate hidden md:block">{userProfile?.role === 'admin' ? 'Admin Access' : 'Premium Plan'}</p>
             </div>
           </div>
+
+          <button
+            onClick={() => setShowFeedbackModal(true)}
+            className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 px-3 bg-white border border-gray-200 text-gray-600 rounded-xl text-xs font-bold hover:bg-pink-50 hover:text-pink-600 hover:border-pink-200 transition-all shadow-sm group"
+          >
+            <Heart className="w-3.5 h-3.5 group-hover:fill-pink-500 transition-all" />
+            Share Feedback
+          </button>
         </div>
       </div>
     </div>
@@ -662,7 +668,17 @@ export const ExpertChat: React.FC = () => {
               </h2>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3 items-center">
+            <button
+              onClick={() => setShowFeedbackModal(true)}
+              className="p-2 hover:bg-gray-100 rounded-full text-gray-400 hover:text-pink-500 transition-all group relative"
+              title="Share Feedback"
+            >
+              <Heart className="w-5 h-5 group-hover:fill-pink-500 transition-all" />
+              <span className="absolute top-full right-0 mt-2 px-2 py-1 bg-gray-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl font-bold">
+                Share Feedback
+              </span>
+            </button>
             <button
               id="step-context-btn"
               onClick={() => setShowContextRepo(!showContextRepo)}
