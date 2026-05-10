@@ -211,7 +211,7 @@ router.post('/waitlist/:id/approve', requireAdmin, async (req: AuthRequest, res)
                 email: entry.email,
                 name: entry.fullName,
                 role: 'user',
-                credits: 300,
+                credits: 100,
             },
         });
 
