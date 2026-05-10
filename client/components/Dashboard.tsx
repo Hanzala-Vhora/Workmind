@@ -27,6 +27,17 @@ const DEPT_ICONS: Record<Department, any> = {
   'Procurement': ShoppingCart
 };
 
+const DEPT_DESCRIPTIONS: Record<Department, string> = {
+  'Sales': 'A consultative revenue intelligence system built to optimize pipelines, improve conversion quality, and drive scalable sales growth through commercially intelligent sales systems.',
+  'Marketing': 'A demand generation and positioning intelligence system designed to build trust, strengthen messaging, and scale customer acquisition through conversion-focused marketing strategy.',
+  'Finance': 'A financial strategy intelligence system focused on improving profitability, protecting cashflow, and enabling financially sound business decisions through operational finance expertise.',
+  'Operations': 'An operational execution intelligence system built to streamline workflows, reduce bottlenecks, and improve scalability through structured process optimization.',
+  'HR': 'A people and organizational intelligence system designed to strengthen hiring, accountability, performance, and scalable team development.',
+  'IT': 'A technology infrastructure intelligence system focused on building secure, scalable, automation-ready business systems and operational reliability.',
+  'Procurement': 'A strategic sourcing intelligence system designed to optimize procurement efficiency, supplier management, and commercially intelligent purchasing decisions.',
+  'Social Media': 'A social growth intelligence system built to improve engagement, algorithmic reach, and content performance through platform-aware audience strategy.'
+};
+
 const TOTAL_DEPARTMENTS = Object.keys(DEPT_ICONS).length;
 
 export const Dashboard: React.FC = () => {
@@ -398,12 +409,12 @@ export const Dashboard: React.FC = () => {
                         <h4 className="text-lg font-bold text-ui-text mb-0.5">{dept} Expert</h4>
                         <p className="text-sm font-semibold text-gray-500 mb-2">{form.companyName}</p>
 
-                        <p className="text-ui-slate text-sm mb-6 line-clamp-2 h-10">
-                          {form.mainGoals?.[0] || 'AI Assistant ready to help.'}
+                        <p className="text-ui-slate text-xs mb-6 leading-relaxed">
+                          {DEPT_DESCRIPTIONS[dept]}
                         </p>
 
-                        <div className="grid grid-cols-2 gap-3">
-                          <button onClick={() => handleSwitchAndNav(form, dept, 'chat')} className="bg-gray-50 text-ui-text font-semibold py-2 rounded-lg hover:bg-neural-DEFAULT hover:text-black transition-all flex items-center justify-center gap-2 text-sm border border-gray-100 hover:border-transparent">
+                        <div className="flex justify-center">
+                          <button onClick={() => handleSwitchAndNav(form, dept, 'chat')} className="w-full bg-gray-50 text-ui-text font-semibold py-2 rounded-lg hover:bg-neural-DEFAULT hover:text-black transition-all flex items-center justify-center gap-2 text-sm border border-gray-100 hover:border-transparent">
                             <Zap className="w-4 h-4" /> Agent
                           </button>
                         </div>
