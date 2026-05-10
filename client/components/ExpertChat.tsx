@@ -64,29 +64,55 @@ export const ExpertChat: React.FC = () => {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
   };
+
+  useEffect(() => {
+    const hasSeenDisclaimer = localStorage.getItem('agent_chat_disclaimer_seen');
+    if (!hasSeenDisclaimer) {
+      setShowDisclaimer(true);
+      localStorage.setItem('agent_chat_disclaimer_seen', 'true');
+    }
+  }, []);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container || messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+    const isUser = lastMessage?.role === 'user';
+    
+    // Always scroll if user just sent a message
+    if (isUser) {
+      scrollToBottom('smooth');
+      return;
+    }
+
+    // Sticky scroll: If we were already at the bottom, stay at the bottom
+    const threshold = 150;
+    const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+    if (isAtBottom) {
+      scrollToBottom('auto');
+    }
+  }, [messages, loading]);
+
+  useEffect(() => {
+    // When switching chats or departments, we want to see the latest messages
+    // Use a small timeout to ensure the DOM has updated with the new message list
+    const timer = setTimeout(() => {
+      scrollToBottom('auto');
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [currentChatId, activeDepartment]);
 
   useEffect(() => {
     if (userProfile && userProfile.credits <= 0) {
       setShowFeedbackModal(true);
     }
   }, [userProfile]);
-
-
-
-  useEffect(() => {
-    scrollToBottom();
-    
-    // First time disclaimer logic
-    const hasSeenDisclaimer = localStorage.getItem('agent_chat_disclaimer_seen');
-    if (!hasSeenDisclaimer) {
-      setShowDisclaimer(true);
-      localStorage.setItem('agent_chat_disclaimer_seen', 'true');
-    }
-  }, [conversations, activeDepartment, messages]);
 
 
 
@@ -836,7 +862,7 @@ export const ExpertChat: React.FC = () => {
 
           {/* Main Chat Area */}
           <div className="flex-1 flex flex-col bg-white w-full relative">
-            <div className="flex-1 overflow-y-auto overflow-x-hidden scroll-smooth">
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden">
               <div className="max-w-[59rem] mx-auto px-4 py-8 space-y-8">
                 {currentMessages.length === 0 && (
                   loading ? (
