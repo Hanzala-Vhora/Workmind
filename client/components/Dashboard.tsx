@@ -197,7 +197,7 @@ export const Dashboard: React.FC = () => {
           className="p-6 flex items-center gap-3 border-b border-white/10 cursor-pointer"
         >
           <BrainLogo width={30} height={30} className="text-white" />
-          <h1 className="text-xl font-bold tracking-tight uppercase">THEWORKIMND.AI</h1>
+          <h1 className="text-xl font-bold tracking-tight uppercase">THEWORKMIND.AI</h1>
         </div>
         <nav className="flex-1 px-4 space-y-4 mt-6 overflow-y-auto">
           <div className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2">Navigation</div>
@@ -260,7 +260,7 @@ export const Dashboard: React.FC = () => {
           className="p-6 flex items-center gap-3 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-colors"
         >
           <BrainLogo width={30} height={30} className="text-white" />
-          <h1 className="text-xl font-bold tracking-tight uppercase">THEWORKIMND.AI</h1>
+          <h1 className="text-xl font-bold tracking-tight uppercase">TheWorkMind.AI</h1>
         </div>
         <nav className="flex-1 px-4 space-y-4 mt-6 overflow-y-auto">
           <div className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2">Navigation</div>
@@ -450,4 +450,5 @@ export const Dashboard: React.FC = () => {
     </div>
   );
 };
+
 

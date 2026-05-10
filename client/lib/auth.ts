@@ -1,5 +1,5 @@
-const ACCESS_TOKEN_KEY = 'TheWorkimnd_access_token';
-const USER_KEY = 'TheWorkimnd_auth_user';
+const ACCESS_TOKEN_KEY = 'TheWorkMind_access_token';
+const USER_KEY = 'TheWorkMind_auth_user';
 
 export type AuthUser = {
   id: string;
@@ -53,3 +53,4 @@ export async function authFetch(input: RequestInfo | URL, init: RequestInit = {}
     headers: getAuthHeaders(init.headers),
   });
 }
+

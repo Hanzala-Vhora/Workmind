@@ -40,7 +40,7 @@ export default function HowItWorksPanel() {
     {
       title: "6. Institutional Memory",
       description:
-        "TheWorkimnd builds a long-term operational asset. Knowledge uploaded today remains accessible and active for your team tomorrow, preventing 'brain drain' and ensuring continuity in execution.",
+        "TheWorkMind builds a long-term operational asset. Knowledge uploaded today remains accessible and active for your team tomorrow, preventing 'brain drain' and ensuring continuity in execution.",
       icon: Brain,
       color: "text-indigo-400"
     },
@@ -56,11 +56,11 @@ export default function HowItWorksPanel() {
             <Rocket className="w-4 h-4" /> Operational OS
           </div>
           <h1 className="text-4xl md:text-5xl font-black mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
-            How TheWorkimnd Works
+            How TheWorkMind Works
           </h1>
 
           <p className="text-lg text-slate-400 max-w-3xl leading-relaxed font-medium">
-            TheWorkimnd is an Operational OS designed for coordinated business intelligence. 
+            TheWorkMind is an Operational OS designed for coordinated business intelligence. 
             By organizing your proprietary data into structured AI environments, we transform static documents into active departmental expertise.
           </p>
         </div>
@@ -99,7 +99,7 @@ export default function HowItWorksPanel() {
 
           <p className="text-slate-300 leading-relaxed text-lg max-w-5xl font-medium">
             Traditional AI operates in isolated chat windows, leading to information loss and operational silos. 
-            <strong> TheWorkimnd</strong> centralizes your organizational knowledge, ensuring that every AI expert 
+            <strong> TheWorkMind</strong> centralizes your organizational knowledge, ensuring that every AI expert 
             possesses a persistent, unified understanding of your business goals, allowing for seamless scaling and superior decision-making.
           </p>
         </div>
@@ -108,3 +108,4 @@ export default function HowItWorksPanel() {
     </div>
   );
 }
+

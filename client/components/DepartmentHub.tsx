@@ -60,7 +60,7 @@ export const DepartmentHub: React.FC = () => {
 
         addHubMessage(activeDepartment, {
           id: crypto.randomUUID(),
-          sender: 'TheWorkimnd AI',
+          sender: 'TheWorkMind AI',
           role: 'assistant',
           content: response.text,
           timestamp: Date.now()
@@ -126,7 +126,7 @@ export const DepartmentHub: React.FC = () => {
 
         {currentMessages.map(msg => {
           const isMe = msg.role === 'user';
-          const isAi = msg.sender === 'TheWorkimnd AI';
+          const isAi = msg.sender === 'TheWorkMind AI';
 
           return (
             <div key={msg.id} className={`flex gap-3 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
@@ -179,3 +179,4 @@ export const DepartmentHub: React.FC = () => {
     </div>
   );
 };
+

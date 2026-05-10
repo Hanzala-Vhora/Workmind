@@ -213,7 +213,7 @@ export const AdminDashboard: React.FC = () => {
                     </button>
                     <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                         <Database className="w-5 h-5 text-indigo-600" />
-                        TheWorkimnd Admin
+                        TheWorkMind Admin
                     </h1>
                 </div>
                 <div className="flex items-center gap-3">
@@ -873,3 +873,4 @@ export const AdminDashboard: React.FC = () => {
         </div>
     );
 };
+

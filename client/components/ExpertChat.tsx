@@ -1078,7 +1078,7 @@ export const ExpertChat: React.FC = () => {
 
                 <div className="text-center mt-3">
                   <p className="text-[11px] text-gray-400">
-                    TheWorkimnd can make mistakes. Verify critical information.
+                    TheWorkMind can make mistakes. Verify critical information.
                   </p>
                 </div>
               </div>
@@ -1263,3 +1263,4 @@ const Shield = ({ className }: { className?: string }) => (
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
   </svg>
 );
+
