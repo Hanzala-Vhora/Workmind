@@ -8,8 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/apiClient';
 import { INITIAL_DATA } from './IntakeForm';
-import { driver } from "driver.js";
-import "driver.js/dist/driver.css";
+
 import { KnowledgeBase } from './KnowledgeBase';
 import { FeedbackModal } from './FeedbackModal';
 import HowItWorksPanel from './HowItWorksPanel';
@@ -45,39 +44,7 @@ export const Dashboard: React.FC = () => {
 
 
 
-  useEffect(() => {
-    if (intakeForms.length > 0 && !localStorage.getItem('dashboard_tour_completed')) {
-      const driverObj = driver({
-        showProgress: true,
-        steps: [
-          { 
-            element: '#step-add-expert', 
-            popover: { 
-              title: 'Create Your AI Workforce', 
-              description: 'Click here to add a new department expert. You can have up to 8 specialized agents.', 
-              side: "top", 
-              align: 'start' 
-            } 
-          },
-          {
-            element: '.md\\:flex nav',
-            popover: {
-              title: 'Your Department Hubs',
-              description: 'Once created, your experts will appear here. You can switch between them anytime.',
-              side: "right",
-              align: 'start'
-            }
-          }
-        ],
-        onDestroyStarted: () => {
-          localStorage.setItem('dashboard_tour_completed', 'true');
-          driverObj.destroy();
-        },
-      });
 
-      driverObj.drive();
-    }
-  }, [intakeForms]);
 
   // Fetch intake forms from backend
   const fetchIntakeForms = async () => {

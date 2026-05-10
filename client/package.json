@@ -15,7 +15,6 @@
     "@sentry/react": "^10.52.0",
     "@types/uuid": "^10.0.0",
     "clsx": "^2.1.1",
-    "driver.js": "^1.4.0",
     "lucide-react": "^0.562.0",
     "marked": "^18.0.3",
     "next": "^16.1.1",

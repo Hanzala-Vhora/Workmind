@@ -14,8 +14,7 @@ import { FeedbackModal } from './FeedbackModal';
 
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/auth';
-import { driver } from "driver.js";
-import "driver.js/dist/driver.css";
+
 
 export const ExpertChat: React.FC = () => {
   const { user } = useAuth();
@@ -92,48 +91,7 @@ export const ExpertChat: React.FC = () => {
   }, [conversations, activeDepartment, messages]);
 
 
-  useEffect(() => {
-    if (messages.length > 0 && !localStorage.getItem('chat_tour_completed')) {
-      const driverObj = driver({
-        showProgress: true,
-        steps: [
-          {
-            element: '#step-context-btn',
-            popover: {
-              title: 'Upload Your Context',
-              description: 'Training the AI is as simple as uploading your documents here. PDFs, Docs, and Websites are all supported.',
-              side: "bottom",
-              align: 'end'
-            }
-          },
-          {
-            element: '#step-chat-input',
-            popover: {
-              title: 'Chat with your Expert',
-              description: 'Type your questions here. Your expert uses the uploaded context to provide accurate, non-hallucinated answers.',
-              side: "top",
-              align: 'center'
-            }
-          },
-          {
-             element: '.md\\:relative.z-40.md\\:z-auto',
-             popover: {
-               title: 'Chat History',
-               description: 'All your conversations are saved per department. You can create new chats or revisit old ones here.',
-               side: "right",
-               align: 'start'
-             }
-          }
-        ],
-        onDestroyStarted: () => {
-          localStorage.setItem('chat_tour_completed', 'true');
-          driverObj.destroy();
-        },
-      });
 
-      driverObj.drive();
-    }
-  }, [messages]);
 
   const [chatsLoading, setChatsLoading] = useState(false);
 
