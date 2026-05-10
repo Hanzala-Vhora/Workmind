@@ -135,6 +135,13 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
       <div className="bg-white w-full max-w-2xl rounded-[32px] shadow-2xl overflow-hidden relative border border-gray-100 flex flex-col max-h-[90vh]">
         
+        <button 
+          onClick={onClose}
+          className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all z-[10]"
+        >
+          <X className="w-6 h-6" />
+        </button>
+        
         {isCheckingStatus ? (
             <div className="p-20 flex flex-col items-center justify-center gap-4">
                 <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
@@ -333,11 +340,13 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
             </div>
             <h2 className="text-3xl font-black text-gray-900 mb-4">Feedback Received!</h2>
             <p className="text-gray-500 text-lg max-w-sm mx-auto mb-6">Thank you for helping us make TheWorkimnd better. We appreciate your time.</p>
-            <div className="p-4 bg-amber-50 rounded-2xl border border-amber-100 inline-block">
-                <p className="text-sm font-bold text-amber-800 flex items-center gap-2 justify-center">
-                    <Zap className="w-4 h-4" /> Credits Empty
+            <div className="p-6 bg-indigo-50/50 rounded-[24px] border border-indigo-100 max-w-lg mx-auto">
+                <p className="text-gray-700 leading-relaxed mb-4">
+                    Our team will review your submission and get back to you shortly with access to the official platform website, where you’ll be able to sign up, onboard your team, and start using the SaaS platform across your organization.
                 </p>
-                <p className="text-xs text-amber-700 mt-1">Please contact your account administrator to refill your balance and continue using the platform.</p>
+                <p className="text-indigo-600 font-bold">
+                    We appreciate your time and participation.
+                </p>
             </div>
           </div>
         )}
