@@ -572,13 +572,15 @@ router.post('/', async (req, res) => {
         // Fetch PDF chunks from DB
         const dbChunks = await prisma.documentChunk.findMany({
             where: {
-                chat: {
-                    userId: String(userId),
-                    OR: [
-                        { department: { equals: department, mode: 'insensitive' } },
-                        { department: { equals: 'Universal', mode: 'insensitive' } }
-                    ]
-                }
+                OR: [
+                    { chatId: currentChatId },
+                    { 
+                        chat: { 
+                            userId: String(userId),
+                            department: { equals: 'Universal', mode: 'insensitive' } 
+                        } 
+                    }
+                ]
             }
         });
 
@@ -617,29 +619,7 @@ router.post('/', async (req, res) => {
         });
         const prevMsgsAsc = previousMessages.reverse();
 
-        // Fetch recent cross-department context for shared memory
-        try {
-            const recentCrossChats = await prisma.chatMessage.findMany({
-                where: { 
-                    chat: { userId: session.userId, id: { not: session.id } }
-                },
-                include: { chat: { select: { department: true } } },
-                orderBy: { createdAt: 'desc' },
-                take: 15
-            });
 
-            if (recentCrossChats.length > 0) {
-                let crossContext = "\n\n--- RECENT ACTIVITY FROM OTHER DEPARTMENTS (SHARED MEMORY) ---\n(Use this context if the user refers to past conversations with other experts, e.g. 'read the GTM chat with marketing')\n";
-                [...recentCrossChats].reverse().forEach(msg => {
-                    const snippet = msg.content.length > 400 ? msg.content.substring(0, 400) + '...' : msg.content;
-                    crossContext += `[${msg.chat.department} Expert - ${msg.role.toUpperCase()}]: ${snippet}\n`;
-                });
-                crossContext += "----------------------------------------------\n";
-                systemInstruction += crossContext;
-            }
-        } catch (err) {
-            console.error("Failed to load cross-department context", err);
-        }
 
         let fullResponseText = "";
 
