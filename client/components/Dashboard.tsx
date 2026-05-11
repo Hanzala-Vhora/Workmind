@@ -13,6 +13,8 @@ import { KnowledgeBase } from './KnowledgeBase';
 import { FeedbackModal } from './FeedbackModal';
 import HowItWorksPanel from './HowItWorksPanel';
 import { LayoutGrid, BookOpen, HelpCircle, Search, Clock, TrendingUp, Users as UsersIcon, Home } from 'lucide-react';
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
 
 
 
@@ -132,6 +134,23 @@ export const Dashboard: React.FC = () => {
       setShowFeedbackModal(true);
     }
   }, [userProfile]);
+  
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem('dashboard_tour_seen');
+    if (intakeForms.length > 0 && !hasSeenTour) {
+      const driverObj = driver({
+        showProgress: true,
+        steps: [
+          { element: '#step-nav', popover: { title: 'Navigation', description: 'Access your Home, Knowledge Base, and Help guides here.' } },
+          { element: '#step-stats', popover: { title: 'Business Overview', description: 'Monitor your AI workforce performance and conversation history at a glance.' } },
+          { element: '#step-experts', popover: { title: 'Expert Workspaces', description: 'Enter specific department workspaces to interact with specialized AI agents.' } },
+          { element: '#step-add-expert', popover: { title: 'Scale Your AI', description: 'Deploy new AI experts for other departments as your business grows.' } },
+        ]
+      });
+      setTimeout(() => driverObj.drive(), 1000);
+      localStorage.setItem('dashboard_tour_seen', 'true');
+    }
+  }, [intakeForms]);
 
 
 
@@ -262,7 +281,7 @@ export const Dashboard: React.FC = () => {
           <BrainLogo width={30} height={30} className="text-white" />
           <h1 className="text-xl font-bold tracking-tight uppercase">TheWorkMind.AI</h1>
         </div>
-        <nav className="flex-1 px-4 space-y-4 mt-6 overflow-y-auto">
+        <nav id="step-nav" className="flex-1 px-4 space-y-4 mt-6 overflow-y-auto">
           <div className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2">Navigation</div>
 
           <button
@@ -372,7 +391,7 @@ export const Dashboard: React.FC = () => {
             {currentView === 'dashboard' && (
               <>
                 {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div id="step-stats" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
                   <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
                     <div className="text-gray-500 text-sm mb-1">Active Experts</div>
                     <div className="text-3xl font-bold text-ui-text">{intakeForms.length}</div>
@@ -388,7 +407,7 @@ export const Dashboard: React.FC = () => {
                 </div>
 
                 <h3 className="text-xl font-bold text-deepTech-DEFAULT mb-6">Your Expert Workspaces</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div id="step-experts" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {intakeForms.map(form => {
                     const dept = (form.department as Department) || 'Sales';
                     const Icon = DEPT_ICONS[dept] || Briefcase;

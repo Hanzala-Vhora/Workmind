@@ -26,8 +26,9 @@ export const AdminDashboard: React.FC = () => {
     const [waitlistEntries, setWaitlistEntries] = useState<any[]>([]);
     const [approvingId, setApprovingId] = useState<string | null>(null);
     const [waitlistTab, setWaitlistTab] = useState<'pending' | 'approved'>('pending');
-    const [feedbackList, setFeedbackList] = useState<any[]>([]);
     const [feedbackLoading, setFeedbackLoading] = useState(false);
+    const [creditRequests, setCreditRequests] = useState<any[]>([]);
+    const [creditRequestsLoading, setCreditRequestsLoading] = useState(false);
 
 
     const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
@@ -56,6 +57,7 @@ export const AdminDashboard: React.FC = () => {
             }
 
             fetchFeedback();
+            fetchCreditRequests();
         } catch (err) {
             console.error("Admin fetch error", err);
         } finally {
@@ -74,6 +76,47 @@ export const AdminDashboard: React.FC = () => {
             console.error("Feedback fetch error", err);
         } finally {
             setFeedbackLoading(false);
+        }
+    };
+
+    const fetchCreditRequests = async () => {
+        setCreditRequestsLoading(true);
+        try {
+            const res = await authFetch(`${API_URL}/api/admin/credit-requests`);
+            if (res.ok) {
+                setCreditRequests(await res.json());
+            }
+        } catch (err) {
+            console.error("Credit requests fetch error", err);
+        } finally {
+            setCreditRequestsLoading(false);
+        }
+    };
+
+    const handleApproveCreditRequest = async (requestId: string) => {
+        try {
+            const res = await authFetch(`${API_URL}/api/admin/credit-requests/${requestId}/approve`, {
+                method: 'POST'
+            });
+            if (res.ok) {
+                fetchCreditRequests();
+                fetchAdminData(); // Refresh users/stats
+            }
+        } catch (err) {
+            console.error("Approve credit request error", err);
+        }
+    };
+
+    const handleRejectCreditRequest = async (requestId: string) => {
+        try {
+            const res = await authFetch(`${API_URL}/api/admin/credit-requests/${requestId}/reject`, {
+                method: 'POST'
+            });
+            if (res.ok) {
+                fetchCreditRequests();
+            }
+        } catch (err) {
+            console.error("Reject credit request error", err);
         }
     };
 
@@ -390,6 +433,69 @@ export const AdminDashboard: React.FC = () => {
                     )}
                 </div>
                 
+                {/* Credit Requests Management */}
+                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+                        <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                            <Zap className="w-4 h-4 text-amber-500" /> Credit Requests ({creditRequests.length})
+                        </h2>
+                        <button 
+                            onClick={fetchCreditRequests}
+                            className="p-2 hover:bg-gray-100 rounded-lg text-gray-400"
+                        >
+                            <RefreshCw className={`w-4 h-4 ${creditRequestsLoading ? 'animate-spin' : ''}`} />
+                        </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        {creditRequests.length === 0 ? (
+                            <div className="p-12 text-center text-gray-500">
+                                <CreditCard className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                                <p>No pending credit requests.</p>
+                            </div>
+                        ) : (
+                            <table className="w-full text-left border-collapse">
+                                <thead className="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
+                                    <tr>
+                                        <th className="px-6 py-3">User & Date</th>
+                                        <th className="px-6 py-3 text-center">Amount Requested</th>
+                                        <th className="px-6 py-3 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {creditRequests.map((req) => (
+                                        <tr key={req.id} className="hover:bg-gray-50/50 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <p className="text-sm font-bold text-gray-900">{req.user?.email || 'Unknown User'}</p>
+                                                <p className="text-[10px] text-gray-400">{new Date(req.createdAt).toLocaleString()}</p>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="inline-flex px-3 py-1 bg-amber-50 text-amber-600 text-sm font-black rounded-lg border border-amber-100">
+                                                    {req.amount} Credits
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                <button
+                                                    onClick={() => handleRejectCreditRequest(req.id)}
+                                                    className="px-4 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-all"
+                                                >
+                                                    Reject
+                                                </button>
+                                                <button
+                                                    onClick={() => handleApproveCreditRequest(req.id)}
+                                                    className="px-4 py-2 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-all shadow-md shadow-green-100"
+                                                >
+                                                    Approve & Add
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        )}
+                    </div>
+                </div>
+
                 {/* User Feedback Management */}
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
                     <div className="p-4 border-b border-gray-100 flex items-center justify-between">

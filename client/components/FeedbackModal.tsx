@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Star, Check, AlertCircle, Loader2, Send, Clock, DollarSign, Heart, Layout, Users, Zap, MessageSquare, ArrowRight, X } from 'lucide-react';
+import { Star, Check, AlertCircle, Loader2, Send, Clock, DollarSign, Heart, Layout, Users, Zap, MessageSquare, ArrowRight, X, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 interface FeedbackModalProps {
@@ -12,6 +12,9 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
   const [step, setStep] = useState<'intro' | 'form' | 'success'>('intro');
   const [loading, setLoading] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [isRequestingCredits, setIsRequestingCredits] = useState(false);
+  const [creditRequestStatus, setCreditRequestStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [creditRequestError, setCreditRequestError] = useState('');
 
 
   const [formData, setFormData] = useState({
@@ -96,6 +99,35 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
       alert('Error submitting feedback. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRequestCredits = async () => {
+    setIsRequestingCredits(true);
+    setCreditRequestError('');
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/feedback/request-credits`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id,
+          amount: 200
+        }),
+      });
+
+      if (response.ok) {
+        setCreditRequestStatus('success');
+      } else {
+        const data = await response.json();
+        setCreditRequestStatus('error');
+        setCreditRequestError(data.error || 'Failed to request credits');
+      }
+    } catch (error) {
+      console.error(error);
+      setCreditRequestStatus('error');
+      setCreditRequestError('Connection error. Please try again.');
+    } finally {
+      setIsRequestingCredits(false);
     }
   };
 
@@ -340,13 +372,53 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
                 </div>
                 <h2 className="text-3xl font-black text-gray-900 mb-4">Feedback Received!</h2>
                 <p className="text-gray-500 text-lg max-w-sm mx-auto mb-6">Thank you for helping us make TheWorkMind better. We appreciate your time.</p>
-                <div className="p-6 bg-indigo-50/50 rounded-[24px] border border-indigo-100 max-w-lg mx-auto">
-                  <p className="text-gray-700 leading-relaxed mb-4">
-                    Our team will review your submission and get back to you shortly with access to the official platform website, where you’ll be able to sign up, onboard your team, and start using the SaaS platform across your organization.
-                  </p>
-                  <p className="text-indigo-600 font-bold">
-                    We appreciate your time and participation.
-                  </p>
+                
+                <div className="space-y-6">
+                  <div className="p-6 bg-indigo-50/50 rounded-[24px] border border-indigo-100 max-w-lg mx-auto">
+                    <p className="text-gray-700 leading-relaxed mb-4">
+                      Our team will review your submission and get back to you shortly with access to the official platform website, where you’ll be able to sign up, onboard your team, and start using the SaaS platform across your organization.
+                    </p>
+                    <p className="text-indigo-600 font-bold">
+                      We appreciate your time and participation.
+                    </p>
+                  </div>
+
+                  <div className="max-w-lg mx-auto p-8 bg-gray-900 rounded-[32px] text-white shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-3xl rounded-full -mr-16 -mt-16 group-hover:bg-indigo-500/20 transition-all"></div>
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-center gap-2 mb-4">
+                        <Zap className="w-6 h-6 text-amber-400 fill-amber-400" />
+                        <span className="text-xs font-black uppercase tracking-[0.2em] text-indigo-400">Bonus Reward</span>
+                      </div>
+                      <h3 className="text-2xl font-black mb-2">Request 200 Credits</h3>
+                      <p className="text-gray-400 text-sm mb-6 leading-relaxed">
+                        As a thank you for your feedback, you can request an additional 200 AI credits to continue exploring the platform.
+                      </p>
+                      
+                      {creditRequestStatus === 'idle' && (
+                        <button
+                          onClick={handleRequestCredits}
+                          disabled={isRequestingCredits}
+                          className="w-full py-4 bg-white text-gray-900 font-black rounded-2xl hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 shadow-xl shadow-white/5"
+                        >
+                          {isRequestingCredits ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Submit Credit Request'}
+                        </button>
+                      )}
+
+                      {creditRequestStatus === 'success' && (
+                        <div className="flex items-center justify-center gap-2 text-green-400 font-bold py-4 bg-green-400/10 rounded-2xl border border-green-400/20">
+                          <CheckCircle className="w-5 h-5" />
+                          Request Submitted!
+                        </div>
+                      )}
+
+                      {creditRequestStatus === 'error' && (
+                        <div className="text-red-400 text-sm font-bold mt-2">
+                          {creditRequestError || 'Failed to submit request. Please try again.'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

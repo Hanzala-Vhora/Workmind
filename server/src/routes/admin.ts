@@ -211,7 +211,7 @@ router.post('/waitlist/:id/approve', requireAdmin, async (req: AuthRequest, res)
                 email: entry.email,
                 name: entry.fullName,
                 role: 'user',
-                credits: 100,
+                credits: 500,
             },
         });
 
@@ -229,6 +229,8 @@ router.post('/waitlist/:id/approve', requireAdmin, async (req: AuthRequest, res)
     }
 });
 
+import { getPendingRequests, approveCreditRequest, rejectCreditRequest } from '../controllers/creditController.js';
+
 router.get('/feedback', requireAdmin, async (_req, res) => {
     try {
         const feedback = await prisma.feedback.findMany({
@@ -239,6 +241,11 @@ router.get('/feedback', requireAdmin, async (_req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
+// Credit Requests Management
+router.get('/credit-requests', requireAdmin, getPendingRequests);
+router.post('/credit-requests/:requestId/approve', requireAdmin, approveCreditRequest);
+router.post('/credit-requests/:requestId/reject', requireAdmin, rejectCreditRequest);
 
 export default router;
 

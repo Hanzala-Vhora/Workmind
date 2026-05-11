@@ -10,10 +10,78 @@ import { ThreadAnalyzer } from './ThreadAnalyzer';
 import { BrainLogo } from './BrainLogo';
 import { StoredDocument } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
 import { FeedbackModal } from './FeedbackModal';
 
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/auth';
+
+const SUGGESTED_PROMPTS: Record<string, string[]> = {
+
+  Sales: [
+    "What can you help me improve in my current sales pipeline based on my business model?",
+    "Create a discovery call framework tailored to my ICP and offer.",
+    "Analyze our current sales process and identify conversion leaks.",
+    "Draft a personalized follow-up sequence for leads who stopped responding."
+  ],
+
+  Marketing: [
+    "What marketing strategy would best fit our business stage and ICP?",
+    "Create a 30-day content strategy aligned to our positioning.",
+    "Audit our current value proposition and identify messaging gaps.",
+    "Generate high-converting campaign hooks tailored to our audience."
+  ],
+
+  Finance: [
+    "Analyze potential cashflow risks based on our current business structure.",
+    "Help me improve profitability without slowing growth.",
+    "Review our pricing model and suggest optimization opportunities.",
+    "Create a KPI tracking structure for financial visibility."
+  ],
+
+  Operations: [
+    "Analyze our operational workflow and identify bottlenecks.",
+    "Help us streamline delivery and execution systems.",
+    "Create SOPs tailored to our current operational maturity.",
+    "Recommend operational improvements based on our business stage."
+  ],
+
+  HR: [
+    "Help us structure roles and responsibilities more clearly.",
+    "Create an onboarding system tailored to our company structure.",
+    "Suggest ways to improve accountability and team alignment.",
+    "Help us define hiring priorities based on our growth stage."
+  ],
+
+  IT: [
+    "Review our current tech stack for scalability and security risks.",
+    "Recommend automation opportunities based on our operations.",
+    "Help us improve system reliability and infrastructure planning.",
+    "Suggest integrations that fit our existing tools and workflows."
+  ],
+
+  Procurement: [
+    "Analyze our procurement process for efficiency improvements.",
+    "Identify vendor optimization or cost-saving opportunities.",
+    "Create a supplier evaluation framework for our business.",
+    "Suggest procurement workflows that reduce operational risk."
+  ],
+
+  'Social Media': [
+    "Create a social growth strategy aligned to our brand positioning.",
+    "Suggest content ideas tailored to our audience and goals.",
+    "Help us improve engagement and algorithmic reach.",
+    "Analyze our current content strategy and identify gaps."
+  ],
+
+  Universal: [
+    "Summarize key business insights from uploaded documents.",
+    "Identify the biggest operational risks to our current goals.",
+    "Recommend high-ROI improvements for our business this quarter.",
+    "Create an execution roadmap based on our current business context."
+  ]
+};
 
 
 export const ExpertChat: React.FC = () => {
@@ -113,6 +181,24 @@ export const ExpertChat: React.FC = () => {
       setShowFeedbackModal(true);
     }
   }, [userProfile]);
+
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem('chat_tour_seen');
+    if (!hasSeenTour && currentChatId) {
+      const driverObj = driver({
+        showProgress: true,
+        steps: [
+          { element: '#step-chat-sidebar', popover: { title: 'Chat History', description: 'Switch between previous conversations or start a new one.' } },
+          { element: '#step-credits', popover: { title: 'AI Credits', description: 'Monitor your usage balance. Your AI is powered by these credits.' } },
+          { element: '#step-context-btn', popover: { title: 'Knowledge Base', description: 'Upload documents and links to give the AI specific business context.' } },
+          { element: '#step-suggestions', popover: { title: 'Suggested Prompts', description: 'Use these department-specific shortcuts to get immediate value.' } },
+          { element: '#step-chat-input', popover: { title: 'Interaction', description: 'Type your requests here or attach files directly to the chat.' } },
+        ]
+      });
+      setTimeout(() => driverObj.drive(), 1000);
+      localStorage.setItem('chat_tour_seen', 'true');
+    }
+  }, [currentChatId]);
 
 
 
@@ -250,8 +336,9 @@ export const ExpertChat: React.FC = () => {
   const currentMessages = messages;
   const currentDocs = fetchedDocuments;
 
-  const handleSend = async () => {
-    if (!input.trim() || loading || !user?.id) return;
+  const handleSend = async (overrideText?: string) => {
+    const textToSend = typeof overrideText === 'string' ? overrideText : input;
+    if (!textToSend.trim() || loading || !user?.id) return;
 
     // Check credits before sending
     if (userProfile && userProfile.credits <= 0) {
@@ -259,8 +346,8 @@ export const ExpertChat: React.FC = () => {
       return;
     }
 
-    const userText = input;
-    setInput('');
+    const userText = textToSend;
+    if (!overrideText) setInput('');
     setLoading(true);
 
     // Optimistically add user message
@@ -558,7 +645,7 @@ export const ExpertChat: React.FC = () => {
       )}
 
       {/* Chats Sidebar */}
-      <div className={`${showSidebar ? 'w-72 md:w-64' : 'w-0 overflow-hidden'} fixed md:relative z-40 md:z-auto inset-y-0 left-0 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out`}>
+      <div id="step-chat-sidebar" className={`${showSidebar ? 'w-72 md:w-64' : 'w-0 overflow-hidden'} fixed md:relative z-40 md:z-auto inset-y-0 left-0 flex-shrink-0 bg-gray-50 border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out`}>
         <div className={`${showSidebar ? 'opacity-100' : 'opacity-0'} flex flex-col h-full transition-opacity duration-200`}>
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors font-medium text-sm">
@@ -638,7 +725,7 @@ export const ExpertChat: React.FC = () => {
 
         <div className="p-4 border-t border-gray-200 bg-gray-50/50">
           {/* Wallet / Credits Section */}
-          <div className="mb-4 px-2">
+          <div id="step-credits" className="mb-4 px-2">
             <div className={`rounded-xl p-3 text-white shadow-sm transition-all ${userProfile?.credits <= 0 ? 'bg-red-600' : 'bg-gray-900 border border-gray-800'}`}>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">Credits Balance</span>
@@ -872,13 +959,27 @@ export const ExpertChat: React.FC = () => {
                     </div>
                   ) : (
                     <div className="min-h-[60vh] flex flex-col items-center justify-center text-gray-400 select-none animate-fadeIn">
-                      <div className="w-24 h-24 bg-gradient-to-br from-indigo-50 to-cyan-50 rounded-3xl mb-8 flex items-center justify-center shadow-sm">
-                        <BrainLogo width={64} height={64} className="opacity-80" />
+                      <div className="w-20 h-20 bg-gradient-to-br from-indigo-50 to-cyan-50 rounded-3xl mb-8 flex items-center justify-center shadow-sm">
+                        <BrainLogo width={48} height={48} className="opacity-80" />
                       </div>
                       <h3 className="text-2xl font-bold text-gray-800 mb-2">How can I help with {activeDepartment}?</h3>
-                      <p className="text-gray-500 max-w-md text-center">
+                      <p className="text-gray-500 max-w-md text-center mb-10">
                         I'm trained on your company's documents and guidelines. Ask me anything about processes, contracts, or strategies.
                       </p>
+
+                      <div id="step-suggestions" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full max-w-4xl px-4">
+                        {(SUGGESTED_PROMPTS[activeDepartment] || SUGGESTED_PROMPTS['Universal']).map((suggestion, i) => (
+                          <button
+                            key={i}
+                            onClick={() => handleSend(suggestion)}
+                            className="text-left p-4 bg-white border border-gray-100 rounded-2xl hover:border-indigo-200 hover:bg-indigo-50/30 transition-all group shadow-sm hover:shadow-md"
+                          >
+                            <p className="text-sm font-medium text-gray-600 group-hover:text-indigo-700 leading-relaxed">
+                              {suggestion}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )
                 )}
