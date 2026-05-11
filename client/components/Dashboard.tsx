@@ -419,10 +419,6 @@ export const Dashboard: React.FC = () => {
                           <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${isActive ? 'bg-gradient-brand text-white' : 'bg-cyan-bio/10 text-neural-DEFAULT group-hover:bg-gradient-brand group-hover:text-white'}`}>
                             <Icon className="w-6 h-6" />
                           </div>
-                          {isActive && <span className="bg-cyan-50 text-neural-dark text-xs px-2 py-1 rounded-full font-medium border border-cyan-100">Active Session</span>}
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium border ml-auto ${isActive ? 'hidden' : ''} ${form.status === 'submitted' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-yellow-50 text-yellow-700 border-yellow-100'}`}>
-                            {form.status === 'submitted' ? 'Ready' : form.status}
-                          </span>
                         </div>
 
                         <h4 className="text-lg font-bold text-ui-text mb-0.5">{dept} Expert</h4>
