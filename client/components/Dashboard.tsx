@@ -375,10 +375,6 @@ export const Dashboard: React.FC = () => {
 
             <p className="text-ui-slate text-sm md:text-base">Manage your AI workforce</p>
           </div>
-          <div className="bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm text-sm flex items-center gap-2 w-full md:w-auto justify-center md:justify-start">
-            <RefreshCw onClick={fetchIntakeForms} className={`w-4 h-4 text-gray-400 cursor-pointer hover:text-neural-DEFAULT ${refreshing ? 'animate-spin' : ''}`} />
-            <span className="text-gray-500">Status:</span> <span className="font-bold text-green-600">Online</span>
-          </div>
         </header>
 
         {refreshing && intakeForms.length === 0 ? (

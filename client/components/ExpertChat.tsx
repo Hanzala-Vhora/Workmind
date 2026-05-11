@@ -827,47 +827,85 @@ export const ExpertChat: React.FC = () => {
                 </div>
                 <button onClick={() => setShowContextRepo(false)} className="hover:bg-gray-200 rounded p-1"><X className="w-4 h-4 text-gray-400" /></button>
               </div>
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              <div className="flex-1 overflow-y-auto p-4 space-y-6">
                 {currentDocs.length === 0 ? (
                   <div className="text-center text-gray-400 text-sm py-12 px-4 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
                     <p className="mb-2">No documents yet.</p>
                     <p className="text-xs text-gray-400">Upload PDFs, Contracts, or Guidelines to train this expert.</p>
                   </div>
                 ) : (
-                  currentDocs.map((doc, idx) => (
-                    <div key={doc.id || idx} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex items-start gap-3 hover:border-neural-DEFAULT hover:shadow-md transition-all cursor-default group">
-                      {doc.type.startsWith('image/') ? (
-                        <ImageIcon className="w-8 h-8 p-1.5 bg-cyan-50 text-cyan-600 rounded-lg shrink-0" />
-                      ) : doc.type === 'application/pdf' ? (
-                        <FileText className="w-8 h-8 p-1.5 bg-red-50 text-red-600 rounded-lg shrink-0" />
-                      ) : (
-                        <File className="w-8 h-8 p-1.5 bg-gray-50 text-gray-600 rounded-lg shrink-0" />
-                      )}
-                      <div className="flex flex-col gap-0.5 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-xs font-bold text-gray-800 truncate">{doc.name}</p>
-                          {doc.category && doc.category !== 'general' && (
-                            <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter ${
-                              doc.category === 'template' ? 'bg-purple-100 text-purple-600 border border-purple-200' : 'bg-teal-100 text-teal-600 border border-teal-200'
-                            }`}>
-                              {doc.category}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[9px] text-gray-400">
-                          {new Date(doc.uploadedAt).toLocaleDateString()} • {doc.type.split('/')[1]?.toUpperCase() || 'FILE'}
-                        </p>
+                  <>
+                    {/* Session Specific Section */}
+                    {currentDocs.filter(d => !d.chatId?.includes('kb-universal')).length > 0 && (
+                      <div className="space-y-3">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Current Session Context</p>
+                        {currentDocs.filter(d => !d.chatId?.includes('kb-universal')).map((doc, idx) => (
+                          <div key={doc.id || idx} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm flex items-start gap-3 hover:border-indigo-200 hover:shadow-md transition-all cursor-default group">
+                            {doc.type.startsWith('image/') ? (
+                              <ImageIcon className="w-8 h-8 p-1.5 bg-cyan-50 text-cyan-600 rounded-lg shrink-0" />
+                            ) : doc.type === 'application/pdf' ? (
+                              <FileText className="w-8 h-8 p-1.5 bg-red-50 text-red-600 rounded-lg shrink-0" />
+                            ) : (
+                              <File className="w-8 h-8 p-1.5 bg-gray-50 text-gray-600 rounded-lg shrink-0" />
+                            )}
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-xs font-bold text-gray-800 truncate">{doc.name}</p>
+                                {doc.category && doc.category !== 'general' && (
+                                  <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase tracking-tighter ${
+                                    doc.category === 'template' ? 'bg-purple-100 text-purple-600 border border-purple-200' : 'bg-teal-100 text-teal-600 border border-teal-200'
+                                  }`}>
+                                    {doc.category}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[9px] text-gray-400">
+                                {new Date(doc.uploadedAt).toLocaleDateString()} • {doc.type.split('/')[1]?.toUpperCase() || 'FILE'}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteDocument(doc)}
+                              className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all ml-auto"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
+                    )}
 
-                      <button
-                        onClick={() => handleDeleteDocument(doc)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                        title="Delete Document"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))
+                    {/* Global Knowledge Section */}
+                    {currentDocs.filter(d => d.chatId?.includes('kb-universal')).length > 0 && (
+                      <div className="space-y-3">
+                        <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest px-1 flex items-center gap-2">
+                           <Globe className="w-3 h-3" /> Global Knowledge Base
+                        </p>
+                        {currentDocs.filter(d => d.chatId?.includes('kb-universal')).map((doc, idx) => (
+                          <div key={doc.id || idx} className="bg-indigo-50/30 p-3 rounded-lg border border-indigo-100 shadow-sm flex items-start gap-3 hover:border-indigo-300 transition-all cursor-default group">
+                            {doc.type.startsWith('image/') ? (
+                              <ImageIcon className="w-8 h-8 p-1.5 bg-cyan-50 text-cyan-600 rounded-lg shrink-0" />
+                            ) : doc.type === 'application/pdf' ? (
+                              <FileText className="w-8 h-8 p-1.5 bg-indigo-50 text-indigo-600 rounded-lg shrink-0" />
+                            ) : (
+                              <File className="w-8 h-8 p-1.5 bg-gray-50 text-gray-600 rounded-lg shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold text-indigo-900 truncate">{doc.name}</p>
+                              <p className="text-[9px] text-indigo-400">
+                                {new Date(doc.uploadedAt).toLocaleDateString()} • Global Asset
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteDocument(doc)}
+                              className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
               <div className="p-4 bg-gray-50 border-t border-gray-200">

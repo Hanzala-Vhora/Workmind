@@ -242,18 +242,6 @@ export const KnowledgeBase: React.FC = () => {
               <Globe className="w-4 h-4 text-cyan-electric" />
               Add Website Context
             </h4>
-            <div className="flex gap-2 items-center mb-3">
-                <select 
-                    value={selectedCategory} 
-                    onChange={(e) => setSelectedCategory(e.target.value as any)}
-                    className="text-[10px] bg-white border border-gray-200 rounded px-2 py-1 font-bold text-gray-600 focus:border-neural-DEFAULT outline-none"
-                >
-                    <option value="general">General Doc</option>
-                    <option value="template">Template</option>
-                    <option value="sop">SOP</option>
-                </select>
-                <div className="flex-1 h-[1px] bg-gray-100"></div>
-            </div>
             <div className="flex gap-2">
 
               <input 
@@ -282,10 +270,24 @@ export const KnowledgeBase: React.FC = () => {
               <Book className="w-4 h-4 text-cyan-400" />
               Why Global?
             </h4>
-            <p className="text-xs text-indigo-100/80 leading-relaxed mb-4">
+            <p className="text-xs text-indigo-100/80 leading-relaxed mb-6">
               Documents uploaded here are used as "absolute truth" by every expert. 
               Upload your company mission, tone of voice, or general guidelines to ensure consistency across all departments.
             </p>
+            
+            <div className="mb-4">
+              <label className="text-[10px] font-bold text-indigo-300 uppercase tracking-widest mb-2 block">Content Category</label>
+              <select 
+                value={selectedCategory} 
+                onChange={(e) => setSelectedCategory(e.target.value as any)}
+                className="w-full bg-indigo-800/50 border border-indigo-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:border-cyan-400 outline-none transition-all cursor-pointer"
+              >
+                <option value="general">General Knowledge</option>
+                <option value="template">Document Template</option>
+                <option value="sop">Standard Operating Procedure (SOP)</option>
+              </select>
+            </div>
+
             <button 
               onClick={() => fileInputRef.current?.click()}
               className="w-full bg-white text-indigo-900 hover:bg-indigo-50 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
