@@ -208,12 +208,15 @@ export const ExpertChat: React.FC = () => {
   const fetchDepartmentDocuments = async () => {
     if (!activeDepartment || !user?.id) return;
     try {
-      // Fetch department specific docs
-      const deptRes = await authFetch(`${API_URL}/api/documents/department/${activeDepartment}?userId=${user.id}`);
-      const deptData = await deptRes.json();
-      const deptDocs = deptData.documents || [];
+      // Fetch department specific docs only if we have a current session
+      let deptDocs = [];
+      if (currentChatId) {
+        const deptRes = await authFetch(`${API_URL}/api/documents/department/${activeDepartment}?userId=${user.id}&chatId=${currentChatId}`);
+        const deptData = await deptRes.json();
+        deptDocs = deptData.documents || [];
+      }
 
-      // Fetch universal docs
+      // Fetch universal (global) docs always
       const univRes = await authFetch(`${API_URL}/api/documents/department/Universal?userId=${user.id}`);
       const univData = await univRes.json();
       const univDocs = univData.documents || [];
@@ -245,10 +248,6 @@ export const ExpertChat: React.FC = () => {
             setMessages([]);
           }
         }
-
-        // Fetch department-wide documents
-        await fetchDepartmentDocuments();
-
       } catch (err) {
         console.error("Failed to load chats list", err);
       } finally {
@@ -257,6 +256,11 @@ export const ExpertChat: React.FC = () => {
     };
     fetchChats();
   }, [activeDepartment, user?.id]);
+
+  // Fetch documents whenever chatId or department changes
+  useEffect(() => {
+    fetchDepartmentDocuments();
+  }, [activeDepartment, currentChatId, user?.id]);
 
   // Fetch specific chat history when currentChatId changes
   useEffect(() => {

@@ -8,22 +8,29 @@ const router = Router();
 router.get('/department/:department', async (req, res) => {
     try {
         const { department } = req.params;
-        const { userId } = req.query;
+        const { userId, chatId } = req.query;
 
         if (!userId) {
             return res.status(400).json({ error: 'User ID is required' });
         }
 
+        const whereClause: any = {
+            chat: {
+                userId: String(userId)
+            }
+        };
+
+        if (department.toLowerCase() === 'universal') {
+            whereClause.chat.department = { equals: 'Universal', mode: 'insensitive' };
+        } else {
+            whereClause.chat.department = { equals: department, mode: 'insensitive' };
+            if (chatId) {
+                whereClause.chatId = String(chatId);
+            }
+        }
+
         const documents = await prisma.chatDocument.findMany({
-            where: {
-                chat: {
-                    department: {
-                        equals: department,
-                        mode: 'insensitive'
-                    },
-                    userId: String(userId)
-                }
-            },
+            where: whereClause,
             orderBy: { createdAt: 'desc' }
         });
 
