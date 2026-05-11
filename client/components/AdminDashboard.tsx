@@ -27,6 +27,7 @@ export const AdminDashboard: React.FC = () => {
     const [approvingId, setApprovingId] = useState<string | null>(null);
     const [waitlistTab, setWaitlistTab] = useState<'pending' | 'approved'>('pending');
     const [feedbackLoading, setFeedbackLoading] = useState(false);
+    const [feedbackList, setFeedbackList] = useState<any[]>([]);
     const [creditRequests, setCreditRequests] = useState<any[]>([]);
     const [creditRequestsLoading, setCreditRequestsLoading] = useState(false);
 
