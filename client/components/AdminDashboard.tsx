@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Users, CreditCard, Activity, ArrowLeft, Search, Plus, TrendingUp, AlertCircle, Database, Zap, Cpu, Loader, Heart, MessageSquare, Star, RefreshCw } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { authFetch, getAuthHeaders } from '../lib/auth';
 
 const parseUserAgent = (ua: string | null | undefined): string => {
     if (!ua) return 'Unknown Device';
