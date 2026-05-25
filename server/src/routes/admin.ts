@@ -16,6 +16,9 @@ type AdminUserWithUsage = Prisma.UserGetPayload<{
         role: true;
         allowedModels: true;
         createdAt: true;
+        lastLogin: true;
+        lastLoginIp: true;
+        lastLoginUserAgent: true;
         usageLogs: {
             select: {
                 inputTokens: true;
@@ -38,6 +41,9 @@ router.get('/users', requireAdmin, async (req, res) => {
                 role: true,
                 allowedModels: true,
                 createdAt: true,
+                lastLogin: true,
+                lastLoginIp: true,
+                lastLoginUserAgent: true,
                 usageLogs: {
                     select: {
                         inputTokens: true,

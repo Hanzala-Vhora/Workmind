@@ -31,6 +31,19 @@ router.post('/sign-in', async (req, res) => {
       return res.status(403).json({ error: 'Your account is not approved yet.' });
     }
 
+    const userAgent = req.headers['user-agent'] || null;
+    const ip = req.ip || req.headers['x-forwarded-for'];
+    const ipStr = typeof ip === 'string' ? ip : Array.isArray(ip) ? ip[0] : null;
+
+    await prisma.user.update({
+      where: { id: appUser.id },
+      data: {
+        lastLogin: new Date(),
+        lastLoginIp: ipStr,
+        lastLoginUserAgent: typeof userAgent === 'string' ? userAgent : null,
+      },
+    });
+
     res.json({
       accessToken: session.access_token,
       refreshToken: session.refresh_token,

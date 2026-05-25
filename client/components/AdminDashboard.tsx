@@ -2,8 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Users, CreditCard, Activity, ArrowLeft, Search, Plus, TrendingUp, AlertCircle, Database, Zap, Cpu, Loader, Heart, MessageSquare, Star, RefreshCw } from 'lucide-react';
 
-import { useNavigate } from 'react-router-dom';
-import { authFetch, getAuthHeaders } from '../lib/auth';
+const parseUserAgent = (ua: string | null | undefined): string => {
+    if (!ua) return 'Unknown Device';
+    
+    let browser = 'Unknown Browser';
+    let os = 'Unknown OS';
+    
+    // Simple OS detection
+    if (ua.includes('Windows')) os = 'Windows';
+    else if (ua.includes('Macintosh') || ua.includes('Mac OS')) os = 'macOS';
+    else if (ua.includes('Linux')) os = 'Linux';
+    else if (ua.includes('Android')) os = 'Android';
+    else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+    
+    // Simple Browser detection
+    if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('Chrome') && !ua.includes('Chromium')) browser = 'Chrome';
+    else if (ua.includes('Safari') && !ua.includes('Chrome')) browser = 'Safari';
+    else if (ua.includes('Edge')) browser = 'Edge';
+    
+    return `${browser} on ${os}`;
+};
 
 export const AdminDashboard: React.FC = () => {
     const { userProfile } = useApp();
@@ -599,6 +618,7 @@ export const AdminDashboard: React.FC = () => {
                             <thead className="bg-gray-50 text-[10px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-100">
                                 <tr>
                                     <th className="px-6 py-3">User</th>
+                                    <th className="px-6 py-3 text-center">Last Login</th>
                                     <th className="px-6 py-3 text-center">Credits Left</th>
                                     <th className="px-6 py-3 text-center">Model Access</th>
                                     <th className="px-6 py-3 text-center">Tokens (In/Out)</th>
@@ -612,6 +632,25 @@ export const AdminDashboard: React.FC = () => {
                                         <td className="px-6 py-4">
                                             <p className="text-sm font-semibold text-gray-900">{u.email}</p>
                                             <p className="text-[10px] text-gray-400 font-mono">{u.id}</p>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            {u.lastLogin ? (
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <span className="text-xs font-semibold text-gray-900">
+                                                        {new Date(u.lastLogin).toLocaleString()}
+                                                    </span>
+                                                    {(u.lastLoginIp || u.lastLoginUserAgent) && (
+                                                        <span 
+                                                            className="text-[10px] text-gray-400 font-medium max-w-[180px] truncate"
+                                                            title={`${u.lastLoginIp || 'Unknown IP'} | ${u.lastLoginUserAgent || 'Unknown Device'}`}
+                                                        >
+                                                            {u.lastLoginIp || 'No IP'} • {parseUserAgent(u.lastLoginUserAgent)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-xs text-gray-400">Never</span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className={`inline-block px-2 py-1 rounded-md text-xs font-bold ${u.credits <= 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>

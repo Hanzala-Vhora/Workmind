@@ -20,6 +20,10 @@ model User {
   allowedModels String[]   @default(["gemini", "claude", "openai"])
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  lastLogin          DateTime?
+  lastLoginIp        String?
+  lastLoginUserAgent String?
+
 
   workspaces    Workspace[]
   agents        Agent[]
